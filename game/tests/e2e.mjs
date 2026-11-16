@@ -191,6 +191,19 @@ test('сон в темноте: ночь + свет выключен -> снит
   await waitFor((s) => !s.objs.find((o) => o.kind === 'char').sleeping);
 });
 
+test('волшебное желание: подсказка рецепта исполняется варкой', async () => {
+  await room((s) => {
+    const c = s.objs.filter((o) => o.kind === 'char')[1];
+    const key = 'egg + star';
+    s.showWish(c, 'magic', null, { key, recipe: s.alchemy.recipes.get(key) });
+    const pot = s.objs.find((o) => o.beh?.cauldron);
+    pot.brewing = false;
+    pot.contents = [s.findRec('egg').id, s.findRec('star').id];
+    s.brew(pot);
+  });
+  await waitFor((s) => s.wish === null && s.alchemy.found['egg + star']?.result === 'golden egg');
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });
