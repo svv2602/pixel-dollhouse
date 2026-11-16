@@ -436,6 +436,46 @@ test('ванная: косметика, зубная щётка, пузыри и
   await waitFor((s) => s.testCh2.texture.key.endsWith('_smile'));
 });
 
+test('подсказки: в ванной просит щётку — почистили — желание исполнено, фича запомнена', async () => {
+  const st = await room((s) => {
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    const c = s.objs.find((o) => o.kind === 'char');
+    c.inTub = null; c.x = 3 * W + 60; c.busy = false;
+    c.look = { ...c.look, mustache: undefined };
+    const bathHints = s.hintsFor(c).sort().join(',');
+    c.x = W + 60;
+    const kitchenHints = s.hintsFor(c).sort().join(',');
+    c.x = 3 * W + 60;
+    s.clearWish(false);
+    s.showHint(c, 'teeth');
+    s.testCh3 = c;
+    return { bathHints, kitchenHints, shown: s.wish?.hint };
+  });
+  assert.equal(st.bathHints, 'bubbles,makeup,teeth,toilet');
+  assert.equal(st.kitchenHints, 'cook,fridge,smoothie');
+  assert.equal(st.shown, 'teeth');
+  await waitFor((s) => !s.testCh3.busy);
+  await room((s) => s.brushTeeth(s.testCh3));
+  await waitFor((s) => !s.wish && s.flags.tried?.teeth === true);
+});
+
+test('потребности: наелась — облачко с унитазом, посадили — исполнено; 3 сладости — щётка', async () => {
+  await room((s) => {
+    s.clearWish(false);
+    const c = s.testCh3;
+    c.pottyAt = 3; c.eaten = 2; c.sweets = 2; c.needs?.clear();
+    s.afterMeal(c, s.findRec('cupcake'));
+  });
+  const needs = await room((s) => [...s.testCh3.needs].sort().join(','));
+  assert.equal(needs, 'potty,teeth');
+  await waitFor((s) => s.wish?.ch === s.testCh3 && s.wish.type === 'hint');
+  await room((s) => { s.clearWish(false); s.showHint(s.testCh3, 'potty'); s.sitOnToilet(s.testCh3, s.objs.find((o) => o.beh?.toilet)); });
+  const st = await room((s) => ({ wish: !!s.wish, needs: [...s.testCh3.needs].join(','), eaten: s.testCh3.eaten }));
+  assert.equal(st.wish, false);
+  assert.equal(st.needs, 'teeth');
+  assert.equal(st.eaten, 0);
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });

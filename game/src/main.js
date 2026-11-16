@@ -107,6 +107,24 @@ const FRIDGE = ['egg', 'glass of milk', 'wedge of cheese', 'tomato', 'carrot', '
 const SOUR = /\b(lemon|lime|grapefruit|pickle)\b/;
 const HOT = /chili|jalapeno|hot sauce|wasabi/;
 const DISLIKE = ['broccoli', 'onion', 'button mushroom', 'cabbage', 'radish', 'eggplant'];
+// Подсказки-облачка «что взять → куда»: персонаж просит о том, чего ещё не пробовали в его комнате.
+// room — номер комнаты; seq — картинки по очереди (id/предмет каталога или 'tex:ключ текстуры).
+const HINTS = {
+  fridge: { room: 1, seq: (s) => ['big_fridge', pick(s.fridgeRecs())] },
+  smoothie: { room: 1, seq: () => [pick(['strawberry', 'banana', 'peach']), 'blender', 'smoothie'] },
+  cook: { room: 1, seq: () => ['egg', 'big_stove', 'fried egg'] },
+  makeup: { room: 3, seq: () => [pick(['lipstick', 'blush', 'paint-whiskers', 'paint-hearts', 'paint-freckles'])] },
+  teeth: { room: 3, seq: () => ['toothbrush'] },
+  bubbles: { room: 3, seq: () => ['big_tub', 'tex:bubble_big'] },
+  toilet: { room: 3, seq: () => ['big_toilet', 'tex:bubble_big'] },
+  // потребности (room: null) — появляются по состоянию персонажа, а не по комнате
+  potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
+  dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
+};
+const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
+// Что подпрыгивает с искорками, пока его ни разу не трогали (ключ — как в HINTS)
+const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
+  ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush]];
 // Любимые игрушки питомцев (у каждого своя — по номеру)
 const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
@@ -1238,6 +1256,7 @@ class Room extends Phaser.Scene {
   /** Фен: сушит и делает новую причёску. */
   blowDry(ch) {
     ch.wetUntil = 0;
+    this.hintDone('dryer', ch);
     const i = HAIR_STYLE_KEYS.indexOf(ch.look.hairStyle || 'bob');
     ch.look = { ...ch.look, hairStyle: HAIR_STYLE_KEYS[(i + 1) % HAIR_STYLE_KEYS.length] };
     makeCharTextures(this, ch.key, ch.look);
@@ -1272,6 +1291,7 @@ class Room extends Phaser.Scene {
   openFridge(fr) {
     sfx.chestOut();
     fr.setTexture('big_fridgeOpen');
+    this.hintDone('fridge');
     this.time.delayedCall(650, () => { if (fr.active) fr.setTexture('big_fridge'); });
     if (fr.contents.length) { this.spill(fr); return; }
     const room = Math.floor(fr.x / L.W);
@@ -1475,6 +1495,7 @@ class Room extends Phaser.Scene {
     mk.add(o.beh.makeup); // последняя — поверх остальных
     ch.look = { ...ch.look, makeup: [...mk] };
     makeCharTextures(this, ch.key, ch.look);
+    this.hintDone('makeup', ch);
     ch.busy = true;
     ch.setTexture(ch.key + '_blink');
     sfx.wear(); sfx.sparkle();
@@ -1503,6 +1524,8 @@ class Room extends Phaser.Scene {
         this.fxCrumbs.explode(2, m.x + rnd(-2, 2), m.y);
         if (++i < 10) return;
         if (ch.look.mustache) { ch.look = { ...ch.look, mustache: undefined }; makeCharTextures(this, ch.key, ch.look); }
+        ch.sweets = 0;
+        this.hintDone('teeth', ch);
         ch.setTexture(ch.key + '_smile');
         sfx.ding();
         this.fxSparks.explode(8, m.x, m.y);
@@ -1536,13 +1559,14 @@ class Room extends Phaser.Scene {
     this.popBubbles = (this.popBubbles || []).filter((x) => x !== b);
     this.tweens.killTweensOf(b);
     sfx.pop();
-    if (!auto) this.fxSparks.explode(5, b.x, b.y);
+    if (!auto) { this.fxSparks.explode(5, b.x, b.y); this.hintDone('bubbles'); }
     b.destroy();
   }
 
   /** Смыв: журчание, вода закручивается, унитаз чуть подпрыгивает. */
   flushFx(wc) {
     sfx.flush();
+    this.hintDone('toilet');
     this.fxCrumbs.setParticleTint(0x9fdcff);
     for (let i = 0; i < 4; i++) this.time.delayedCall(i * 180, () => this.fxCrumbs.explode(4, wc.x + rnd(-5, 5), wc.y - wc.displayHeight + 11));
     this.tweens.add({ targets: wc, y: wc.y - 1, duration: 70, yoyo: true, repeat: 2 });
@@ -1560,6 +1584,8 @@ class Room extends Phaser.Scene {
   }
 
   sitOnToilet(ch, wc) {
+    ch.eaten = 0;
+    this.hintDone('potty', ch);
     ch.x = Math.round(wc.x);
     ch.y = Math.round(wc.y - 7);
     ch.restOn = wc;
@@ -1610,6 +1636,15 @@ class Room extends Phaser.Scene {
       this.fxCrumbs.explode(2, pot.x + rnd(-6, 6), pot.y - pot.displayHeight + 3);
       if (Math.random() < 0.3) sfx.blub();
     }
+    // неопробованное подпрыгивает с искорками — «потрогай меня»
+    if (Math.random() < 0.5) return;
+    const tried = this.flags.tried || {};
+    const lure = LURES.filter(([k]) => !tried[k])
+      .flatMap(([, f]) => this.objs.filter((o) => o.kind === 'item' && f(o.beh) && !o.dragging && !o.owner && !o.blending && this.visible(o)));
+    if (!lure.length) return;
+    const o = pick(lure);
+    this.fxSparks.explode(4, o.x, o.y - o.displayHeight);
+    this.tweens.add({ targets: o, y: o.y - 3, duration: 120, yoyo: true, repeat: 1, ease: 'Quad.easeOut' });
   }
 
   /** Первый за сеанс приход в комнату с котлом: котёл «здоровается» фонтанчиком. */
@@ -1883,7 +1918,12 @@ class Room extends Phaser.Scene {
   startDrag(o) {
     sfx.pick();
     if (o.inTub) {
-      if (o.kind === 'char' || o.beh?.pet) o.wetUntil = this.time.now + 7000; // с персонажа капает
+      if (o.beh?.pet) o.wetUntil = this.time.now + 7000; // с питомца капает
+      if (o.kind === 'char') {
+        // с персонажа капает, и он просит фен (всегда — пока фен не пробовали, потом иногда)
+        o.wetUntil = this.time.now + 20000;
+        if (!this.flags.tried?.dryer || Math.random() < 0.4) this.addNeed(o, 'dryer', 1500);
+      }
       o.inTub = null;
     }
     if (o.owner) { o.owner.slots[o.slot] = null; o.owner = null; o.slot = null; }
@@ -2277,9 +2317,11 @@ class Room extends Phaser.Scene {
                 // коктейль оставляет «усы» — смываются в ванне или зубной щёткой
                 ch.look = { ...ch.look, mustache: lightHex(o.color) };
                 makeCharTextures(this, ch.key, ch.look);
+                this.hintDone('smoothie', ch);
               }
               ch.setTexture(ch.key + (taste ? `_${taste}` : '_blink'));
               if (taste) this.tasteReact(ch, taste);
+              if (last) this.afterMeal(ch, o.rec);
               else if (last) { sfx.yum(); this.fxHearts.explode(3, m.x, m.y - 10); } else this.fxHearts.explode(1, m.x, m.y - 10);
               if (o.rec.subject === this.favFood(ch)) {
                 // любимая еда: больше сердечек и радостный прыжок
@@ -2311,10 +2353,19 @@ class Room extends Phaser.Scene {
       if (this.time.now > this.wish.until || !this.wish.ch.active) this.clearWish(false);
       return;
     }
-    if (Math.random() > 0.22) return;
     const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && this.visible(c));
     if (!chars.length) return;
+    for (const c of chars) if (c.needs?.has('dryer') && !(c.wetUntil > this.time.now)) c.needs.delete('dryer'); // высохла сама
+    const needy = chars.filter((c) => c.needs?.size);
+    if (needy.length && Math.random() < 0.5) { const c = pick(needy); this.showHint(c, pick([...c.needs])); return; }
+    const tried = (this.flags.tried ||= {});
+    const fresh = (c) => this.hintsFor(c).filter((h) => !tried[h]);
+    // есть чему научить — облачка появляются чаще
+    if (Math.random() > (!this.night && chars.some((c) => fresh(c).length) ? 0.5 : 0.22)) return;
     const ch = pick(chars);
+    const hs = this.night ? [] : this.hintsFor(ch);
+    const fr = fresh(ch);
+    if (hs.length && Math.random() < (fr.length ? 0.75 : 0.2)) { this.showHint(ch, pick(fr.length ? fr : hs)); return; }
     const r = Math.random();
     const kinds = this.night ? ['sleep', 'sleep', 'food', 'music', 'magic'] : ['food', 'food', 'wear', 'pet', 'music', 'food', 'wear', 'sleep', 'magic', 'magic', 'party'];
     const type = kinds[Math.floor(r * kinds.length)];
@@ -2334,25 +2385,86 @@ class Room extends Phaser.Scene {
     this.showWish(ch, type, rec);
   }
 
-  showWish(ch, type, rec, magic = null) {
+  /** Подсказки для персонажа: «усы» — всегда щётка; иначе — то, что есть в его комнате. */
+  hintsFor(ch) {
+    if (ch.needs?.size) return [...ch.needs];
+    if (ch.look.mustache) return ['teeth'];
+    const room = Math.floor(ch.x / L.W);
+    return Object.keys(HINTS).filter((k) => HINTS[k].room === room);
+  }
+
+  fridgeRecs() {
+    this.fridgeList ||= FRIDGE.map((sub) => this.findRec(sub)).filter(Boolean);
+    return this.fridgeList;
+  }
+
+  /** Картинка для облачка: предмет каталога (id или название) или 'tex:ключ'. */
+  hintIcon(e) {
+    if (!e) return null;
+    if (typeof e !== 'string') return e;
+    if (e.startsWith('tex:')) return e.slice(4);
+    return this.byId.get(e) || this.findRec(e);
+  }
+
+  /** Потребность персонажа: облачко сразу (если свободно) и потом снова, пока не исполнят. */
+  addNeed(ch, name, delay = 2000) {
+    (ch.needs ||= new Set()).add(name);
+    this.time.delayedCall(delay, () => {
+      if (ch.active && ch.needs?.has(name) && !this.wish && !ch.sleeping && !this.dress && !this.albumUi) this.showHint(ch, name);
+    });
+  }
+
+  /** После еды: 3–5 съеденных — на горшок; три сладости — почистить зубы. */
+  afterMeal(ch, rec) {
+    ch.eaten = (ch.eaten || 0) + 1;
+    ch.pottyAt ||= 3 + Math.floor(Math.random() * 3);
+    if (ch.eaten >= ch.pottyAt) { ch.eaten = 0; ch.pottyAt = 0; this.addNeed(ch, 'potty', 2500); }
+    if (SWEET.test(rec.subject)) {
+      ch.sweets = (ch.sweets || 0) + 1;
+      if (ch.sweets >= 3) { ch.sweets = 0; this.addNeed(ch, 'teeth', 3500); }
+    }
+  }
+
+  showHint(ch, name) {
+    const seq = HINTS[name].seq(this).map((e) => this.hintIcon(e)).filter(Boolean);
+    if (!seq.length) return;
+    this.showWish(ch, 'hint', null, null, seq);
+    this.wish.hint = name;
+  }
+
+  /** Фичу попробовали: запоминаем; если именно о ней просили — желание исполнено. */
+  hintDone(name, ch = null) {
+    ch?.needs?.delete(name);
+    const tried = (this.flags.tried ||= {});
+    if (!tried[name]) { tried[name] = true; this.save(); }
+    const w = this.wish;
+    if (!w || w.type !== 'hint' || w.hint !== name || (ch && ch !== w.ch)) return;
+    this.clearWish(true);
+    sfx.fanfare();
+    this.fxHearts.explode(6, w.ch.x, w.ch.y - w.ch.displayHeight);
+    this.celebrate(w.ch);
+  }
+
+  showWish(ch, type, rec, magic = null, seq = null) {
     if (this.wish) this.clearWish(false);
     const bubble = this.add.image(ch.x, ch.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setScale(0);
     const key = rec ? (rec.tex ? `${rec.tex}_icon` : rec.cat) : type === 'music' ? 'wish_music' : type === 'magic' ? 'big_cauldron_icon' : type === 'bath' ? 'big_tub_icon' : type === 'party' ? 'candle_box_icon' : 'wish_sleep';
     const icon = (rec && !rec.tex ? this.add.image(0, 0, key, rec.frame) : this.add.image(0, 0, key)).setDepth(10004).setAlpha(0);
     this.wish = { ch, type, rec, bubble, icon, until: this.time.now + (magic ? 60000 : 30000), key: magic?.key };
-    if (magic) {
-      // картинки по очереди: первый ингредиент → второй → котёл
-      const seq = [magic.recipe.a, magic.recipe.b, null];
+    // картинки по очереди: рецепт — ингредиент → ингредиент → котёл; купание — ванна → мыло; подсказки — свои цепочки
+    if (magic) seq = [magic.recipe.a, magic.recipe.b, 'big_cauldron_icon'];
+    else if (!seq && type === 'bath') seq = [this.big.tub, this.byId.get('foam-pink')].filter(Boolean);
+    if (seq?.length) {
       let i = 0;
       const show = () => {
         const r = seq[i++ % seq.length];
-        if (!icon.active) return;
-        if (!r) icon.setTexture('big_cauldron_icon');
+        if (!icon.active || !r) return;
+        if (typeof r === 'string') icon.setTexture(r);
         else if (r.tex) icon.setTexture(`${r.tex}_icon`);
         else icon.setTexture(r.cat, r.frame);
       };
       show();
-      this.wish.timer = this.time.addEvent({ delay: 900, loop: true, callback: show });
+      if (seq.length > 1) this.wish.timer = this.time.addEvent({ delay: 900, loop: true, callback: show });
     }
     sfx.squeak();
     this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut', onComplete: () => bubble.setScale(1) });
@@ -2483,6 +2595,7 @@ class Room extends Phaser.Scene {
       this.removeObj(o);
       const n = this.spawnItem(to, x, y);
       n.restOn = stove;
+      this.hintDone('cook');
       this.fxSparks.explode(14, x, y - 8);
       this.tweens.add({ targets: n, y: y - 4, duration: 120, yoyo: true });
       this.save();
