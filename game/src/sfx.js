@@ -69,3 +69,25 @@ export const sfx = {
   page: () => noise(0.06, { freq: 3000, vol: 0.06 }),
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
 };
+
+// ---------------------------------------------------------------- фоновая музыка
+// Тихая колыбельная: фиксированная мелодия в пентатонике + бас раз в такт. Синтез, без файлов.
+const SCALE = [262, 294, 330, 392, 440, 523, 587, 659];
+const MELODY = [4, 2, 4, 5, 4, 2, 0, -1, 1, 2, 3, 2, 1, 0, 1, -1, 4, 2, 4, 5, 7, 5, 4, -1, 3, 2, 1, 2, 0, -1, -1, -1];
+const BASS = [0, 3, 4, 0];
+let musicTimer = null;
+let step = 0;
+
+function musicTick() {
+  if (!ctx || ctx.state !== 'running' || document.hidden) return;
+  const n = MELODY[step % MELODY.length];
+  if (n >= 0) tone(SCALE[n], 0.5, { type: 'triangle', vol: 0.03 });
+  if (step % 8 === 0) tone(SCALE[BASS[(step / 8) % BASS.length]] / 2, 1.4, { type: 'sine', vol: 0.035 });
+  step++;
+}
+
+export function setMusic(on) {
+  if (on && !musicTimer) { step = 0; musicTimer = setInterval(musicTick, 340); }
+  if (!on && musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+}
+export const musicPlaying = () => !!musicTimer;

@@ -1,8 +1,9 @@
 import Phaser from 'phaser';
-import { sfx, unlockAudio } from './sfx.js';
+import { sfx, unlockAudio, setMusic, musicPlaying } from './sfx.js';
 import { makeCharTextures, ANCHOR, HAIR, DRESS, SKIN, HAIR_STYLE_KEYS, OUTFIT_KEYS } from './character.js';
 import { BIG_FURNITURE, makeFurnitureTextures, outline } from './furniture.js';
 import { Alchemy } from './alchemy.js';
+import { makePotions } from './potions.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -80,6 +81,8 @@ const RX = {
   container: /\b(chest|drawers|wardrobe|refrigerator|fridge|cabinet|basket|crate|dresser|lunchbox|backpack|purse|handbag|nightstand|bookshelf|oven|cookie jar)\b/,
   notPet: /plush|stuffed|figurine|statue|bath|feeder|nest|coop|hutch|wheel|collar|leash|bed|carrier|rocking|hobby|float|carriage|saddle|harness|horn|jar of/,
   dressUp: /\b(wardrobe|mirror)\b/,
+  // водные и медленные животные не бегают по полу
+  noWalk: /fish|whale|jellyfish|octopus|dolphin|seahorse|starfish|shark|snail|turtle|seal/,
   // украшения на волосы — подгоняются по размеру головы (иконки датасета для них слишком крупные)
   hairAcc: /tiara|circlet|flower crown|hair (bow|clip)|hairclip|bow ribbon/,
   // ободки (часто с ушками): дуга обхватывает голову — концы на уровне глаз, ушки торчат над макушкой
@@ -136,20 +139,24 @@ class Room extends Phaser.Scene {
     // крупная мебель (рисуется в коде) заменяет в ящике свои 16×16-аналоги из датасета
     this.big = {};
     const bigSubjects = new Set(BIG_FURNITURE.map((b) => b.icon));
-    for (const b of BIG_FURNITURE) {
+    for (const [order, b] of BIG_FURNITURE.entries()) {
       const icon = this.items.find((r) => r.subject === b.icon);
-      const rec = { id: `big_${b.key}`, subject: b.subject, cat: 'furniture', tags: ['furniture'], tex: `big_${b.key}`, icon };
+      const rec = { id: `big_${b.key}`, subject: b.subject, cat: 'furniture', tags: ['furniture'], tex: `big_${b.key}`, icon, order };
       this.big[b.key] = rec;
       this.byId.set(rec.id, rec);
     }
-    this.byCat = { furniture: Object.values(this.big) };
+    // цветные зелья (рисуются в коде): у каждого цвета свой постоянный эффект
+    const potions = makePotions(this);
+    for (const r of potions) this.byId.set(r.id, r);
+    this.byCat = { furniture: Object.values(this.big), magic: potions.slice() };
     for (const r of this.items) {
       if (HIDE.test(r.subject) || bigSubjects.has(r.subject)) continue;
       (this.byCat[r.cat] ||= []).push(r);
     }
     for (const [c, list] of Object.entries(this.byCat)) {
       const fav = FAVORITES[c] || [];
-      const rank = (r) => { if (r.tex) return -1; const i = fav.indexOf(r.subject); return i < 0 ? 1e6 : i; };
+      // свои предметы (нарисованные в коде) — первыми и в заданном порядке
+      const rank = (r) => { if (r.tex) return -1000 + (r.order || 0); const i = fav.indexOf(r.subject); return i < 0 ? 1e6 : i; };
       list.sort((a, b) => rank(a) - rank(b) || a.subject.localeCompare(b.subject));
     }
     this.cats = CAT_ORDER.filter((c) => this.byCat[c]);
@@ -188,6 +195,9 @@ class Room extends Phaser.Scene {
       if (this.press?.moved && this.press.obj) this.drop(this.press.obj, this.pt(this.input.activePointer));
       this.press = null;
     });
+
+    // питомцы оживают: прыгают по полу и находят еду
+    this.time.addEvent({ delay: 3500, loop: true, callback: () => this.petTick() });
 
     // моргание
     this.time.addEvent({
@@ -415,7 +425,7 @@ class Room extends Phaser.Scene {
     this.add.rectangle(0, ROOM_H + 19, W, 1, 0x3a2546).setOrigin(0).setDepth(D);
     this.cat = this.cats[0];
     this.page = 0;
-    const n = this.cats.length + 1; // + кнопка сброса
+    const n = this.cats.length + 2; // + кнопки сброса и музыки
     const step = Math.min(22, Math.floor((W - 2) / n));
     const x0 = Math.floor((W - step * n) / 2) + Math.floor(step / 2);
     this.tabs = this.cats.map((c, i) => {
@@ -432,6 +442,13 @@ class Room extends Phaser.Scene {
     rb.ui = { reset: true };
     const ig = this.add.graphics().setDepth(D + 1);
     pixelMap(ig, ['.XXXX.X', 'X....XX', 'X...XXX', 'X......', 'X.....X', '.XXXXX.'], rx - 3, TAB_Y - 3, 0x8f6fa3);
+    // музыка вкл/выкл
+    const mx = rx + step;
+    this.musicBtn = this.add.rectangle(mx, TAB_Y, step - 2, 18, 0x6b4a7e).setDepth(D).setInteractive();
+    this.musicBtn.ui = { music: true };
+    this.musicIcon = this.add.graphics().setDepth(D + 1);
+    this.musicIconAt = [mx - 3, TAB_Y - 4];
+    this.drawMusicIcon();
     // стрелки
     const arrow = (x, dir) => {
       const hit = this.add.rectangle(x, SLOT_Y, 10, 18, 0x6b4a7e).setDepth(D).setInteractive();
@@ -454,6 +471,13 @@ class Room extends Phaser.Scene {
     this.refreshDrawer();
   }
 
+  drawMusicIcon() {
+    const on = musicPlaying();
+    this.musicIcon.clear();
+    pixelMap(this.musicIcon, ['..XXXX', '..X..X', '..X..X', '..X..X', 'XXX.XX', 'XXX.XX', '.X..X.'], ...this.musicIconAt, on ? 0xfff07a : 0x8f6fa3);
+    this.musicBtn.setFillStyle(on ? 0x6b4a7e : 0x3a2546);
+  }
+
   refreshDrawer() {
     const list = this.byCat[this.cat];
     const pages = Math.ceil(list.length / this.perPage);
@@ -469,6 +493,12 @@ class Room extends Phaser.Scene {
   // ---------------------------------------------------------------- input
   onDown(p, over) {
     unlockAudio();
+    if (!this.musicChecked) {
+      this.musicChecked = true;
+      let pref = null;
+      try { pref = localStorage.getItem('pixel-house-music'); } catch { /* ignore */ }
+      if (pref !== '0' && !musicPlaying() && !over[0]?.ui?.music) { setMusic(true); this.drawMusicIcon(); }
+    }
     goFullscreen();
     const q = this.pt(p);
     const top = over[0];
@@ -517,6 +547,12 @@ class Room extends Phaser.Scene {
       if (pr.ui.tab) { this.cat = pr.ui.tab; this.page = 0; this.refreshDrawer(); }
       if (pr.ui.page) { this.page += pr.ui.page; this.refreshDrawer(); }
       if (pr.ui.reset && p.upTime - pr.t > 2000) this.resetRoom();
+      if (pr.ui.music) {
+        const on = !musicPlaying();
+        setMusic(on);
+        try { localStorage.setItem('pixel-house-music', on ? '1' : '0'); } catch { /* ignore */ }
+        this.drawMusicIcon();
+      }
       return;
     }
     if (pr.rec) { this.tossIn(pr.rec); return; }
@@ -532,6 +568,7 @@ class Room extends Phaser.Scene {
     for (const x of this.objs) if (x.restOn === o) { x.restOn = null; this.settle(x); }
     o.dragging = true;
     o.setDepth(5000);
+    if (o.walkTween) { o.walkTween.stop(); o.walkTween = null; o.walking = false; }
     this.tweens.killTweensOf(o);
     o.setScale(o.kind === 'char' ? o.mul : 1); // масштаб только целый — без «поднятия» ×1.15
     if (o.kind === 'char') o.setTexture(o.key + '_open');
@@ -776,6 +813,53 @@ class Room extends Phaser.Scene {
     });
   }
 
+  petTick() {
+    if (this.dress || this.albumUi || this.press?.moved) return;
+    const { W, FLOOR_TOP, ROOM_H } = L;
+    const pets = this.objs.filter((o) => o.kind === 'item' && o.beh.pet && !o.owner && !o.dragging && !o.restOn
+      && !o.walking && o.y >= FLOOR_TOP && !RX.noWalk.test(o.rec.subject));
+    if (!pets.length) return;
+    // еда на полу рядом -> подбежать и съесть
+    const food = this.objs.filter((f) => f.kind === 'item' && f.beh.edible && !f.owner && !f.dragging && !f.restOn
+      && !f.eating && f.y >= FLOOR_TOP);
+    for (const p of pets) {
+      const f = food.find((it) => Math.abs(it.x - p.x) < 70 && Math.abs(it.y - p.y) < 30);
+      if (f && Math.random() < 0.6) {
+        this.hopTo(p, f.x + (p.x < f.x ? -8 : 8), f.y, () => {
+          if (f.active && !f.owner && !f.dragging && this.objs.includes(f)) { this.feedPet(p, f); this.save(); }
+        });
+        return;
+      }
+    }
+    if (Math.random() < 0.5) return; // не все время в движении
+    const p = pick(pets);
+    const tx = Math.round(Phaser.Math.Clamp(p.x + rnd(-30, 30), 10, W - 10));
+    const ty = Math.round(Phaser.Math.Clamp(p.y + rnd(-6, 6), FLOOR_TOP + 4, ROOM_H - 2));
+    this.hopTo(p, tx, ty, () => this.save());
+  }
+
+  /** Прыжками к точке: x/y плавно, сверху — подскоки по 3 пикселя. */
+  hopTo(p, tx, ty, done) {
+    p.walking = true;
+    p.setFlipX(tx < p.x);
+    const hops = Math.max(1, Math.round(Math.hypot(tx - p.x, ty - p.y) / 7));
+    const dur = hops * 200;
+    const base = { y: p.y };
+    this.tweens.add({ targets: p, x: tx, duration: dur });
+    this.tweens.add({ targets: base, y: ty, duration: dur });
+    p.walkTween = this.tweens.addCounter({
+      from: 0, to: hops * Math.PI, duration: dur,
+      onUpdate: (tw) => { p.y = Math.round(base.y - Math.abs(Math.sin(tw.getValue())) * 3); },
+      onComplete: () => {
+        p.y = Math.round(ty);
+        p.walking = false;
+        p.walkTween = null;
+        if (Math.random() < 0.3) sfx.squeak();
+        done?.();
+      },
+    });
+  }
+
   feedPet(pet, o) {
     this.objs = this.objs.filter((x) => x !== o);
     this.tweens.add({
@@ -803,11 +887,26 @@ class Room extends Phaser.Scene {
         this.time.delayedCall(350, () => {
           sfx.sparkle();
           this.fxSparks.explode(16, ch.x, ch.y - ch.displayHeight / 2);
-          // только целые масштабы: «вырасти» = ×2, повторно — обратно ×1
-          const effects = ['grow', 'color', 'rainbow', 'float'].filter((e) => e !== ch.lastFx);
-          const fx = pick(effects);
+          // цветное зелье -> всегда свой эффект; зелья из датасета -> «сюрприз»
+          const BY_COLOR = { pink: 'pinkHair', green: 'grow', yellow: 'float', blue: 'ice', purple: 'dress', rainbow: 'rainbow' };
+          const fx = BY_COLOR[o.rec.potionColor] || pick(['grow', 'color', 'rainbow', 'float', 'ice'].filter((e) => e !== ch.lastFx));
           ch.lastFx = fx;
-          if (fx === 'grow') {
+          // только целые масштабы: «вырасти» = ×2, повторно — обратно ×1
+          if (fx === 'pinkHair') {
+            const PINK = HAIR[6];
+            if (ch.look.hair === PINK) ch.look = { ...ch.look, hair: ch.look.prevHair || HAIR[0] };
+            else ch.look = { ...ch.look, prevHair: ch.look.hair, hair: PINK };
+            makeCharTextures(this, ch.key, ch.look);
+          } else if (fx === 'dress') {
+            const i = DRESS.indexOf(ch.look.dress);
+            ch.look = { ...ch.look, dress: DRESS[(i + 1) % DRESS.length] };
+            makeCharTextures(this, ch.key, ch.look);
+          } else if (fx === 'ice') {
+            ch.ice = this.time.now + 5000;
+            const x0 = ch.x;
+            this.tweens.add({ targets: ch, x: x0 + 1, duration: 50, yoyo: true, repeat: 24, onComplete: () => { ch.x = x0; } });
+            this.fxPoof.explode(14, ch.x, ch.y - ch.displayHeight);
+          } else if (fx === 'grow') {
             ch.mul = ch.mul > 1 ? 1 : 2;
             ch.setScale(ch.mul);
             this.tweens.add({ targets: ch, y: ch.y - 4, duration: 120, yoyo: true });
@@ -1200,8 +1299,9 @@ class Room extends Phaser.Scene {
         const behind = slot === 'head' && RX.earBand.test(it.rec.subject);
         it.setDepth(ch.depth + (behind ? -0.1 : slot === 'hand' ? 0.3 : slot === 'face' ? 0.2 : 0.25));
       }
-      if (ch.rainbow > time) ch.setTint(Phaser.Display.Color.HSVToRGB((time / 600) % 1, 0.45, 1).color);
-      else if (ch.rainbow) { ch.rainbow = 0; ch.clearTint(); }
+      if (ch.ice > time) ch.setTint(0x9ad9ff);                     // голубое зелье: «замёрзла»
+      else if (ch.rainbow > time) ch.setTint(Phaser.Display.Color.HSVToRGB((time / 600) % 1, 0.45, 1).color);
+      else if (ch.rainbow || ch.ice) { ch.rainbow = 0; ch.ice = 0; ch.clearTint(); }
     }
     for (const o of this.objs) {
       if (!o.glow) continue;
