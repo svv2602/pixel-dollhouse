@@ -222,8 +222,14 @@ test('сад: посадить клубнику → полить ×3 → соб�
     await waitFor((s, st) => s.testBed.plots[0]?.stage === st, stage);
   }
   // считаем сразу после сбора: кролик в саду может успеть съесть урожай с травы
-  const after = await room((s) => { s.plotTap(s.testBed, s.testBed.x - 13); return s.objs.filter((o) => o.rec?.subject === 'strawberry').length; });
-  assert.equal(after, before + 2, 'двойной урожай');
+  const gained = await room((s) => {
+    const n = () => s.objs.filter((o) => o.rec?.subject === 'strawberry').length;
+    const b = n(); // кролик мог съесть клубнику с травы, пока росло, — считаем от момента сбора
+    s.plotTap(s.testBed, s.testBed.x - 13);
+    return n() - b;
+  });
+  assert.ok(before >= 0);
+  assert.equal(gained, 2, 'двойной урожай');
   assert.equal(await room((s) => s.testBed.plots[0]), null);
 });
 
@@ -502,6 +508,76 @@ test('концертный зал: зритель на стуле, микроф�
   assert.deepEqual(cur, [true, false]);
   const disco = await room((s) => { const b = s.objs.find((o) => o.beh?.disco); s.toggleDisco(b); const on = s.discoSpots?.length; s.toggleDisco(b); return [on, !!s.discoBall]; });
   assert.deepEqual(disco, [8, false]);
+});
+
+test('спальня: батут на кровати, сундук с сюрпризом, ночник-звёзды, фото на стену', async () => {
+  const st = await room((s) => {
+    s.goRoom(0);
+    s.applyNight(false);
+    const bed = s.objs.find((o) => o.beh?.bigBed);
+    const c = s.objs.find((o) => o.kind === 'char');
+    c.inTub = null; c.busy = false; c.sleeping = false;
+    c.x = bed.x; c.y = Math.round(bed.y - bed.displayHeight * 0.3); c.restOn = bed;
+    const bounced = s.bounce(bed);
+    const chest = s.objs.find((o) => o.beh?.chest);
+    chest.contents = [];
+    const n0 = s.objs.length;
+    s.openChest(chest);
+    const popped = s.objs.length - n0;
+    const lamp = s.objs.find((o) => o.beh?.lamp);
+    lamp.lit = false;
+    s.applyNight(true);
+    const stars = s.nightStars?.imgs.length || 0;
+    lamp.lit = true;
+    s.nightLight();
+    const starsOff = !s.nightStars;
+    s.applyNight(false);
+    s.testBedCh = c;
+    return { bounced, popped, stars, starsOff, camera: !!s.objs.find((o) => o.beh?.camera) };
+  });
+  assert.deepEqual(st, { bounced: true, popped: 1, stars: 14, starsOff: true, camera: true });
+  await waitFor((s) => !s.testBedCh.busy);
+  await room((s) => { s.photosBefore = s.objs.filter((o) => o.beh?.photo).length; s.takePhoto(s.objs.find((o) => o.beh?.camera)); });
+  await waitFor((s) => s.objs.filter((o) => o.beh?.photo).length === s.photosBefore + 1 && !s.snapping);
+  const ph = await room((s) => { const p = s.objs.find((o) => o.beh?.photo); return { id: !!p.photoId, stored: !!s.photoStore()[p.photoId] }; });
+  assert.deepEqual(ph, { id: true, stored: true });
+  await waitFor((s) => s.objs.some((o) => o.beh?.photo && o.texture.key.startsWith('photo_') && o.texture.key !== 'photo_blank'));
+});
+
+test('сад: дождь поливает грядки и мочит, качели, бабочка на голову, клад лопаткой', async () => {
+  const st = await room((s) => {
+    s.goRoom(2);
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    s.cameras.main.scrollX = 2 * W;
+    const bed = s.objs.find((o) => o.beh?.gardenBed && o.x >= 2 * W && o.x < 3 * W);
+    bed.plots[2] = { id: s.findRec('tulip').id, stage: 0, watered: false };
+    const c = s.objs.find((o) => o.kind === 'char');
+    c.inTub = null; c.restOn = null; c.x = 2 * W + 100; c.y = 70; c.busy = false;
+    if (s.flags.tried) delete s.flags.tried.dryer; // фен ещё не пробовали — мокрый точно попросит фен
+    s.rain();
+    const sw = s.objs.find((o) => o.beh?.swing);
+    const c2 = s.objs.filter((o) => o.kind === 'char')[1];
+    c2.inTub = null; c2.busy = false;
+    s.sitOn(c2, sw);
+    s.testRainBed = bed; s.testRainCh = c; s.testSw = sw; s.testSwCh = c2;
+    return { swing: !!sw, onSwing: c2.restOn === sw, shovel: !!s.objs.find((o) => o.beh?.shovel) };
+  });
+  assert.deepEqual(st, { swing: true, onSwing: true, shovel: true });
+  await waitFor((s) => s.testRainBed.plots[2]?.watered || s.testRainBed.plots[2]?.stage >= 1);
+  await waitFor((s) => s.testRainCh.wetUntil > s.time.now && s.testRainCh.needs?.has('dryer'));
+  const moved = await room((s) => { const x0 = s.testSwCh.x; s.pushSwing(s.testSw); return { amp: s.testSw.amp > 0.3, x0 }; });
+  assert.equal(moved.amp, true);
+  await waitFor((s, x0) => Math.abs(s.testSwCh.x - x0) >= 2, moved.x0);
+  await waitFor((s) => s.butterflies.length > 0 && !!s.digSpot);
+  await room((s) => s.catchButterfly(s.butterflies[0]));
+  await waitFor((s) => s.butterflies.some((b) => b.onChar));
+  await room((s) => {
+    s.lastTreasure = null;
+    const sh = s.objs.find((o) => o.beh?.shovel);
+    s.drop(sh, { x: s.digSpot.x, y: s.digSpot.y });
+  });
+  // кролик может съесть съедобный клад с травы — проверяем сам факт находки
+  await waitFor((s) => !!s.lastTreasure && !s.digSpot && s.flags.tried?.dig);
 });
 
 test('нет ошибок в консоли', () => {

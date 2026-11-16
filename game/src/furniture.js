@@ -148,6 +148,24 @@ const PIECES = {
     clear(0, 0); clear(27, 0);
   }],
 
+  // ------------------------------------------------------------ открытый сундук 28×22 (на миг при тапе)
+  chestOpen: [28, 22, (r) => {
+    r(0, 0, 28, 8, C.pinkD); r(1, 1, 26, 1, C.pink); r(5, 0, 2, 8, C.gold); r(21, 0, 2, 8, C.gold); // откинутая крышка
+    r(1, 8, 26, 3, '#7a4a32');                                                                     // нутро
+    r(4, 8, 4, 3, '#5ac4f2'); r(11, 7, 4, 4, '#ffd84a'); r(18, 8, 5, 3, '#7ad9b5');                // игрушки выглядывают
+    r(0, 10, 28, 12, C.pink); r(0, 10, 28, 1, C.pinkL); r(0, 21, 28, 1, C.pinkD);
+    r(5, 10, 2, 12, C.gold); r(21, 10, 2, 12, C.gold); r(6, 10, 1, 12, C.goldD); r(22, 10, 1, 12, C.goldD);
+    r(10, 15, 1, 1, C.white); r(17, 17, 1, 1, C.white); r(3, 16, 1, 1, C.white); r(25, 14, 1, 1, C.white);
+  }],
+
+  // ------------------------------------------------------------ рама качелей 30×36 (сиденье и верёвки рисуются отдельно — качаются)
+  swing: [30, 36, (r) => {
+    r(0, 0, 30, 3, C.wood); r(0, 0, 30, 1, C.woodL); r(0, 2, 30, 1, C.woodD);
+    r(1, 3, 3, 31, C.woodD); r(2, 3, 1, 31, C.wood); r(26, 3, 3, 31, C.woodD); r(27, 3, 1, 31, C.wood);
+    r(0, 34, 5, 2, C.woodK); r(25, 34, 5, 2, C.woodK);
+    r(9, 3, 1, 2, '#8a8fa3'); r(20, 3, 1, 2, '#8a8fa3');                             // крючки
+  }],
+
   // ------------------------------------------------------------ торшер 14×40 (свет)
   lamp: [14, 40, (r) => {
     for (let y = 0; y < 10; y++) {
@@ -330,6 +348,7 @@ export const BIG_FURNITURE = [
   { key: 'puddle', subject: 'mud puddle' },
   { key: 'petbed', subject: 'cozy pet bed', icon: 'pet bed' },
   { key: 'toilet', subject: 'flush toilet' },
+  { key: 'swing', subject: 'garden swing' },
   { key: 'stage', subject: 'music stage' },
   { key: 'tree', subject: 'apple tree', icon: 'apple tree' },
   { key: 'album', subject: 'discovery album' },

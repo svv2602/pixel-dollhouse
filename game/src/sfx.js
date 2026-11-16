@@ -117,6 +117,11 @@ export const sfx = {
   },
   purr: () => { tone(70, 0.35, { type: 'sawtooth', vol: 0.05 }); tone(75, 0.35, { type: 'triangle', vol: 0.06, delay: 0.05 }); },
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
+  // спальня и сад
+  rain: () => { noise(3.4, { freq: 3000, vol: 0.07 }); for (let i = 0; i < 14; i++) tone(900 + Math.random() * 900, 0.04, { slide: -300, vol: 0.04, delay: Math.random() * 3 }); },
+  shutter: () => { noise(0.04, { freq: 6000, vol: 0.15 }); tone(1800, 0.05, { type: 'square', vol: 0.05, delay: 0.05 }); noise(0.05, { freq: 3000, vol: 0.1, delay: 0.08 }); },
+  dig: (delay = 0) => { noise(0.1, { freq: 700, vol: 0.2, delay }); tone(160, 0.08, { slide: -60, vol: 0.1, delay }); },
+  whee: () => tone(500, 0.35, { slide: 500, type: 'triangle', vol: 0.08 }),
   // концертный зал
   /** Спеть фразу из n нот пентатоники; возвращает длительность в секундах. */
   sing: (n = 7) => {

@@ -7,6 +7,7 @@ import { makePotions } from './potions.js';
 import { makeBath } from './bath.js';
 import { makeParty, BIRTHDAY_TUNE } from './party.js';
 import { makeSalon, blenderTex, smoothieTex } from './salon.js';
+import { makePlay, rainbowTex, makePhoto } from './play.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -118,6 +119,14 @@ const HINTS = {
   bubbles: { room: 3, seq: () => ['big_tub', 'tex:bubble_big'] },
   toilet: { room: 3, seq: () => ['big_toilet', 'tex:bubble_big'] },
   // потребности (room: null) — появляются по состоянию персонажа, а не по комнате
+  bounce: { room: 0, seq: () => ['big_bed'] },
+  chest: { room: 0, seq: () => ['big_chest'] },
+  photo: { room: 0, seq: () => ['camera'] },
+  stars: { room: 0, night: true, seq: () => ['big_lamp', 'tex:star_px'] },
+  rain: { room: 2, seq: () => ['tex:raincloud'] },
+  swing: { room: 2, seq: () => ['big_swing'] },
+  butterfly: { room: 2, seq: () => ['butterfly'] },
+  dig: { room: 2, seq: () => ['shovel', 'tex:dig_x'] },
   mic: { room: 4, seq: () => ['microphone'] },
   audience: { room: 4, seq: () => ['chair', 'teddy bear'] },
   curtain: { room: 4, seq: () => ['tex:curtain_icon'] },
@@ -128,7 +137,14 @@ const HINTS = {
 const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
 // Что подпрыгивает с искорками, пока его ни разу не трогали (ключ — как в HINTS)
 const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
-  ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco]];
+  ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco],
+  ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
+// Сундук с сюрпризами: что выскакивает по тапу
+const TOYBOX = ['teddy bear', 'beach ball', 'rubber duck', 'kite', 'yo-yo', 'spinning top', 'toy robot', 'rag doll', 'nesting doll',
+  'jack-in-the-box', 'toy castle', 'soccer ball', 'pinwheel', 'toy car', 'balloon', 'toy train engine', 'toy sailboat'];
+// Клад в саду
+const TREASURE = ['seashell', 'pearl', 'diamond', 'ruby', 'emerald', 'amethyst', 'four leaf clover', 'starfish', 'treasure chest',
+  'bag of gold coins', 'crystal apple', 'crystal egg', 'toy robot', 'spinning top'];
 // Любимые игрушки питомцев (у каждого своя — по номеру)
 const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
@@ -208,6 +224,13 @@ function behaviorOf(rec) {
     disco: !!rec.disco,
     stage: s === 'music stage',
     seat: rec.cat === 'furniture' && /\b(chair|stool|bench)\b/.test(s) && !RX.bedLike.test(s),
+    chest: s === 'toy chest' && !!rec.tex,
+    bigBed: rec.id === 'big_bed',
+    swing: s === 'garden swing',
+    camera: !!rec.camera,
+    photo: !!rec.photo,
+    shovel: s === 'shovel',
+    lamp: RX.light.test(s) && /lamp/.test(s),
   };
 }
 
@@ -271,11 +294,13 @@ class Room extends Phaser.Scene {
     for (const r of party) this.byId.set(r.id, r);
     const salon = makeSalon(this); // блендер — в кухне; косметика и зубная щётка — в игрушках; коктейль только из блендера
     for (const r of salon) this.byId.set(r.id, r);
+    const play = makePlay(this); // фотоаппарат — в игрушках; фото на стене — только из фотоаппарата
+    for (const r of play) this.byId.set(r.id, r);
     this.byCat = {
       furniture: Object.values(this.big), magic: potions.slice(),
       kitchen: salon.filter((r) => r.cat === 'kitchen'),
       food: party.filter((r) => r.cat === 'food'),
-      toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy')],
+      toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden)],
       animal: bath.filter((r) => r.cat === 'animal'),
     };
     for (const r of this.items) {
@@ -312,6 +337,7 @@ class Room extends Phaser.Scene {
     this.uidSeq = 1;
     // временные эффекты прошлой сцены (поворот экрана пересоздаёт сцену)
     this.discoBall = null; this.discoSpots = null; this.discoDim = null; this.popBubbles = [];
+    this.butterflies = []; this.digSpot = null; this.nightStars = null; this.raining = false; this.snapping = false;
     this.night = false;
     this.press = null;
 
@@ -338,7 +364,11 @@ class Room extends Phaser.Scene {
     this.ensureKitchen2();
     this.ensureBath2();
     this.ensureHall2();
+    this.ensureBedroom2();
+    this.ensureGarden2();
     this.buildCurtain();
+    this.buildCloud();
+    this.swingG = this.add.graphics();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
@@ -362,6 +392,7 @@ class Room extends Phaser.Scene {
     this.time.addEvent({ delay: 6000, loop: true, callback: () => this.danceTick() });
     this.time.addEvent({ delay: 2600, loop: true, callback: () => this.potIdle() });
     this.time.addEvent({ delay: 600, loop: true, callback: () => this.bathTick() });
+    this.time.addEvent({ delay: 1500, loop: true, callback: () => this.gardenTick() });
 
     // моргание
     this.time.addEvent({
@@ -650,6 +681,7 @@ class Room extends Phaser.Scene {
     if (beh.cake) this.time.delayedCall(0, () => this.renderCake(o));
     if (beh.smoothie) { o.color = extra.color ?? 0xff9ac8; o.setTexture(smoothieTex(this, o.color)); }
     if (beh.blender) this.time.delayedCall(0, () => { if (o.active) this.renderBlender(o); });
+    if (beh.photo) { o.photoId = extra.photoId; this.applyPhotoTex(o); }
     if (beh.light) {
       o.glow = this.add.image(x, y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(10001).setVisible(false);
     }
@@ -1260,6 +1292,7 @@ class Room extends Phaser.Scene {
   }
 
   bathTick() {
+    this.nightLight();
     const now = this.time.now;
     for (const o of this.objs) {
       if (o.beh?.tub && this.visible(o) && (o.foam || this.objs.some((x) => x.inTub === o && (x.kind === 'char' || x.beh?.pet)))) {
@@ -1645,8 +1678,10 @@ class Room extends Phaser.Scene {
     o.y = Math.round(seat.y - (o.kind === 'char' ? 4 : 6));
     o.restOn = seat;
     o.inTub = null;
+    if (seat.beh.swing) seat.amp = Math.max(seat.amp || 0, 0.3);
     if (quiet) return;
     sfx.drop();
+    if (seat.beh.swing) { sfx.whee(); this.hintDone('swing'); if (o.kind === 'char') this.time.delayedCall(300, () => sfx.giggle()); return; }
     this.tweens.add({ targets: o, y: o.y - 3, duration: 100, yoyo: true });
     if (Math.floor(seat.x / L.W) === 4) this.hintDone('audience');
   }
@@ -1813,6 +1848,384 @@ class Room extends Phaser.Scene {
     });
   }
 
+  // ---------------------------------------------------------------- спальня: батут, сундук, ночник, фотоаппарат
+  /** Фотоаппарат в спальне — и в старых сохранениях. */
+  ensureBedroom2() {
+    if (this.flags.bed2) return;
+    this.flags.bed2 = true;
+    if (!this.objs.some((o) => o.beh?.camera)) this.spawnItem(this.byId.get('camera'), Math.round(L.W * 0.76), L.FLOOR_TOP + 20);
+    this.save();
+  }
+
+  /** Тап по кровати с персонажем: прыгает всё выше, летят пёрышки, на третьем прыжке — сальто. */
+  bounce(bed) {
+    const riders = this.objs.filter((o) => o.restOn === bed && (o.kind === 'char' || o.beh?.pet) && !o.dragging);
+    if (!riders.length) return false;
+    const now = this.time.now;
+    this.bounceN = now - (this.lastBounce || 0) < 1600 ? (this.bounceN || 0) + 1 : 1;
+    this.lastBounce = now;
+    this.fxCrumbs.setParticleTint(0xffffff);
+    this.fxCrumbs.explode(4, bed.x - bed.displayWidth / 2 + 9, bed.y - bed.displayHeight + 8);
+    for (const r of riders) {
+      if (r.sleeping) { // спит — только ворочается
+        const x0 = r.x;
+        this.tweens.add({ targets: r, x: x0 + 1, duration: 90, yoyo: true, repeat: 1, onComplete: () => { r.x = x0; } });
+        continue;
+      }
+      r.awakeUntil = now + 6000;
+      r.bounceY0 ??= r.y;
+      this.tweens.killTweensOf(r);
+      r.y = r.bounceY0;
+      const h = 8 + 5 * Math.min(this.bounceN, 4);
+      const flip = this.bounceN >= 3;
+      if (r.kind === 'char') { r.busy = true; r.setTexture(r.key + '_open'); }
+      sfx.boing();
+      if (flip) {
+        sfx.whee();
+        this.time.addEvent({ delay: 70, repeat: 5, callback: () => r.setFlipX(!r.flipX) });
+        this.fxSparks.explode(6, r.x, r.y - r.displayHeight - h);
+      }
+      this.tweens.add({
+        targets: r, y: r.bounceY0 - h, duration: 180 + h * 4, yoyo: true, ease: 'Quad.easeOut',
+        onComplete: () => {
+          r.y = r.bounceY0; r.bounceY0 = undefined; r.setFlipX(false);
+          if (r.kind === 'char') { r.busy = false; r.setTexture(r.key); if (flip) sfx.giggle(); }
+        },
+      });
+    }
+    this.hintDone('bounce');
+    return true;
+  }
+
+  /** Тап по сундуку: крышка откидывается, выскакивает игрушка (или то, что туда положили). */
+  openChest(box) {
+    sfx.chestOut();
+    box.setTexture('big_chestOpen');
+    this.time.delayedCall(650, () => { if (box.active) box.setTexture('big_chest'); });
+    this.hintDone('chest');
+    if (box.contents.length) { this.spill(box); return; }
+    const room = Math.floor(box.x / L.W);
+    const loose = this.objs.filter((x) => x.kind === 'item' && !x.beh.furniture && Math.floor(x.x / L.W) === room).length;
+    if (loose > 40) { sfx.boing(); return; }
+    this.toyList ||= TOYBOX.map((sub) => this.findRec(sub)).filter(Boolean);
+    const rec = pick(this.toyList);
+    const o = this.spawnItem(rec, box.x, Math.round(box.y - 14));
+    const dir = box.x - room * L.W > L.W / 2 ? -1 : 1;
+    const tx = Math.round(Phaser.Math.Clamp(box.x + dir * rnd(16, 55), room * L.W + 8, (room + 1) * L.W - 8));
+    const ty = Math.round(rnd(L.FLOOR_TOP + 6, L.ROOM_H - 3));
+    this.fxSparks.explode(8, box.x, box.y - 16);
+    this.tweens.add({ targets: o, x: tx, duration: 550 });
+    this.tweens.add({
+      targets: o, y: o.y - 18, duration: 230, ease: 'Quad.easeOut',
+      onComplete: () => this.tweens.add({ targets: o, y: ty, duration: 380, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } }),
+    });
+  }
+
+  /** Ночник: ночью выключенная лампа превращается в проектор — по стенам плывут звёзды и луна. */
+  nightLight() {
+    const lamp = this.objs?.find((o) => o.kind === 'item' && o.beh.lamp && !o.dragging && !o.owner);
+    const on = !!(lamp && this.night && !lamp.lit);
+    const room = lamp ? Math.floor(lamp.x / L.W) : -1;
+    if (this.nightStars && (!on || this.nightStars.room !== room)) {
+      const old = this.nightStars.imgs;
+      this.nightStars = null;
+      this.tweens.add({ targets: old, alpha: 0, duration: 500, onComplete: () => old.forEach((i) => i.destroy()) });
+    }
+    if (!on || this.nightStars) return;
+    const x0 = room * L.W;
+    const imgs = [];
+    for (let i = 0; i < 14; i++) {
+      const im = this.add.image(Math.round(x0 + rnd(8, L.W - 8)), Math.round(rnd(4, L.FLOOR_TOP - 6)), i === 0 ? 'moon_px' : 'star_px').setDepth(10001).setAlpha(0);
+      im.setTint(pick([0xfff6a8, 0xffffff, 0x9fdcff, 0xffc0e0]));
+      if (i === 0) im.clearTint();
+      this.tweens.add({ targets: im, alpha: 0.9, duration: 700, delay: i * 60 });
+      this.tweens.add({ targets: im, x: im.x + rnd(-10, 10), duration: rnd(5000, 8000), yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      if (i) this.tweens.add({ targets: im, scale: 1, alpha: { from: 0.9, to: 0.35 }, duration: rnd(900, 1600), yoyo: true, repeat: -1, delay: 800 });
+      imgs.push(im);
+    }
+    this.nightStars = { room, imgs };
+    sfx.sparkle();
+    this.hintDone('stars');
+  }
+
+  /** Фотоаппарат: щёлк — вспышка, и на стене появляется пиксельная фотография того, что в кадре. */
+  takePhoto(cam) {
+    if (this.snapping) return;
+    this.snapping = true;
+    sfx.shutter();
+    this.tweens.add({ targets: cam, y: cam.y - 2, duration: 80, yoyo: true });
+    const cw = Math.min(120, L.W);
+    const sx = Math.round((L.W - cw) / 2);
+    const room = Math.round(this.cameras.main.scrollX / L.W);
+    const done = (img) => {
+      const finish = () => {
+        let url = null;
+        try { url = makePhoto(img, cw, L.ROOM_H); } catch { url = null; }
+        this.snapping = false;
+        // вспышка поверх всего экрана
+        const flash = this.add.rectangle(0, 0, L.W, L.H, 0xffffff, 0.9).setOrigin(0).setScrollFactor(0).setDepth(20000);
+        this.tweens.add({ targets: flash, fillAlpha: 0, duration: 350, onComplete: () => flash.destroy() });
+        if (!url) return;
+        const id = Date.now().toString(36);
+        this.photoStore()[id] = url;
+        this.prunePhotos(id);
+        const o = this.spawnItem(this.byId.get('photo'), cam.x, cam.y - 6, { photoId: id });
+        const walls = [0.12, 0.3, 0.5, 0.7, 0.88].map((f) => room * L.W + Math.round(L.W * f));
+        const tx = walls.find((x) => !this.objs.some((p) => p.beh?.photo && p !== o && Math.abs(p.x - x) < 20)) ?? pick(walls);
+        this.tweens.add({ targets: o, x: tx, y: L.FLOOR_TOP - 14, duration: 700, ease: 'Quad.easeOut', onComplete: () => { sfx.sparkle(); this.save(); } });
+        this.hintDone('photo');
+      };
+      if (img.complete) finish(); else img.onload = finish;
+    };
+    try { this.game.renderer.snapshotArea(sx * L.P, 0, cw * L.P, L.ROOM_H * L.P, done); } catch { this.snapping = false; }
+  }
+
+  photoStore() {
+    if (!this.photos) {
+      try { this.photos = JSON.parse(localStorage.getItem('pixel-house-photos')) || {}; } catch { this.photos = {}; }
+    }
+    return this.photos;
+  }
+
+  /** Храним только снимки, что висят в доме (+ новый); не больше 16 — самые старые снимаются со стены. */
+  prunePhotos(keep) {
+    const store = this.photoStore();
+    const hung = this.objs.filter((o) => o.beh?.photo);
+    while (hung.length >= 16) { const old = hung.shift(); this.removeObj(old); }
+    const used = new Set([keep, ...this.objs.filter((o) => o.beh?.photo).map((o) => o.photoId)]);
+    for (const id of Object.keys(store)) if (!used.has(id)) delete store[id];
+    try { localStorage.setItem('pixel-house-photos', JSON.stringify(store)); } catch { /* места нет — фото проживёт до перезагрузки */ }
+  }
+
+  applyPhotoTex(o) {
+    const id = o.photoId;
+    const url = id && this.photoStore()[id];
+    if (!url) return;
+    const key = `photo_${id}`;
+    if (this.textures.exists(key)) { o.setTexture(key); return; }
+    const img = new Image();
+    img.onload = () => {
+      if (!this.textures.exists(key)) this.textures.addImage(key, img);
+      for (const p of this.objs) if (p.photoId === id && p.active) p.setTexture(key);
+    };
+    img.src = url;
+  }
+
+  // ---------------------------------------------------------------- сад: тучка и радуга, качели, бабочки, клад
+  /** Качели и лопатка в саду — и в старых сохранениях. */
+  ensureGarden2() {
+    if (this.flags.garden2) return;
+    this.flags.garden2 = true;
+    const { W, FLOOR_TOP, ROOM_H } = L;
+    if (!this.objs.some((o) => o.beh?.swing)) this.spawnItem(this.big.swing, Math.round(2 * W + W * 0.88), FLOOR_TOP + 12);
+    const sh = this.findRec('shovel');
+    if (sh && !this.objs.some((o) => o.beh?.shovel)) this.spawnItem(sh, Math.round(2 * W + W * 0.38), ROOM_H - 4);
+    this.save();
+  }
+
+  /** Тучка над садом — тап вызывает дождь (живёт на слое неба, не предмет). */
+  buildCloud() {
+    const x = Math.round(2 * L.W + L.W * 0.42);
+    this.cloud = this.add.image(x, 14, 'raincloud').setDepth(-8.5).setInteractive();
+    this.cloud.raincloud = true;
+    this.tweens.add({ targets: this.cloud, x: x + 14, duration: 9000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.cloud.setVisible(!this.night);
+  }
+
+  /** Дождь: поливает все грядки, мочит всех в саду (→ фен); днём после дождя — радуга. */
+  rain() {
+    if (this.raining || this.night) return;
+    this.raining = true;
+    this.hintDone('rain');
+    const gx = 2 * L.W;
+    sfx.rain();
+    this.cloud.setTint(0xaab3c5);
+    const dim = this.add.rectangle(gx, 0, L.W, L.ROOM_H, 0x5a6a8a, 0).setOrigin(0).setDepth(9998);
+    this.tweens.add({ targets: dim, fillAlpha: 0.18, duration: 400 });
+    const drops = this.add.particles(gx, 4, 'raindrop', {
+      x: { min: 0, max: L.W }, speedY: { min: 150, max: 190 }, speedX: -10, lifespan: (L.ROOM_H / 160) * 1000,
+      tint: [0x7fbfff, 0xb8e0ff], alpha: 0.85, frequency: 12, quantity: 2,
+    }).setDepth(9999);
+    this.time.delayedCall(900, () => {
+      for (const bed of this.objs) {
+        if (!bed.beh?.gardenBed || Math.floor(bed.x / L.W) !== 2) continue;
+        bed.plots.forEach((p, i) => { if (p && p.stage < 3 && !p.watered) this.waterPlot(bed, i); });
+      }
+      for (const o of this.objs) {
+        if (Math.floor(o.x / L.W) !== 2 || o.inTub) continue;
+        if (o.kind === 'char') { o.wetUntil = this.time.now + 20000; if (!this.flags.tried?.dryer || Math.random() < 0.5) this.addNeed(o, 'dryer', 2500); }
+        else if (o.beh?.pet) o.wetUntil = this.time.now + 7000;
+      }
+    });
+    this.time.delayedCall(3400, () => {
+      drops.stop();
+      this.time.delayedCall(800, () => drops.destroy());
+      this.cloud.clearTint();
+      this.tweens.add({ targets: dim, fillAlpha: 0, duration: 500, onComplete: () => dim.destroy() });
+      this.raining = false;
+      if (this.night) return;
+      const bow = this.add.image(gx + L.W / 2, L.FLOOR_TOP - 6, rainbowTex(this, Math.round(L.W * 0.8), Math.max(16, L.FLOOR_TOP - 12))).setOrigin(0.5, 1).setDepth(-8.7).setAlpha(0);
+      sfx.sparkle();
+      this.tweens.add({ targets: bow, alpha: 0.85, duration: 900, hold: 8000, yoyo: true, onComplete: () => bow.destroy() });
+    });
+  }
+
+  pushSwing(sw) {
+    sw.amp = Math.min(0.6, (sw.amp || 0) + 0.2);
+    sfx.whee();
+    const rider = this.objs.find((o) => o.restOn === sw);
+    if (rider?.kind === 'char') { sfx.giggle(); this.fxHearts.explode(1, rider.x, rider.y - rider.displayHeight); }
+  }
+
+  /** Качели: сиденье на верёвках — маятник; седок качается вместе с ним. */
+  updateSwings(time, delta) {
+    const g = this.swingG;
+    if (!g) return;
+    g.clear();
+    for (const sw of this.objs) {
+      if (!sw.beh?.swing || !sw.active) continue;
+      const rider = this.objs.find((o) => o.restOn === sw && !o.dragging);
+      const base = rider ? 0.22 : 0;
+      sw.amp = (sw.amp || 0) > base ? sw.amp * Math.pow(0.9993, delta) : Math.min(base, (sw.amp || 0) + 0.002 * delta);
+      sw.phase = (sw.phase || 0) + delta * 0.0034;
+      const top = sw.y - sw.displayHeight + 4;
+      const len = sw.displayHeight - 14;
+      const th = sw.amp * Math.sin(sw.phase);
+      const sx = Math.round(sw.x + len * Math.sin(th));
+      const sy = Math.round(top + len * Math.cos(th));
+      g.setDepth(sw.depth + 0.3);
+      g.lineStyle(1, 0x7a4a32, 1);
+      g.lineBetween(sw.x - 5, top, sx - 5, sy);
+      g.lineBetween(sw.x + 5, top, sx + 5, sy);
+      g.fillStyle(0x2b1d2e).fillRect(sx - 8, sy - 1, 16, 5);
+      g.fillStyle(0xf27aa6).fillRect(sx - 7, sy, 14, 3);
+      g.fillStyle(0xffb0d0).fillRect(sx - 7, sy, 14, 1);
+      if (rider) { rider.x = sx; rider.y = sy + (rider.kind === 'char' ? 8 : 1); }
+    }
+  }
+
+  /** Раз в полторы секунды: бабочки над садом (больше — над выросшими цветами) и блестящий крестик-клад. */
+  gardenTick() {
+    const inGarden = Math.round(this.cameras.main.scrollX / L.W) === 2 && !this.dress && !this.albumUi;
+    if (this.cloud) this.cloud.setVisible(!this.night);
+    this.butterflies = this.butterflies.filter((b) => b.active);
+    if (!inGarden || this.night) {
+      for (const b of this.butterflies) if (!b.onChar) b.destroy();
+      this.butterflies = this.butterflies.filter((b) => b.active);
+    } else {
+      const want = Math.min(3, 1 + this.ripeFlowers().length);
+      const rec = this.findRec('butterfly');
+      if (rec && this.butterflies.filter((b) => !b.onChar).length < want) {
+        const b = this.add.image(2 * L.W + (Math.random() < 0.5 ? 4 : L.W - 4), Math.round(rnd(10, L.FLOOR_TOP)), rec.cat, rec.frame).setDepth(15000).setInteractive();
+        b.butterfly = true;
+        this.butterflies.push(b);
+        this.flutter(b);
+      }
+    }
+    // клад: крестик на траве появляется время от времени и поблёскивает
+    if (inGarden && !this.digSpot && this.time.now > (this.nextDigAt || 0)) {
+      const x = Math.round(2 * L.W + L.W * rnd(0.3, 0.8));
+      const y = Math.round(rnd(L.FLOOR_TOP + 10, L.ROOM_H - 6));
+      this.digSpot = this.add.image(x, y, 'dig_x').setDepth(-4.9);
+    }
+    if (this.digSpot && Math.random() < 0.5) this.fxSparks.explode(2, this.digSpot.x, this.digSpot.y - 2);
+  }
+
+  ripeFlowers() {
+    const out = [];
+    for (const bed of this.objs) {
+      if (!bed.beh?.gardenBed) continue;
+      bed.plots.forEach((p, i) => {
+        const r = p && p.stage >= 3 && this.recOf(p.id);
+        if (r && /sunflower|tulip|rose|daisy|flower/.test(r.subject)) out.push({ x: bed.x + PLOT_DX[i], y: bed.y - bed.displayHeight - 8 });
+      });
+    }
+    return out;
+  }
+
+  /** Бабочка летает от точки к точке (чаще — к цветам). */
+  flutter(b) {
+    if (!b.active || b.onChar) return;
+    const fl = this.ripeFlowers();
+    const t = fl.length && Math.random() < 0.6 ? pick(fl) : { x: 2 * L.W + rnd(12, L.W - 12), y: rnd(10, L.FLOOR_TOP + 16) };
+    b.setFlipX(t.x < b.x);
+    this.tweens.add({ targets: b, x: Math.round(t.x + rnd(-4, 4)), y: Math.round(t.y + rnd(-4, 2)), duration: rnd(1600, 2600), ease: 'Sine.easeInOut', onComplete: () => this.flutter(b) });
+  }
+
+  /** Поймали бабочку: она садится на голову ближайшему персонажу и через время улетает. */
+  catchButterfly(b) {
+    this.tweens.killTweensOf(b);
+    this.hintDone('butterfly');
+    sfx.sparkle();
+    const chars = this.objs.filter((c) => c.kind === 'char' && this.visible(c) && !c.inTub);
+    if (!chars.length) { this.fxSparks.explode(4, b.x, b.y); this.flutter(b); return; }
+    chars.sort((a, c) => Math.abs(a.x - b.x) - Math.abs(c.x - b.x));
+    const ch = chars[0];
+    b.disableInteractive();
+    this.tweens.add({
+      targets: b, x: ch.x + 2, y: ch.y - ch.displayHeight - 3, duration: 600, ease: 'Sine.easeInOut',
+      onComplete: () => {
+        b.onChar = ch;
+        b.until = this.time.now + 12000;
+        sfx.giggle();
+        this.fxHearts.explode(3, ch.x, ch.y - ch.displayHeight);
+      },
+    });
+  }
+
+  updateButterflies(time) {
+    for (const b of this.butterflies || []) {
+      const ch = b.onChar;
+      if (!ch || !b.active) continue;
+      if (!ch.active || time > b.until) {
+        b.onChar = null;
+        this.tweens.add({ targets: b, y: -12, x: b.x + rnd(-30, 30), duration: 1400, onComplete: () => b.destroy() });
+        continue;
+      }
+      b.x = Math.round(ch.x + 2);
+      b.y = Math.round(ch.y - ch.displayHeight - 3 + Math.sin(time / 300)); // на макушке, не на лице
+      b.setDepth(ch.depth + 0.3);
+    }
+  }
+
+  /** Лопатку — на крестик: копает, и из ямки выскакивает клад. */
+  digTreasure(shovel) {
+    const spot = this.digSpot;
+    this.digSpot = null;
+    this.nextDigAt = this.time.now + 15000; // новый крестик — не сразу, а после паузы
+    const { x, y } = spot;
+    shovel.x = x + 7; shovel.y = y + 2;
+    shovel.restOn = null;
+    for (let i = 0; i < 3; i++) {
+      this.time.delayedCall(i * 260, () => {
+        sfx.dig();
+        this.tweens.add({ targets: shovel, y: shovel.y - 4, duration: 110, yoyo: true });
+        this.fxCrumbs.setParticleTint(0x7a5232);
+        this.fxCrumbs.explode(5, x, y);
+      });
+    }
+    this.time.delayedCall(850, () => {
+      spot.destroy();
+      const hole = this.add.ellipse(x, y - 1, 10, 4, 0x5a3a22).setDepth(-4.9);
+      this.tweens.add({ targets: hole, alpha: 0, delay: 3000, duration: 800, onComplete: () => hole.destroy() });
+      this.treasureList ||= TREASURE.map((sub) => this.findRec(sub)).filter(Boolean);
+      const rec = pick(this.treasureList);
+      if (!rec) return;
+      const o = this.spawnItem(rec, x, y - 2);
+      this.lastTreasure = rec.subject;
+      const tx = Math.round(Phaser.Math.Clamp(x + rnd(-20, 20), 2 * L.W + 8, 3 * L.W - 8));
+      const ty = Math.round(Phaser.Math.Clamp(y + rnd(-4, 6), L.FLOOR_TOP + 6, L.ROOM_H - 2));
+      sfx.fanfare();
+      this.fxSparks.explode(16, x, y - 6);
+      this.tweens.add({ targets: o, x: tx, duration: 600 });
+      this.tweens.add({
+        targets: o, y: y - 26, duration: 280, ease: 'Quad.easeOut',
+        onComplete: () => this.tweens.add({ targets: o, y: ty, duration: 380, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } }),
+      });
+      this.hintDone('dig');
+    });
+  }
+
   // ---------------------------------------------------------------- навигация между комнатами
   buildNav() {
     const { W, ROOM_H } = L;
@@ -1854,6 +2267,12 @@ class Room extends Phaser.Scene {
     // неопробованное подпрыгивает с искорками — «потрогай меня»
     if (Math.random() < 0.5) return;
     const tried = this.flags.tried || {};
+    if (!tried.rain && this.cloud && !this.night && Math.round(this.cameras.main.scrollX / L.W) === 2 && Math.random() < 0.4) {
+      this.tweens.add({ targets: this.cloud, y: this.cloud.y - 2, duration: 140, yoyo: true, repeat: 1 });
+      this.fxCrumbs.setParticleTint(0x7fbfff);
+      this.fxCrumbs.explode(3, this.cloud.x, this.cloud.y + 6);
+      return;
+    }
     if (!tried.curtain && this.curtain && Math.round(this.cameras.main.scrollX / L.W) === 4 && Math.random() < 0.4) {
       for (const [i, c] of this.curtain.entries()) this.tweens.add({ targets: c, x: c.x + (i ? -2 : 2), duration: 140, yoyo: true, repeat: 1 });
       return;
@@ -2029,6 +2448,8 @@ class Room extends Phaser.Scene {
     this.press = { sx: q.x, sy: q.y, t: p.downTime, moved: false };
     if (top?.bubble) { this.popBubble(top); this.press = null; return; }
     if (top?.curtain) { this.toggleCurtain(); this.press = null; return; }
+    if (top?.raincloud) { this.rain(); this.press = null; return; }
+    if (top?.butterfly) { this.catchButterfly(top); this.press = null; return; }
     if (top?.ui) { this.press.ui = top.ui; return; }
     if (top?.drawerRec) { this.press.rec = top.drawerRec; return; }
     if (top && 'drawerRec' in top) return; // пустая ячейка
@@ -2163,7 +2584,7 @@ class Room extends Phaser.Scene {
     for (const c of this.objs) if (c.kind === 'char' && !c.busy) c.setTexture(c.key);
 
     if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
-      const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.seat && x !== o);
+      const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && (x.beh.seat || x.beh.swing) && x !== o);
       if (seat) { this.sitOn(o, seat); this.save(); return; }
     }
     if (o.beh?.pet && q.y <= L.ROOM_H) {
@@ -2196,7 +2617,7 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char' && q.y <= L.ROOM_H) {
       const wc = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.toilet);
       if (wc) { this.sitOnToilet(o, wc); this.save(); return; }
-      const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.seat);
+      const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && (x.beh.seat || x.beh.swing));
       if (seat) { this.sitOn(o, seat); this.save(); return; }
       const stage = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.stage);
       if (stage) { this.onStage(o, stage, q.x); this.save(); return; }
@@ -2251,6 +2672,11 @@ class Room extends Phaser.Scene {
         this.save();
         return;
       }
+    }
+    if (o.kind === 'item' && o.beh.shovel && this.digSpot && Math.hypot(q.x - this.digSpot.x, q.y - this.digSpot.y) < 14) {
+      this.digTreasure(o);
+      this.save();
+      return;
     }
     if (o.kind === 'item' && (o.beh.makeup || o.beh.toothbrush)) {
       const ch = this.objAt(q.x, q.y, (x) => x.kind === 'char');
@@ -2399,6 +2825,10 @@ class Room extends Phaser.Scene {
     if (b.blender) { this.blend(o); return; }
     if (b.tub) { this.blowBubbles(o); return; }
     if (b.toilet) { this.flushFx(o); return; }
+    if (b.chest) { this.openChest(o); return; }
+    if (b.camera) { this.takePhoto(o); return; }
+    if (b.swing) { this.pushSwing(o); return; }
+    if (b.furniture && RX.bedLike.test(o.rec.subject) && this.bounce(o)) return;
     if (b.container && o.contents.length) { this.spill(o); return; }
     if (b.album) { this.openAlbum(); return; }
     if (b.cake && o.deco.candles) { if (o.deco.lit) this.blowCandles(o); else this.lightCandles(o); return; }
@@ -2422,6 +2852,7 @@ class Room extends Phaser.Scene {
     if (b.light) {
       o.lit = !o.lit;
       sfx.click();
+      this.nightLight();
       if (!o.lit && this.objs.some((c) => c.kind === 'char' && c.sleeping)) sfx.shh();
       this.save();
     }
@@ -2593,9 +3024,9 @@ class Room extends Phaser.Scene {
     const tried = (this.flags.tried ||= {});
     const fresh = (c) => this.hintsFor(c).filter((h) => !tried[h]);
     // есть чему научить — облачка появляются чаще
-    if (Math.random() > (!this.night && chars.some((c) => fresh(c).length) ? 0.5 : 0.22)) return;
+    if (Math.random() > (chars.some((c) => fresh(c).length) ? 0.5 : 0.22)) return;
     const ch = pick(chars);
-    const hs = this.night ? [] : this.hintsFor(ch);
+    const hs = this.hintsFor(ch);
     const fr = fresh(ch);
     if (hs.length && Math.random() < (fr.length ? 0.75 : 0.2)) { this.showHint(ch, pick(fr.length ? fr : hs)); return; }
     const r = Math.random();
@@ -2622,7 +3053,7 @@ class Room extends Phaser.Scene {
     if (ch.needs?.size) return [...ch.needs];
     if (ch.look.mustache) return ['teeth'];
     const room = Math.floor(ch.x / L.W);
-    return Object.keys(HINTS).filter((k) => HINTS[k].room === room);
+    return Object.keys(HINTS).filter((k) => HINTS[k].room === room && !!HINTS[k].night === !!this.night);
   }
 
   fridgeRecs() {
@@ -3378,14 +3809,18 @@ class Room extends Phaser.Scene {
     }
     this.night = night;
     this.drawSky();
+    this.nightLight?.();
+    this.cloud?.setVisible(!night);
     const a = night ? 0.55 : 0;
     if (withSound) { this.tweens.add({ targets: this.overlay, fillAlpha: a, duration: 500 }); this.save(); }
     else this.overlay.fillAlpha = a;
   }
 
   // ---------------------------------------------------------------- frame update
-  update(time) {
+  update(time, delta = 16) {
     const cam = this.cameras.main;
+    this.updateSwings(time, delta);
+    this.updateButterflies(time);
     if (this.wish) {
       const { ch, bubble, icon } = this.wish;
       const s = ch.scaleY;
@@ -3542,7 +3977,7 @@ class Room extends Phaser.Scene {
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
         stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
-        color: o.color,
+        color: o.color, photoId: o.photoId,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
         uid: o.uid, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
@@ -3574,7 +4009,7 @@ class Room extends Phaser.Scene {
       const rec = this.recOf(s.id);
       if (!rec) continue;
       const contents = (s.contents || []).map((id) => this.recOf(id)?.id).filter(Boolean);
-      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots, deco: s.deco, color: s.color });
+      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots, deco: s.deco, color: s.color, photoId: s.photoId });
       if (s.bites && it.beh.edible) { it.bites = s.bites; this.applyBites(it); }
       byUid.set(s.uid, it);
     }
