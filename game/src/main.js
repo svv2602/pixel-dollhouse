@@ -78,6 +78,20 @@ const WISH_FOOD = ['cupcake', 'apple', 'strawberry', 'ice cream cone', 'chocolat
 const WISH_WEAR = ['crown', 'tiara', 'party hat', 'flower crown', 'bunny ear headband'];
 const WISH_PET = ['kitten', 'puppy', 'rabbit', 'hamster'];
 
+// Плита/духовка: что во что превращается (сырое -> приготовленное)
+const COOK = {
+  'egg': 'fried egg', 'brown egg': 'fried egg', 'potato': 'baked potato', 'ear of corn': 'buttered corn cob',
+  'slice of bread': 'slice of toast', 'chicken drumstick': 'fried chicken drumstick', 'apple': 'slice of apple pie',
+  'pair of cherries': 'cherry pie', 'cherry': 'cherry pie', 'blueberry': 'blueberry muffin', 'banana': 'banana bread loaf',
+  'wedge of cheese': 'grilled cheese sandwich', 'sack of rice': 'bowl of white rice', 'pumpkin': 'pumpkin pie',
+  'tomato': 'bowl of tomato soup', 'onion': 'bowl of onion soup', 'button mushroom': 'bowl of mushroom soup',
+  'loaf of bread': 'garlic bread', 'sausage link': 'hot dog', 'strawberry': 'strawberry rhubarb pie', 'peach': 'peach cobbler',
+  'sweet potato': 'potato wedges', 'hamburger patty': 'hamburger', 'broccoli': 'steamed broccoli',
+  'cabbage': 'bowl of vegetable soup', 'carrot': 'bowl of vegetable soup', 'lemon': 'lemon tart',
+};
+// Что снится спящим в тёмной комнате
+const DREAMS = ['unicorn', 'rainbow', 'star', 'cupcake', 'kitten', 'crown', 'shooting star', 'teddy bear', 'butterfly'];
+
 // Неаппетитное и странное для 6–7 лет — в ящике не показываем
 const HIDE = /apple core|banana peel|wrapper|century egg|cracked egg|sea cucumber|chamber pot|toilet|plunger|jar of beetles|mystery stew|old boot|trash/;
 
@@ -92,6 +106,10 @@ const RX = {
   dressUp: /\b(wardrobe|mirror)\b/,
   // на чём можно спать
   bedLike: /\b(bed|sofa|crib|cradle|hammock|couch)\b/,
+  cooker: /\b(stove|oven|toaster|microwave|hot plate)\b/,
+  drum: /drum|tambourine|maracas|cymbal|triangle/,
+  bell: /piano|xylophone|bell|music box|harp/,
+  string: /guitar|ukulele|violin|cello|banjo/,
   // водные и медленные животные не бегают по полу
   noWalk: /fish|whale|jellyfish|octopus|dolphin|seahorse|starfish|shark|snail|turtle|seal/,
   // украшения на волосы — подгоняются по размеру головы (иконки датасета для них слишком крупные)
@@ -510,6 +528,8 @@ class Room extends Phaser.Scene {
     const album = big('album', table.x + 10, table.y - 20);
     album.restOn = table;
     put('tabby cat', W * 0.47, ROOM_H - 4);
+    put('toy piano', W * 0.6, ROOM_H - 3);
+    put('toy drum', W * 0.67, ROOM_H - 2);
     this.spawnChar(Math.round(W * 0.33), ROOM_H - 4, { hair: HAIR[0], skin: SKIN[0], dress: DRESS[0], hairStyle: 'long', outfit: 'dress' });
     this.spawnChar(Math.round(W * 0.8), ROOM_H - 6, { hair: HAIR[2], skin: SKIN[1], dress: DRESS[1], hairStyle: 'pigtails', outfit: 'pants' });
   }
@@ -858,6 +878,10 @@ class Room extends Phaser.Scene {
         const pot = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.cauldron);
         if (pot) { this.addToCauldron(pot, o); this.save(); return; }
       }
+      if (o.beh.edible) {
+        const stove = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.furniture && RX.cooker.test(x.rec.subject));
+        if (stove) { this.cook(stove, o); this.save(); return; }
+      }
       if (!o.beh.container) {
         const box = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.container && x !== o);
         if (box) { this.putIn(box, o); this.save(); return; }
@@ -952,10 +976,16 @@ class Room extends Phaser.Scene {
         return;
       }
     }
-    if (b.light) { o.lit = !o.lit; sfx.click(); this.save(); }
+    if (b.light) {
+      o.lit = !o.lit;
+      sfx.click();
+      if (!o.lit && this.objs.some((c) => c.kind === 'char' && c.sleeping)) sfx.shh();
+      this.save();
+    }
     else if (b.music) {
-      sfx.note();
-      this.fxNotes.explode(2, o.x, o.y - o.displayHeight);
+      const room = Math.floor(o.x / L.W);
+      const band = this.objs.filter((x) => x.kind === 'item' && x.beh.music && !x.owner && Math.floor(x.x / L.W) === room);
+      if (band.length >= 2) this.playBand(band); else { sfx.instrument(this.instrumentKind(o), Math.floor(Math.random() * 8)); this.fxNotes.explode(2, o.x, o.y - o.displayHeight); }
       for (const c of this.objs) if (c.kind === 'char' && Math.floor(c.x / L.W) === Math.floor(o.x / L.W)) this.checkWish(c, 'music');
     }
     else if (b.pet) { sfx.squeak(); this.fxHearts.explode(1, o.x, o.y - o.displayHeight); }
@@ -1179,7 +1209,93 @@ class Room extends Phaser.Scene {
         c.setTexture(c.key + '_blink');
         this.fxZ.explode(1, c.x + 6, c.y - c.displayHeight + 4);
       }
+      // сладкий сон: ночь + в комнате погашен свет -> облачко сна с меняющимися картинками
+      const dreaming = c.sleeping && this.night && this.roomDark(c.x);
+      if (dreaming) this.dream(c); else if (c.dreamBubble) this.endDream(c);
     }
+  }
+
+  roomDark(x) {
+    const room = Math.floor(x / L.W);
+    return !this.objs.some((o) => o.kind === 'item' && o.beh.light && o.lit && Math.floor(o.x / L.W) === room);
+  }
+
+  dream(c) {
+    if (!c.dreamBubble) {
+      c.dreamBubble = this.add.image(c.x, c.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setAlpha(0);
+      c.dreamIcon = this.add.image(0, 0, 'px').setDepth(10004).setAlpha(0);
+      this.tweens.add({ targets: [c.dreamBubble, c.dreamIcon], alpha: 0.9, duration: 600 });
+      c.dreamStep = 0;
+    }
+    if (c.dreamStep++ % 2 === 0) {
+      const rec = this.findRec(DREAMS[Math.floor(Math.random() * DREAMS.length)]);
+      if (rec) c.dreamIcon.setTexture(rec.cat, rec.frame);
+      this.fxSparks.explode(2, c.dreamBubble.x + 9, c.dreamBubble.y - 14);
+    }
+  }
+
+  endDream(c) {
+    const b = c.dreamBubble;
+    const i = c.dreamIcon;
+    c.dreamBubble = null;
+    c.dreamIcon = null;
+    this.tweens.add({ targets: [b, i], alpha: 0, duration: 400, onComplete: () => { b.destroy(); i.destroy(); } });
+  }
+
+  // ---------------------------------------------------------------- готовка и оркестр
+  /** Положить еду на плиту: шипит, пар, через пару секунд — готовое блюдо (если есть рецепт). */
+  cook(stove, o) {
+    o.x = Math.round(stove.x);
+    o.y = Math.round(stove.y - stove.displayHeight + 3);
+    o.restOn = stove;
+    o.cooking = true;
+    const steam = this.add.particles(o.x, o.y - 6, 'px', {
+      lifespan: 900, speedY: { min: -22, max: -10 }, speedX: { min: -5, max: 5 }, x: { min: -4, max: 4 },
+      scale: { start: 2, end: 0 }, alpha: { start: 0.8, end: 0 }, frequency: 120,
+    }).setDepth(16000);
+    this.time.addEvent({ delay: 280, repeat: 7, callback: () => sfx.sizzle() });
+    this.time.delayedCall(2400, () => {
+      steam.stop();
+      this.time.delayedCall(1000, () => steam.destroy());
+      o.cooking = false;
+      // сняли с плиты раньше времени — ничего не готовим
+      if (!o.active || o.restOn !== stove || !this.objs.includes(o)) return;
+      const to = COOK[o.rec.subject] && this.findRec(COOK[o.rec.subject]);
+      sfx.ding();
+      if (!to) { this.fxHearts.explode(2, o.x, o.y - 10); return; } // просто тёплое
+      const x = o.x;
+      const y = o.y;
+      this.removeObj(o);
+      const n = this.spawnItem(to, x, y);
+      n.restOn = stove;
+      this.fxSparks.explode(14, x, y - 8);
+      this.tweens.add({ targets: n, y: y - 4, duration: 120, yoyo: true });
+      this.save();
+    });
+  }
+
+  instrumentKind(o) {
+    const s = o.rec.subject;
+    return RX.drum.test(s) ? 'drum' : RX.bell.test(s) ? 'bell' : RX.string.test(s) ? 'string' : 'wind';
+  }
+
+  /** Все инструменты комнаты играют вместе: аккорд-арпеджио, каждый своим тембром, персонажи танцуют. */
+  playBand(band) {
+    const chords = [[0, 2, 4, 7], [1, 3, 5, 7], [2, 4, 6, 9], [0, 3, 5, 7]];
+    const chord = pick(chords);
+    band.sort((a, b) => a.x - b.x).forEach((o, i) => {
+      const delay = i * 0.14;
+      sfx.instrument(this.instrumentKind(o), chord[i % chord.length], delay);
+      this.time.delayedCall(delay * 1000, () => {
+        this.fxNotes.explode(2, o.x, o.y - o.displayHeight);
+        this.tweens.add({ targets: o, y: o.y - 3, duration: 100, yoyo: true });
+      });
+    });
+    const room = Math.floor(band[0].x / L.W);
+    for (const c of this.objs) {
+      if (c.kind === 'char' && !c.busy && !c.sleeping && Math.floor(c.x / L.W) === room) this.celebrate(c, 2);
+    }
+    return band.length;
   }
 
   danceTick() {
@@ -1627,6 +1743,15 @@ class Room extends Phaser.Scene {
 
   applyNight(night, withSound = false) {
     if (withSound) (night ? sfx.night : sfx.day)();
+    if (withSound && !night) {
+      // утро: спящие просыпаются, потягиваются и радуются
+      for (const c of this.objs) {
+        if (c.kind !== 'char' || !c.sleeping) continue;
+        c.sleeping = false;
+        c.awakeUntil = this.time.now + 12000;
+        this.time.delayedCall(300 + Math.random() * 400, () => this.celebrate(c, 2));
+      }
+    }
     this.night = night;
     this.drawSky();
     const a = night ? 0.55 : 0;
@@ -1644,6 +1769,13 @@ class Room extends Phaser.Scene {
       bubble.y = Math.round(ch.y - ch.displayHeight + 3 * s);
       icon.x = Math.round(bubble.x - 6 + 15);
       icon.y = Math.round(bubble.y - 14); // центр облачка (у иконки центр по середине)
+    }
+    for (const c of this.objs) {
+      if (c.kind !== 'char' || !c.dreamBubble) continue;
+      c.dreamBubble.x = Math.round(c.x + 3 * c.scaleY);
+      c.dreamBubble.y = Math.round(c.y - c.displayHeight + 3 * c.scaleY);
+      c.dreamIcon.x = c.dreamBubble.x + 9;
+      c.dreamIcon.y = c.dreamBubble.y - 14;
     }
     if (this.nav) {
       this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && !this.dress && !this.albumUi));

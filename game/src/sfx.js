@@ -67,6 +67,17 @@ export const sfx = {
   splash: () => { noise(0.18, { freq: 1800, vol: 0.15 }); tone(500, 0.1, { slide: -300, vol: 0.08 }); },
   fanfare: () => [0, 2, 4, 7].forEach((n, i) => tone(PENTA[n], i === 3 ? 0.45 : 0.14, { type: 'triangle', vol: 0.13, delay: i * 0.11 })),
   page: () => noise(0.06, { freq: 3000, vol: 0.06 }),
+  sizzle: (delay = 0) => noise(0.12, { freq: 5000, vol: 0.05, delay }),
+  ding: () => { tone(1568, 0.5, { type: 'sine', vol: 0.12 }); tone(2093, 0.4, { type: 'sine', vol: 0.06, delay: 0.05 }); },
+  shh: () => noise(0.5, { freq: 1500, vol: 0.05 }),
+  /** Инструмент оркестра: kind = drum | bell | string | wind, n — ступень пентатоники. */
+  instrument: (kind, n, delay = 0) => {
+    const f = PENTA[((n % PENTA.length) + PENTA.length) % PENTA.length];
+    if (kind === 'drum') { noise(0.12, { freq: 300, vol: 0.25, delay }); tone(110, 0.15, { slide: -50, vol: 0.2, delay }); return; }
+    if (kind === 'bell') { tone(f, 0.6, { type: 'sine', vol: 0.12, delay }); tone(f * 2, 0.3, { type: 'sine', vol: 0.04, delay }); return; }
+    if (kind === 'string') { tone(f / 2, 0.5, { type: 'sawtooth', vol: 0.05, delay }); tone(f, 0.4, { type: 'triangle', vol: 0.06, delay }); return; }
+    tone(f, 0.45, { type: 'sine', vol: 0.12, delay, slide: 6 });
+  },
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
 };
 

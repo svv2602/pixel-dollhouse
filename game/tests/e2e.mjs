@@ -161,6 +161,36 @@ test('каталог: витрина 2 страницы, кубик переме
   assert.ok(st.perPage >= 10);
 });
 
+test('готовка: яйцо на плите превращается в яичницу', async () => {
+  await room((s) => {
+    const stove = s.objs.find((o) => o.rec?.subject === 'kitchen stove');
+    const egg = s.spawnItem(s.findRec('egg'), stove.x, 40);
+    s.drop(egg, { x: stove.x, y: stove.y - 10 });
+  });
+  await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'fried egg'));
+});
+
+test('оркестр: два инструмента в комнате играют вместе', async () => {
+  const n = await room((s) => {
+    const band = s.objs.filter((o) => o.beh?.music && o.x < 293);
+    return band.length >= 2 ? s.playBand(band) : 0;
+  });
+  assert.ok(n >= 2, 'в спальне есть пианино и барабан');
+});
+
+test('сон в темноте: ночь + свет выключен -> снится сон', async () => {
+  await room((s) => {
+    s.applyNight(true);
+    for (const o of s.objs) if (o.beh?.light) o.lit = false;
+    const c = s.objs.find((o) => o.kind === 'char');
+    const bed = s.objs.find((o) => o.rec?.subject === 'bed');
+    s.drop(c, { x: bed.x, y: bed.y - 8 });
+  });
+  await waitFor((s) => !!s.objs.find((o) => o.kind === 'char').dreamBubble);
+  await room((s) => s.applyNight(false, true)); // утро будит
+  await waitFor((s) => !s.objs.find((o) => o.kind === 'char').sleeping);
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });
