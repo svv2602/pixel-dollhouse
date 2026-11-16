@@ -29,6 +29,10 @@ function computeLayout() {
   L.SLOT_Y = L.ROOM_H + 29;
   const wh = Math.min(26, L.FLOOR_TOP - 22);
   L.WINDOW = { x: Math.round(L.W * 0.66), y: Math.max(5, Math.round((L.FLOOR_TOP - 16 - wh) / 2)), w: 30, h: wh };
+  // мир — две комнаты по ширине экрана: спальня [0, W) и алхимическая кухня [W, 2W)
+  L.ROOMS = 2;
+  L.WORLD = L.W * L.ROOMS;
+  L.WINDOWS = [L.WINDOW, { ...L.WINDOW, x: L.W + L.WINDOW.x }];
 }
 computeLayout();
 
@@ -87,6 +91,7 @@ const RX = {
   hairAcc: /tiara|circlet|flower crown|hair (bow|clip)|hairclip|bow ribbon/,
   // ободки (часто с ушками): дуга обхватывает голову — концы на уровне глаз, ушки торчат над макушкой
   earBand: /headband|\bears?\b/,
+  shelf: /\bshelf\b/,
   wall: /window|painting|picture frame|collage|wall clock|cuckoo clock|wall shelf|curtain|chandelier|ceiling lamp|^mirror$|oval mirror|magic mirror|blinds|shutter/,
 };
 
@@ -105,6 +110,7 @@ function behaviorOf(rec) {
     furniture: rec.cat === 'furniture',
     wall: RX.wall.test(s),
     flat: /\b(rug|carpet|mat)\b/.test(s),
+    shelf: rec.cat === 'furniture' && RX.shelf.test(s),
     cauldron: /cauldron/.test(s),
     album: s === 'discovery album',
   };
@@ -167,6 +173,16 @@ class Room extends Phaser.Scene {
 
   create() {
     this.cameras.main.setOrigin(0, 0).setZoom(L.P).setRoundPixels(true);
+    // всё, что создают эти функции, — интерфейс: закрепить на экране (не прокручивается вместе с комнатами)
+    for (const name of ['buildDrawer', 'buildNav', 'openDressUp', 'buildDressRows', 'openAlbum', 'buildAlbum']) {
+      const orig = Room.prototype[name];
+      this[name] = (...args) => {
+        const before = new Set(this.children.list);
+        const res = orig.apply(this, args);
+        for (const o of this.children.list) if (!before.has(o)) o.setScrollFactor?.(0);
+        return res;
+      };
+    }
     this.objs = [];
     this.uidSeq = 1;
     this.night = false;
@@ -177,15 +193,18 @@ class Room extends Phaser.Scene {
     this.drawRoom();
     this.makeParticles();
 
-    this.overlay = this.add.rectangle(0, 0, L.W, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
+    this.overlay = this.add.rectangle(0, 0, L.WORLD, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
 
     this.buildDrawer();
+    this.buildNav();
     // котёл: пул результатов для пар без рецепта — волшебное, игрушки и любимая еда
     const favFood = new Set(FAVORITES.food);
     const pool = [...(this.byCat.magic || []), ...(this.byCat.toy || []), ...(this.byCat.food || []).filter((r) => favFood.has(r.subject))];
     this.alchemy = new Alchemy((subj) => this.findRec(subj), pool);
     if (!this.loadState()) this.defaultRoom();
+    this.ensureKitchen();
     this.ensureMagic();
+    this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
     this.applyNight(this.night);
 
     this.input.on('pointerdown', (p, over) => this.onDown(p, over));
@@ -240,19 +259,17 @@ class Room extends Phaser.Scene {
   drawRoom() {
     const { W, ROOM_H, FLOOR_TOP } = L;
     const g = this.add.graphics().setDepth(-10);
-    // обои в полоску с точками
+    // ===== спальня [0, W): обои в полоску с точками
     g.fillStyle(0xf8dce8).fillRect(0, 0, W, FLOOR_TOP);
     g.fillStyle(0xf2cadb);
     for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, FLOOR_TOP);
     g.fillStyle(0xe6aec7);
     for (let y = 5, r = 0; y < FLOOR_TOP - 16; y += 10, r++) for (let x = r % 2 ? 9 : 1; x < W; x += 16) g.fillRect(x, y, 1, 1);
-    // панель снизу стены
     const wy = FLOOR_TOP - 14;
     g.fillStyle(0xe7b6cd).fillRect(0, wy, W, 14);
     g.fillStyle(0xd197b4).fillRect(0, wy - 1, W, 1);
     g.fillStyle(0xdba8c0);
-    for (let x = 3; x < W; x += 18) g.fillRect(x, wy + 3, 13, 7);
-    // плинтус
+    for (let x = 3; x < W - 14; x += 18) g.fillRect(x, wy + 3, 13, 7);
     g.fillStyle(0x8d5a78).fillRect(0, FLOOR_TOP - 2, W, 2);
     // пол — доски
     g.fillStyle(0xd39a68).fillRect(0, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
@@ -261,26 +278,54 @@ class Room extends Phaser.Scene {
       g.fillStyle(0xb98153).fillRect(0, y + 5, W, 1);
       for (let x = (row % 2) * 12; x < W; x += 24) g.fillRect(x, y + 1, 1, 4);
     }
-    // небо в окне — отдельный слой, перерисовывается днём/ночью
+    // ===== кухня [W, 2W): мятная стена, плитка-фартук, пол в клетку
+    const k = W;
+    g.fillStyle(0xe6f6ef).fillRect(k, 0, W, FLOOR_TOP);
+    g.fillStyle(0xcdeee0);
+    for (let y = 6, r = 0; y < FLOOR_TOP - 26; y += 9, r++) for (let x = k + (r % 2 ? 10 : 2); x < k + W; x += 16) g.fillRect(x, y, 2, 2);
+    const ty = FLOOR_TOP - 24;
+    g.fillStyle(0xd8f3e8).fillRect(k, ty, W, 22);
+    g.fillStyle(0xbfe6d5);
+    for (let y = ty; y < FLOOR_TOP - 2; y += 6) g.fillRect(k, y, W, 1);
+    for (let y = ty, r = 0; y < FLOOR_TOP - 2; y += 6, r++) for (let x = k + (r % 2) * 3; x < k + W; x += 6) g.fillRect(x, y, 1, 6);
+    g.fillStyle(0x5f9c85).fillRect(k, FLOOR_TOP - 2, W, 2);
+    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 6, r++) {
+      for (let x = k, c = r % 2; x < k + W; x += 6, c ^= 1) g.fillStyle(c ? 0xf4ead8 : 0xe3cfae).fillRect(x, y, 6, 6);
+    }
+    // проём между комнатами
+    g.fillStyle(0xc9a3b9).fillRect(W - 2, 0, 4, FLOOR_TOP - 2);
+    g.fillStyle(0xa77f97).fillRect(W + 1, 0, 1, FLOOR_TOP - 2);
+    // окна: небо — отдельный слой (перерисовывается днём/ночью), рамы — поверх
     this.sky = this.add.graphics().setDepth(-9);
     const f = this.add.graphics().setDepth(-8);
-    const { x, y, w, h } = L.WINDOW;
-    const mx = x + w / 2;
-    const my = y + Math.floor(h / 2);
-    f.fillStyle(0xffffff)
-      .fillRect(x - 2, y - 2, w + 4, 2).fillRect(x - 2, y + h, w + 4, 2)
-      .fillRect(x - 2, y, 2, h).fillRect(x + w, y, 2, h)
-      .fillRect(mx - 1, y, 2, h).fillRect(x, my - 1, w, 2);
-    f.fillStyle(0xd197b4).fillRect(x - 4, y + h + 2, w + 8, 2); // подоконник
-    // занавески
-    f.fillStyle(0xfff4a8).fillRect(x - 7, y - 4, 5, h + 7).fillRect(x + w + 2, y - 4, 5, h + 7);
-    f.fillStyle(0xf2df7a).fillRect(x - 5, y - 4, 1, h + 7).fillRect(x + w + 4, y - 4, 1, h + 7);
-    f.fillStyle(0xc98aa9).fillRect(x - 9, y - 5, w + 18, 1); // карниз
+    L.WINDOWS.forEach(({ x, y, w, h }, i) => {
+      const mx = x + w / 2;
+      const my = y + Math.floor(h / 2);
+      f.fillStyle(0xffffff)
+        .fillRect(x - 2, y - 2, w + 4, 2).fillRect(x - 2, y + h, w + 4, 2)
+        .fillRect(x - 2, y, 2, h).fillRect(x + w, y, 2, h)
+        .fillRect(mx - 1, y, 2, h).fillRect(x, my - 1, w, 2);
+      if (i === 0) {
+        f.fillStyle(0xd197b4).fillRect(x - 4, y + h + 2, w + 8, 2); // подоконник
+        f.fillStyle(0xfff4a8).fillRect(x - 7, y - 4, 5, h + 7).fillRect(x + w + 2, y - 4, 5, h + 7);
+        f.fillStyle(0xf2df7a).fillRect(x - 5, y - 4, 1, h + 7).fillRect(x + w + 4, y - 4, 1, h + 7);
+        f.fillStyle(0xc98aa9).fillRect(x - 9, y - 5, w + 18, 1); // карниз
+      } else {
+        // кухня: короткая занавеска-«кафе» в клетку
+        f.fillStyle(0x5f9c85).fillRect(x - 4, y + h + 2, w + 8, 2);
+        for (let cx = 0; cx < w; cx += 2) for (let cy = 0; cy < 6; cy += 2) {
+          f.fillStyle((cx + cy) % 4 ? 0xff9ab8 : 0xffffff).fillRect(x + cx, y - 1 + cy, 2, 2);
+        }
+      }
+    });
   }
 
   drawSky() {
-    const { x, y, w, h } = L.WINDOW;
     const s = this.sky.clear();
+    for (const win of L.WINDOWS) this.drawSkyIn(s, win);
+  }
+
+  drawSkyIn(s, { x, y, w, h }) {
     if (!this.night) {
       s.fillStyle(0x8fd3ff).fillRect(x, y, w, h);
       s.fillStyle(0xffe066).fillRect(x + w - 9, y + 3, 5, 5);
@@ -403,9 +448,8 @@ class Room extends Phaser.Scene {
     put('cuckoo clock', W * 0.42, FLOOR_TOP - 22);
     const table = big('table', W * 0.56, FLOOR_TOP + 17);
     big('lamp', W * 0.69, FLOOR_TOP + 7);
-    big('fridge', W - 44, FLOOR_TOP + 5);
+    big('sofa', W - 50, FLOOR_TOP + 12);
     big('chest', W - 16, ROOM_H - 4);
-    big('cauldron', W * 0.4, FLOOR_TOP + 12);
     on(bed, 'teddy bear', -10, 9);
     on(table, 'cupcake', -8, 20);
     on(table, 'apple', 0, 20);
@@ -414,6 +458,58 @@ class Room extends Phaser.Scene {
     put('tabby cat', W * 0.47, ROOM_H - 4);
     this.spawnChar(Math.round(W * 0.33), ROOM_H - 4, { hair: HAIR[0], skin: SKIN[0], dress: DRESS[0], hairStyle: 'long', outfit: 'dress' });
     this.spawnChar(Math.round(W * 0.8), ROOM_H - 6, { hair: HAIR[2], skin: SKIN[1], dress: DRESS[1], hairStyle: 'pigtails', outfit: 'pants' });
+  }
+
+  /** Алхимическая кухня: появляется и в старых сохранениях (если во второй комнате пусто). */
+  ensureKitchen() {
+    if (this.objs.some((o) => o.x >= L.W)) return;
+    const { W, FLOOR_TOP } = L;
+    const x0 = W;
+    const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
+    const onRec = (base, rec, dx, dy) => { if (!rec) return null; const o = this.spawnItem(rec, base.x + dx, base.y - dy); o.restOn = base; return o; };
+    const counter = big('counter', 0.18, FLOOR_TOP + 14);
+    onRec(counter, this.findRec('teapot'), -13, 20);
+    onRec(counter, this.findRec('star'), 0, 20);
+    onRec(counter, this.findRec('feather'), 11, 20);
+    big('stove', 0.4, FLOOR_TOP + 12);
+    const s1 = big('shelf', 0.3, FLOOR_TOP - 30);
+    const s2 = big('shelf', 0.55, FLOOR_TOP - 30);
+    ['pink', 'green', 'yellow'].forEach((c, i) => onRec(s1, this.byId.get(`potion-${c}`), -12 + i * 12, 4));
+    ['blue', 'purple', 'rainbow'].forEach((c, i) => onRec(s2, this.byId.get(`potion-${c}`), -12 + i * 12, 4));
+    // котёл — сердце алхимической кухни: переносим существующий (пустой) или ставим новый
+    const pot = this.objs.find((o) => o.kind === 'item' && o.beh.cauldron && !o.contents.length);
+    const px = Math.round(x0 + W * 0.53);
+    if (pot) { pot.x = px; pot.y = FLOOR_TOP + 22; pot.restOn = null; } else big('cauldron', 0.53, FLOOR_TOP + 22);
+    big('fridge', (W - 28) / W, FLOOR_TOP + 5);
+    this.save();
+  }
+
+  // ---------------------------------------------------------------- навигация между комнатами
+  buildNav() {
+    const { W, ROOM_H } = L;
+    const y = Math.round(ROOM_H / 2);
+    this.nav = [-1, 1].map((dir) => {
+      const x = dir < 0 ? 6 : W - 6;
+      const hit = this.add.rectangle(x, y, 11, 22, 0x4a3157, 0.75).setDepth(19000).setInteractive();
+      hit.ui = { nav: dir };
+      const g = this.add.graphics().setDepth(19001);
+      const rows = dir > 0 ? ['X...', 'XX..', 'XXX.', 'XXXX', 'XXX.', 'XX..', 'X...'] : ['...X', '..XX', '.XXX', 'XXXX', '.XXX', '..XX', '...X'];
+      pixelMap(g, rows, x - 2, y - 3, 0xffffff);
+      return [hit, g];
+    });
+  }
+
+  goRoom(idx) {
+    const cam = this.cameras.main;
+    const target = Phaser.Math.Clamp(idx, 0, L.ROOMS - 1) * L.W;
+    if (Math.abs(cam.scrollX - target) > 1) sfx.pick();
+    this.tweens.add({ targets: cam, scrollX: target, duration: 350, ease: 'Sine.easeInOut', onComplete: () => this.save() });
+  }
+
+  /** Довести камеру до ближайшей комнаты (после свайпа или переноса предмета к краю). */
+  snapCamera(bias = 0) {
+    const cam = this.cameras.main;
+    this.goRoom(Math.round(cam.scrollX / L.W + bias));
   }
 
   // ---------------------------------------------------------------- drawer UI
@@ -505,12 +601,23 @@ class Room extends Phaser.Scene {
     this.press = { sx: q.x, sy: q.y, t: p.downTime, moved: false };
     if (top?.ui) { this.press.ui = top.ui; return; }
     if (top?.drawerRec) { this.press.rec = top.drawerRec; return; }
-    if (top?.kind) { this.press.obj = top; this.press.offX = top.x - q.x; this.press.offY = top.y - q.y; }
+    if (top?.kind) { this.press.obj = top; this.press.offX = top.x - q.x; this.press.offY = top.y - q.y; return; }
+    // пустое место комнаты: возможный свайп между комнатами
+    if (!top && q.y <= L.ROOM_H) this.press.swipe = { sx: p.x, cam: this.cameras.main.scrollX };
   }
 
   onMove(p) {
     const pr = this.press;
     if (!pr || !p.isDown) return;
+    if (pr.swipe) {
+      const dx = (p.x - pr.swipe.sx) / L.P;
+      if (!pr.scrolling && Math.abs(dx) < 4) return;
+      pr.scrolling = true;
+      const cam = this.cameras.main;
+      this.tweens.killTweensOf(cam);
+      cam.scrollX = Phaser.Math.Clamp(pr.swipe.cam - dx, 0, L.WORLD - L.W);
+      return;
+    }
     const q = this.pt(p);
     if (!pr.moved) {
       if (Phaser.Math.Distance.Between(pr.sx, pr.sy, q.x, q.y) < 3) return;
@@ -524,7 +631,7 @@ class Room extends Phaser.Scene {
       this.startDrag(pr.obj);
     }
     const o = pr.obj;
-    o.x = Phaser.Math.Clamp(q.x + pr.offX, 4, L.W - 4);
+    o.x = Phaser.Math.Clamp(q.x + pr.offX, 4, L.WORLD - 4);
     o.y = Phaser.Math.Clamp(q.y + pr.offY, o.displayHeight * 0.6, L.H + 10);
     // «предвкушение»: персонаж открывает рот, когда к нему несут еду
     for (const c of this.objs) {
@@ -539,7 +646,15 @@ class Room extends Phaser.Scene {
     this.press = null;
     if (!pr) return;
     const q = this.pt(p);
-    if (pr.moved && pr.obj) { this.drop(pr.obj, q); return; }
+    if (pr.scrolling) {
+      // свайп на 15% экрана — перелистнуть комнату
+      const dx = (p.x - pr.swipe.sx) / L.P;
+      const from = Math.round(pr.swipe.cam / L.W);
+      this.goRoom(dx < -L.W * 0.15 ? from + 1 : dx > L.W * 0.15 ? from - 1 : from);
+      return;
+    }
+    if (pr.moved && pr.obj) { this.drop(pr.obj, q); if (this.edgeScrolled) { this.edgeScrolled = false; this.snapCamera(); } return; }
+    if (pr.ui?.nav) { this.goRoom(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav); return; }
     if (pr.ui && ('albumSel' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
     if (pr.ui?.dress || pr.ui?.dressDone || pr.ui?.block) { this.onDressUi(pr.ui); return; }
     if (pr.ui) {
@@ -557,8 +672,7 @@ class Room extends Phaser.Scene {
     }
     if (pr.rec) { this.tossIn(pr.rec); return; }
     if (pr.obj) { this.tap(pr.obj); return; }
-    const { x, y, w, h } = L.WINDOW;
-    if (q.x >= x && q.x <= x + w && q.y >= y && q.y <= y + h) this.applyNight(!this.night, true);
+    if (L.WINDOWS.some(({ x, y, w, h }) => q.x >= x && q.x <= x + w && q.y >= y && q.y <= y + h)) this.applyNight(!this.night, true);
   }
 
   startDrag(o) {
@@ -582,7 +696,7 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char' && q.y <= L.ROOM_H) {
       const wr = this.objAt(q.x, q.y, (x) => x.kind === 'item' && RX.dressUp.test(x.rec.subject));
       if (wr) {
-        o.x = Math.round(Phaser.Math.Clamp(wr.x + wr.displayWidth / 2 + 10, 12, L.W - 12));
+        o.x = Math.round(Phaser.Math.Clamp(wr.x + wr.displayWidth / 2 + 10, 12, L.WORLD - 12));
         o.y = Math.max(Math.round(o.y), L.FLOOR_TOP + 8);
         this.settle(o);
         this.openDressUp(o);
@@ -636,7 +750,7 @@ class Room extends Phaser.Scene {
     o.x = Math.round(o.x);
     if (o.y >= L.FLOOR_TOP + 1) return;
     if (o.kind === 'item' && o.beh.wall) return;
-    const sup = this.objs.find((s) => s !== o && s.kind === 'item' && s.beh.furniture && !s.beh.wall && !s.beh.flat && !s.owner
+    const sup = this.objs.find((s) => s !== o && s.kind === 'item' && s.beh.furniture && (!s.beh.wall || s.beh.shelf) && !s.beh.flat && !s.owner
       && !s.dragging && s.getBounds().contains(o.x, o.y));
     if (sup) { o.restOn = sup; return; }
     const target = Math.round(L.FLOOR_TOP + rnd(2, L.FLOOR_D * 0.35));
@@ -648,7 +762,7 @@ class Room extends Phaser.Scene {
 
   // ---------------------------------------------------------------- actions
   tossIn(rec) {
-    const o = this.spawnItem(rec, Math.round(rnd(20, L.W - 20)), -4);
+    const o = this.spawnItem(rec, Math.round(this.cameras.main.scrollX + rnd(20, L.W - 20)), -4); // в комнату, которую видно
     const ty = Math.round(rnd(L.FLOOR_TOP + 4, L.ROOM_H - 3));
     sfx.pick();
     this.tweens.add({ targets: o, y: ty, duration: 600, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } });
@@ -833,7 +947,8 @@ class Room extends Phaser.Scene {
     }
     if (Math.random() < 0.5) return; // не все время в движении
     const p = pick(pets);
-    const tx = Math.round(Phaser.Math.Clamp(p.x + rnd(-30, 30), 10, W - 10));
+    const rx0 = Math.floor(p.x / W) * W; // своя комната
+    const tx = Math.round(Phaser.Math.Clamp(p.x + rnd(-30, 30), rx0 + 10, rx0 + W - 10));
     const ty = Math.round(Phaser.Math.Clamp(p.y + rnd(-6, 6), FLOOR_TOP + 4, ROOM_H - 2));
     this.hopTo(p, tx, ty, () => this.save());
   }
@@ -962,7 +1077,7 @@ class Room extends Phaser.Scene {
       if (!rec) return;
       const o = this.spawnItem(rec, box.x, box.y - 4);
       o.setAlpha(0);
-      const tx = Math.round(Phaser.Math.Clamp(box.x + rnd(-35, 35), 8, L.W - 8));
+      const tx = Math.round(Phaser.Math.Clamp(box.x + rnd(-35, 35), 8, L.WORLD - 8));
       const ty = Math.round(rnd(L.FLOOR_TOP + 4, L.ROOM_H - 2));
       this.tweens.add({ targets: o, alpha: 1, duration: 150, delay: i * 80 });
       this.tweens.add({ targets: o, x: tx, duration: 500, delay: i * 80 });
@@ -994,7 +1109,7 @@ class Room extends Phaser.Scene {
   addToCauldron(pot, o) {
     if (pot.brewing || pot.contents.length >= 2) {
       sfx.boing();
-      o.x = Math.round(Phaser.Math.Clamp(pot.x + (o.x < pot.x ? -20 : 20), 8, L.W - 8));
+      o.x = Math.round(Phaser.Math.Clamp(pot.x + (o.x < pot.x ? -20 : 20), 8, L.WORLD - 8));
       this.settle(o);
       return;
     }
@@ -1036,7 +1151,7 @@ class Room extends Phaser.Scene {
       pot.contents = [];
       pot.brewing = false;
       const o = this.spawnItem(result, top.x, top.y + 2);
-      const tx = Math.round(Phaser.Math.Clamp(top.x + (Math.random() < 0.5 ? -1 : 1) * rnd(16, 30), 10, L.W - 10));
+      const tx = Math.round(Phaser.Math.Clamp(top.x + (Math.random() < 0.5 ? -1 : 1) * rnd(16, 30), 10, L.WORLD - 10));
       const ty = Math.round(rnd(L.FLOOR_TOP + 6, L.ROOM_H - 3));
       sfx.sparkle();
       this.fxSparks.explode(28, top.x, top.y - 10);
@@ -1254,6 +1369,24 @@ class Room extends Phaser.Scene {
 
   // ---------------------------------------------------------------- frame update
   update(time) {
+    const cam = this.cameras.main;
+    if (this.nav) {
+      this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && !this.dress && !this.albumUi));
+      this.nav[1].forEach((o) => o.setVisible(cam.scrollX < L.WORLD - L.W - 2 && !this.dress && !this.albumUi));
+    }
+    // перенос предмета к краю экрана: камера едет в соседнюю комнату
+    const pr = this.press;
+    if (pr?.moved && pr.obj) {
+      const p = this.input.activePointer;
+      const sx = p.x / L.P;
+      const sy = p.y / L.P;
+      const v = sy > L.ROOM_H ? 0 : sx < 12 ? -3 : sx > L.W - 12 ? 3 : 0;
+      if (v) {
+        cam.scrollX = Phaser.Math.Clamp(cam.scrollX + v, 0, L.WORLD - L.W);
+        pr.obj.x = Phaser.Math.Clamp(cam.scrollX + sx + pr.offX, 4, L.WORLD - 4);
+        this.edgeScrolled = true;
+      }
+    }
     for (const o of this.objs) {
       // сняли очки (любым способом) — вернуть исходный спрайт
       if (o.fitted && o.slot !== o.fitted) { o.setTexture(o.rec.cat, o.rec.frame); o.fitted = false; }
@@ -1323,6 +1456,7 @@ class Room extends Phaser.Scene {
     if (!this.objs) return;
     const state = {
       v: 2, night: this.night, W: L.W, ROOM_H: L.ROOM_H, FLOOR_TOP: L.FLOOR_TOP,
+      room: Math.round(this.cameras.main.scrollX / L.W),
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit,
         contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
@@ -1339,7 +1473,8 @@ class Room extends Phaser.Scene {
     try { st = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return false; }
     if (!st || st.v !== 2) return false;
     // экран мог поменяться (поворот, полноэкранный режим) — переносим координаты в новую раскладку
-    const fx = (x) => Math.round(Phaser.Math.Clamp(x * L.W / (st.W || L.W), 6, L.W - 6));
+    const fx = (x) => Math.round(Phaser.Math.Clamp(x * L.W / (st.W || L.W), 6, L.WORLD - 6));
+    this.roomIdx = Phaser.Math.Clamp(st.room || 0, 0, L.ROOMS - 1);
     const fy = (y) => {
       const oldFloor = st.FLOOR_TOP || L.FLOOR_TOP;
       const oldRoom = st.ROOM_H || L.ROOM_H;

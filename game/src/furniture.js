@@ -163,6 +163,37 @@ const PIECES = {
     r(5, 13, 1, 1, C.white); r(12, 3, 1, 1, C.white); r(13, 14, 1, 1, C.white);
   }],
 
+  // ------------------------------------------------------------ кухонная тумба 40×22 (поверхность)
+  counter: [40, 22, (r) => {
+    const m = '#f4f1ea';
+    r(0, 0, 40, 3, m); r(0, 0, 40, 1, C.white); r(0, 2, 40, 1, '#d9d3c4');            // столешница
+    r(6, 1, 3, 1, '#e6e1d4'); r(24, 1, 5, 1, '#e6e1d4');                               // прожилки
+    r(1, 3, 38, 19, C.mint); r(1, 3, 1, 19, C.mintL); r(38, 3, 1, 19, C.mintD);
+    r(13, 4, 1, 17, C.mintD); r(26, 4, 1, 17, C.mintD);                                // дверцы
+    r(3, 5, 8, 6, C.mintL); r(15, 5, 9, 6, C.mintL); r(28, 5, 8, 6, C.mintL);          // филёнки
+    r(10, 14, 2, 1, C.gold); r(15, 14, 2, 1, C.gold); r(28, 14, 2, 1, C.gold);         // ручки
+    r(1, 21, 38, 1, C.mintD);
+  }],
+
+  // ------------------------------------------------------------ плита 24×26
+  stove: [24, 26, (r) => {
+    const w = '#f6f7fb';
+    const d = '#c9ccd8';
+    r(0, 0, 24, 4, '#5a5a6a'); r(0, 0, 24, 1, '#7a7a8a');                             // варочная панель
+    r(3, 1, 6, 2, '#2b2b36'); r(15, 1, 6, 2, '#2b2b36'); r(5, 1, 2, 1, '#ff6b6b');    // конфорки
+    r(0, 4, 24, 22, w); r(0, 4, 1, 22, C.white); r(23, 4, 1, 22, d);
+    r(3, 6, 2, 2, C.pink); r(8, 6, 2, 2, C.pink); r(14, 6, 2, 2, C.gold); r(19, 6, 2, 2, C.gold); // ручки
+    r(3, 10, 18, 11, d); r(4, 11, 16, 9, '#3a2e48'); r(5, 12, 4, 1, '#6a5a80');       // духовка
+    r(6, 9, 12, 1, '#8a8ca0');                                                         // ручка духовки
+    r(1, 24, 3, 2, '#5a5a6a'); r(20, 24, 3, 2, '#5a5a6a');
+  }],
+
+  // ------------------------------------------------------------ настенная полка 40×7 (на неё можно ставить)
+  shelf: [40, 7, (r) => {
+    r(0, 0, 40, 3, C.wood); r(0, 0, 40, 1, C.woodL); r(0, 2, 40, 1, C.woodD);
+    r(4, 3, 2, 4, C.woodD); r(34, 3, 2, 4, C.woodD); r(5, 3, 1, 3, C.wood); r(35, 3, 1, 3, C.wood);
+  }],
+
   // ------------------------------------------------------------ ковёр 50×11
   rug: [50, 11, (r) => {
     const ell = (k, col) => {
@@ -188,6 +219,9 @@ export const BIG_FURNITURE = [
   { key: 'lamp', subject: 'floor lamp', icon: 'floor lamp' },
   { key: 'rug', subject: 'round rug', icon: 'round rug' },
   { key: 'cauldron', subject: 'magic cauldron' },
+  { key: 'counter', subject: 'kitchen counter' },
+  { key: 'stove', subject: 'kitchen stove', icon: 'kitchen stove' },
+  { key: 'shelf', subject: 'wall shelf', icon: 'wall shelf' },
   { key: 'album', subject: 'discovery album' },
 ];
 
