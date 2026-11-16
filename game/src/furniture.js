@@ -135,6 +135,34 @@ const PIECES = {
     r(3, 37, 8, 2, C.pole); r(2, 39, 10, 1, C.pole); r(3, 37, 8, 1, C.poleL);
   }],
 
+  // ------------------------------------------------------------ волшебный котёл 26×22
+  cauldron: [26, 22, (r) => {
+    const body = '#3a2e48';
+    const bodyL = '#5c4c70';
+    const bodyD = '#2a2036';
+    for (let y = 6; y < 19; y++) {
+      const inset = y < 14 ? 0 : [1, 2, 3, 5, 7][y - 14];
+      r(inset, y, 26 - inset * 2, 1, body);
+      if (y > 7 && y < 16) { r(inset + 2, y, 2, 1, bodyL); r(26 - inset - 2, y, 1, 1, bodyD); }
+    }
+    r(0, 4, 26, 3, '#4a3a5a'); r(1, 4, 24, 1, '#7a6a8a');            // обод
+    r(3, 2, 20, 2, '#5fe08a'); r(4, 2, 18, 1, '#9ff5b8');             // зелье
+    r(6, 0, 3, 2, '#9ff5b8'); r(15, 1, 2, 1, '#c8ffd8'); r(19, 0, 2, 2, '#5fe08a'); // пузыри
+    r(11, 10, 1, 3, C.gold); r(10, 11, 3, 1, C.gold);                 // звёздочки
+    r(17, 13, 1, 1, C.gold); r(6, 13, 1, 1, C.gold);
+    r(4, 19, 3, 3, bodyD); r(19, 19, 3, 3, bodyD);                     // ножки
+  }],
+
+  // ------------------------------------------------------------ альбом открытий 16×18
+  album: [16, 18, (r) => {
+    r(0, 0, 16, 18, '#c25a8a');
+    r(3, 1, 12, 16, C.pink); r(3, 1, 12, 1, C.pinkL);
+    r(15, 1, 1, 16, C.white);                                          // срез страниц
+    r(1, 0, 1, 18, '#a8467a');                                         // корешок
+    r(7, 6, 2, 1, C.gold); r(10, 6, 2, 1, C.gold); r(7, 7, 5, 2, C.gold); r(8, 9, 3, 1, C.gold); r(9, 10, 1, 1, C.gold);
+    r(5, 13, 1, 1, C.white); r(12, 3, 1, 1, C.white); r(13, 14, 1, 1, C.white);
+  }],
+
   // ------------------------------------------------------------ ковёр 50×11
   rug: [50, 11, (r) => {
     const ell = (k, col) => {
@@ -159,6 +187,8 @@ export const BIG_FURNITURE = [
   { key: 'chest', subject: 'toy chest', icon: 'toy chest' },
   { key: 'lamp', subject: 'floor lamp', icon: 'floor lamp' },
   { key: 'rug', subject: 'round rug', icon: 'round rug' },
+  { key: 'cauldron', subject: 'magic cauldron' },
+  { key: 'album', subject: 'discovery album' },
 ];
 
 export function makeFurnitureTextures(scene) {

@@ -63,5 +63,9 @@ export const sfx = {
   chestOut: () => [0, 1, 2].forEach((i) => tone(400 + i * 150, 0.08, { vol: 0.1, delay: i * 0.05 })),
   night: () => tone(500, 0.6, { slide: -300, vol: 0.1 }),
   day: () => tone(300, 0.6, { slide: 500, vol: 0.1 }),
+  blub: () => tone(180 + Math.random() * 120, 0.12, { slide: 200, type: 'sine', vol: 0.12 }),
+  splash: () => { noise(0.18, { freq: 1800, vol: 0.15 }); tone(500, 0.1, { slide: -300, vol: 0.08 }); },
+  fanfare: () => [0, 2, 4, 7].forEach((n, i) => tone(PENTA[n], i === 3 ? 0.45 : 0.14, { type: 'triangle', vol: 0.13, delay: i * 0.11 })),
+  page: () => noise(0.06, { freq: 3000, vol: 0.06 }),
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
 };

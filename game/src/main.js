@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { sfx, unlockAudio } from './sfx.js';
 import { makeCharTextures, ANCHOR, HAIR, DRESS, SKIN, HAIR_STYLE_KEYS, OUTFIT_KEYS } from './character.js';
 import { BIG_FURNITURE, makeFurnitureTextures, outline } from './furniture.js';
+import { Alchemy } from './alchemy.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -101,6 +102,8 @@ function behaviorOf(rec) {
     furniture: rec.cat === 'furniture',
     wall: RX.wall.test(s),
     flat: /\b(rug|carpet|mat)\b/.test(s),
+    cauldron: /cauldron/.test(s),
+    album: s === 'discovery album',
   };
 }
 
@@ -170,7 +173,12 @@ class Room extends Phaser.Scene {
     this.overlay = this.add.rectangle(0, 0, L.W, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
 
     this.buildDrawer();
+    // котёл: пул результатов для пар без рецепта — волшебное, игрушки и любимая еда
+    const favFood = new Set(FAVORITES.food);
+    const pool = [...(this.byCat.magic || []), ...(this.byCat.toy || []), ...(this.byCat.food || []).filter((r) => favFood.has(r.subject))];
+    this.alchemy = new Alchemy((subj) => this.findRec(subj), pool);
     if (!this.loadState()) this.defaultRoom();
+    this.ensureMagic();
     this.applyNight(this.night);
 
     this.input.on('pointerdown', (p, over) => this.onDown(p, over));
@@ -387,10 +395,12 @@ class Room extends Phaser.Scene {
     big('lamp', W * 0.69, FLOOR_TOP + 7);
     big('fridge', W - 44, FLOOR_TOP + 5);
     big('chest', W - 16, ROOM_H - 4);
+    big('cauldron', W * 0.4, FLOOR_TOP + 12);
     on(bed, 'teddy bear', -10, 9);
     on(table, 'cupcake', -8, 20);
     on(table, 'apple', 0, 20);
-    on(table, 'teapot', 9, 20);
+    const album = big('album', table.x + 10, table.y - 20);
+    album.restOn = table;
     put('tabby cat', W * 0.47, ROOM_H - 4);
     this.spawnChar(Math.round(W * 0.33), ROOM_H - 4, { hair: HAIR[0], skin: SKIN[0], dress: DRESS[0], hairStyle: 'long', outfit: 'dress' });
     this.spawnChar(Math.round(W * 0.8), ROOM_H - 6, { hair: HAIR[2], skin: SKIN[1], dress: DRESS[1], hairStyle: 'pigtails', outfit: 'pants' });
@@ -500,6 +510,7 @@ class Room extends Phaser.Scene {
     if (!pr) return;
     const q = this.pt(p);
     if (pr.moved && pr.obj) { this.drop(pr.obj, q); return; }
+    if (pr.ui && ('albumSel' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
     if (pr.ui?.dress || pr.ui?.dressDone || pr.ui?.block) { this.onDressUi(pr.ui); return; }
     if (pr.ui) {
       sfx.click();
@@ -562,6 +573,10 @@ class Room extends Phaser.Scene {
         const pet = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.pet && x !== o);
         if (pet) { this.feedPet(pet, o); this.save(); return; }
       }
+      if (!o.beh.furniture) {
+        const pot = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.cauldron);
+        if (pot) { this.addToCauldron(pot, o); this.save(); return; }
+      }
       if (!o.beh.container) {
         const box = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.container && x !== o);
         if (box) { this.putIn(box, o); this.save(); return; }
@@ -616,6 +631,13 @@ class Room extends Phaser.Scene {
     }
     const b = o.beh;
     if (b.container && o.contents.length) { this.spill(o); return; }
+    if (b.album) { this.openAlbum(); return; }
+    if (b.cauldron) {
+      sfx.blub();
+      this.fxSparks.explode(4, o.x, o.y - o.displayHeight);
+      this.tweens.add({ targets: o, y: o.y - 2, duration: 90, yoyo: true });
+      return;
+    }
     if (RX.dressUp.test(o.rec.subject)) {
       // пустой шкаф / зеркало -> переодеть ближайшего персонажа
       const chars = this.objs.filter((c) => c.kind === 'char');
@@ -767,6 +789,184 @@ class Room extends Phaser.Scene {
       });
     });
     this.time.delayedCall(ids.length * 80 + 700, () => this.save());
+  }
+
+  // ---------------------------------------------------------------- волшебный котёл
+  /** В любой комнате (и в старых сохранениях) должны быть котёл и альбом. */
+  ensureMagic() {
+    const { W, FLOOR_TOP } = L;
+    let pot = this.objs.find((o) => o.kind === 'item' && o.beh.cauldron);
+    if (!pot) pot = this.spawnItem(this.big.cauldron, Math.round(W * 0.4), FLOOR_TOP + 12);
+    if (!this.objs.some((o) => o.kind === 'item' && o.beh.album)) {
+      this.spawnItem(this.big.album, Math.round(Math.min(W - 10, pot.x + 22)), FLOOR_TOP + 14);
+    }
+    if (pot.contents.length >= 2) this.time.delayedCall(500, () => this.brew(pot));
+  }
+
+  recColor(rec) {
+    const c = rec.tex ? this.textures.getPixel(8, 8, `${rec.tex}_icon`) : this.textures.getPixel(8, 9, rec.cat, rec.frame);
+    return c && c.alpha ? c.color : 0xffffff;
+  }
+
+  addToCauldron(pot, o) {
+    if (pot.brewing || pot.contents.length >= 2) {
+      sfx.boing();
+      o.x = Math.round(Phaser.Math.Clamp(pot.x + (o.x < pot.x ? -20 : 20), 8, L.W - 8));
+      this.settle(o);
+      return;
+    }
+    this.objs = this.objs.filter((x) => x !== o);
+    pot.contents.push(o.rec.id);
+    o.glow?.destroy();
+    const top = pot.y - pot.displayHeight + 4;
+    o.setDepth(pot.depth + 1);
+    this.tweens.add({
+      targets: o, x: pot.x, y: top + 6, alpha: 0, duration: 260, ease: 'Quad.easeIn',
+      onComplete: () => {
+        o.destroy();
+        sfx.splash();
+        this.fxCrumbs.setParticleTint(0x9ff5b8);
+        this.fxCrumbs.explode(8, pot.x, top);
+        this.tweens.add({ targets: pot, y: pot.y - 2, duration: 80, yoyo: true });
+        if (pot.contents.length === 2) this.time.delayedCall(250, () => this.brew(pot));
+      },
+    });
+  }
+
+  brew(pot) {
+    if (pot.brewing || !pot.active) return;
+    const [a, b] = pot.contents.map((id) => this.recOf(id));
+    if (!a || !b) { pot.contents = []; return; }
+    pot.brewing = true;
+    const top = { x: pot.x, y: pot.y - pot.displayHeight + 4 };
+    const steam = this.add.particles(top.x, top.y, 'px', {
+      lifespan: 800, speedY: { min: -45, max: -15 }, speedX: { min: -10, max: 10 }, x: { min: -9, max: 9 },
+      scale: { start: 2, end: 0 }, tint: [this.recColor(a), this.recColor(b), 0x9ff5b8, 0xffffff], frequency: 35,
+    }).setDepth(16000);
+    const x0 = pot.x;
+    this.tweens.add({ targets: pot, x: x0 + 1, duration: 60, yoyo: true, repeat: 13, onComplete: () => { pot.x = x0; } });
+    this.time.addEvent({ delay: 150, repeat: 10, callback: () => sfx.blub() });
+    this.time.delayedCall(1800, () => {
+      steam.stop();
+      this.time.delayedCall(900, () => steam.destroy());
+      const { result, isNew } = this.alchemy.brew(a, b);
+      pot.contents = [];
+      pot.brewing = false;
+      const o = this.spawnItem(result, top.x, top.y + 2);
+      const tx = Math.round(Phaser.Math.Clamp(top.x + (Math.random() < 0.5 ? -1 : 1) * rnd(16, 30), 10, L.W - 10));
+      const ty = Math.round(rnd(L.FLOOR_TOP + 6, L.ROOM_H - 3));
+      sfx.sparkle();
+      this.fxSparks.explode(28, top.x, top.y - 10);
+      this.tweens.add({ targets: o, x: tx, duration: 750 });
+      this.tweens.add({
+        targets: o, y: top.y - 30, duration: 320, ease: 'Quad.easeOut',
+        onComplete: () => this.tweens.add({ targets: o, y: ty, duration: 430, ease: 'Bounce.easeOut', onComplete: () => sfx.thud() }),
+      });
+      if (isNew) {
+        // новое открытие: фанфары, сердечки и подпрыгивающий альбом
+        this.time.delayedCall(250, () => sfx.fanfare());
+        this.fxHearts.explode(6, top.x, top.y - 16);
+        const album = this.objs.find((x) => x.kind === 'item' && x.beh.album);
+        if (album) {
+          this.tweens.add({ targets: album, y: album.y - 6, duration: 140, yoyo: true, repeat: 3, delay: 500 });
+          this.time.delayedCall(500, () => this.fxSparks.explode(12, album.x, album.y - album.displayHeight));
+        }
+      }
+      this.save();
+    });
+  }
+
+  // ---------------------------------------------------------------- альбом открытий
+  recImage(rec, x, y) {
+    return (rec.tex ? this.add.image(x, y, `${rec.tex}_icon`) : this.add.image(x, y, rec.cat, rec.frame)).setOrigin(0.5, 1);
+  }
+
+  openAlbum() {
+    if (this.dress || this.albumUi) return;
+    sfx.page();
+    const bg = this.add.rectangle(0, 0, L.W, L.H, 0x2b1d2e, 0.95).setOrigin(0).setDepth(30000).setInteractive();
+    bg.ui = { block: true };
+    const entries = this.alchemy.entries();
+    const firstFound = entries.findIndex((e) => e.found);
+    this.albumUi = { parts: [bg], rows: [], page: 0, sel: Math.max(0, firstFound) };
+    this.buildAlbum();
+  }
+
+  buildAlbum() {
+    const u = this.albumUi;
+    u.rows.forEach((o) => { this.tweens.killTweensOf(o); o.destroy(); });
+    u.rows = [];
+    const D = 30003;
+    const { W, H } = L;
+    const add = (o) => { u.rows.push(o.setDepth(D)); return o; };
+    const hit = (x, y, w, h, ui) => { const r = add(this.add.rectangle(x, y, w, h, 0xffffff, 0.001).setOrigin(0).setInteractive()); r.ui = ui; r.setDepth(D + 5); };
+    const entries = this.alchemy.entries();
+    const cell = 20;
+    const cols = Math.max(1, Math.floor((W - 36) / cell));
+    const rowsN = Math.max(1, Math.floor((H - 40) / cell));
+    const per = cols * rowsN;
+    const pages = Math.max(1, Math.ceil(entries.length / per));
+    u.page = (u.page + pages) % pages;
+    const x0 = Math.floor((W - cols * cell) / 2);
+    const y0 = 5;
+    entries.slice(u.page * per, (u.page + 1) * per).forEach((e, i) => {
+      const idx = u.page * per + i;
+      const cx = x0 + (i % cols) * cell;
+      const cy = y0 + Math.floor(i / cols) * cell;
+      add(this.add.rectangle(cx, cy, 18, 18, idx === u.sel ? 0xc48ff2 : e.found ? 0x6b4a7e : 0x3a2546).setOrigin(0));
+      const img = add(this.recImage(e.result, cx + 9, cy + 17));
+      if (!e.found) img.setTintFill(0x1e1424); // ещё не открыто — силуэт
+      hit(cx, cy, 18, 18, { albumSel: idx });
+    });
+    if (pages > 1) {
+      for (const dir of [-1, 1]) {
+        const ax = dir < 0 ? 7 : W - 7;
+        add(this.add.rectangle(ax, y0 + (rowsN * cell) / 2, 10, 18, 0x6b4a7e));
+        const g = add(this.add.graphics());
+        const rows = dir > 0 ? ['X...', 'XX..', 'XXX.', 'XXXX', 'XXX.', 'XX..', 'X...'] : ['...X', '..XX', '.XXX', 'XXXX', '.XXX', '..XX', '...X'];
+        pixelMap(g, rows, ax - 2, y0 + (rowsN * cell) / 2 - 3, 0xffffff);
+        hit(ax - 6, y0 + (rowsN * cell) / 2 - 10, 12, 20, { albumPage: dir });
+      }
+    }
+    // нижняя строка — рецепт выбранной клетки: A + B = результат (B и результат скрыты, пока не открыто)
+    const e = entries[u.sel];
+    if (e) {
+      const by = H - 6;
+      const bx = Math.floor(W / 2) - 44;
+      add(this.add.rectangle(bx - 6, by - 21, 100, 24, 0x4a3157).setOrigin(0));
+      const g = add(this.add.graphics());
+      add(this.recImage(e.a, bx + 8, by));
+      pixelMap(g, ['..X..', '..X..', 'XXXXX', '..X..', '..X..'], bx + 19, by - 10, 0xffffff);
+      if (e.found) add(this.recImage(e.b, bx + 34, by));
+      else pixelMap(g, ['.XXX.', 'X...X', '....X', '...X.', '..X..', '.....', '..X..'], bx + 32, by - 11, 0xfff07a);
+      pixelMap(g, ['XXXXX', '.....', 'XXXXX'], bx + 45, by - 9, 0xffffff);
+      const r = add(this.recImage(e.result, bx + 60, by));
+      if (!e.found) r.setTintFill(0x1e1424);
+      else this.tweens.add({ targets: r, y: by - 2, duration: 300, yoyo: true, repeat: -1 });
+    }
+    // «готово»
+    const bx = W - 26;
+    const by = H - 22;
+    add(this.add.rectangle(bx, by, 22, 18, 0x52b893).setOrigin(0));
+    add(this.add.rectangle(bx, by + 16, 22, 2, 0x2f7d5f).setOrigin(0));
+    const g2 = add(this.add.graphics());
+    pixelMap(g2, ['.........XX', '........XX.', '.......XX..', 'XX....XX...', '.XX..XX....', '..XXXX.....', '...XX......'], bx + 5, by + 5, 0xffffff);
+    hit(bx - 2, by - 2, 26, 22, { albumDone: true });
+  }
+
+  onAlbumUi(ui) {
+    const u = this.albumUi;
+    if (!u) return;
+    if (ui.albumDone) {
+      u.rows.forEach((o) => { this.tweens.killTweensOf(o); o.destroy(); });
+      u.parts.forEach((o) => o.destroy());
+      this.albumUi = null;
+      sfx.page();
+      return;
+    }
+    if (ui.albumPage) { u.page += ui.albumPage; sfx.page(); }
+    if ('albumSel' in ui) { u.sel = ui.albumSel; sfx.click(); }
+    this.buildAlbum();
   }
 
   // ---------------------------------------------------------------- гардероб (экран переодевания)
@@ -1038,3 +1238,6 @@ window.addEventListener('resize', () => {
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
+
+// Отладка в dev-режиме: состояние игры доступно из консоли браузера
+if (import.meta.env.DEV) window.__game = game;
