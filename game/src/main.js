@@ -619,6 +619,9 @@ class Room extends Phaser.Scene {
 
   tap(o) {
     if (o.kind === 'char') {
+      const held = o.slots.hand;
+      if (held && !o.busy && held.beh.potion) { this.drinkPotion(o, held); return; }
+      if (held && !o.busy && held.beh.edible) { this.feed(o, held); return; }
       sfx.giggle();
       o.busy = true;
       o.setTexture(o.key + '_blink');
@@ -630,6 +633,11 @@ class Room extends Phaser.Scene {
       return;
     }
     const b = o.beh;
+    // еда/зелье в руке у персонажа: тап по ним = укус / глоток (рука закрывает туловище — тапают именно сюда)
+    if (o.owner && o.slot === 'hand' && !o.owner.busy) {
+      if (b.potion) { this.drinkPotion(o.owner, o); return; }
+      if (b.edible) { this.feed(o.owner, o); return; }
+    }
     if (b.container && o.contents.length) { this.spill(o); return; }
     if (b.album) { this.openAlbum(); return; }
     if (b.cauldron) {
@@ -662,19 +670,93 @@ class Room extends Phaser.Scene {
     return c && c.alpha ? c.color : 0xd9a066;
   }
 
+  /** Сколько укусов до конца: мелкое (вишенка, конфетка) — 1, остальное — 3; напитки — сразу. */
+  biteCount(o) {
+    if (o.beh.drink || !o.rec.bbox || o.rec.tex) return 1;
+    const [x0, y0, x1, y1] = o.rec.bbox;
+    return (x1 - x0 + 1) * (y1 - y0 + 1) < 70 ? 1 : 3;
+  }
+
+  /** Текстура надкусанной еды: n полукруглых укусов, светлая «мякоть» и тёмный край. */
+  biteTex(rec, n) {
+    const key = `bite_${rec.id}_${n}`;
+    if (this.textures.exists(key)) return key;
+    const fr = this.textures.getFrame(rec.cat, rec.frame);
+    const c = document.createElement('canvas');
+    c.width = c.height = 16;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(fr.source.image, fr.cutX, fr.cutY, 16, 16, 0, 0, 16, 16);
+    const img = g.getImageData(0, 0, 16, 16);
+    const d = img.data;
+    const A = (x, y) => (x < 0 || y < 0 || x > 15 || y > 15 ? 0 : d[(y * 16 + x) * 4 + 3]);
+    const [, y0, , y1] = rec.bbox;
+    const h = y1 - y0 + 1;
+    const r = Math.max(3, Math.round(h * 0.27));
+    // край еды на нужной высоте: правый (1-й укус) и левый (2-й укус)
+    const edge = (row, side) => {
+      const y = Math.round(row);
+      for (let i = 0; i < 16; i++) { const x = side > 0 ? 15 - i : i; if (A(x, y)) return x + side; }
+      return side > 0 ? 16 : -1;
+    };
+    const bites = [[edge(y0 + h * 0.38, 1), y0 + h * 0.38], [edge(y0 + h * 0.62, -1), y0 + h * 0.62]];
+    const cut = new Uint8Array(256);
+    const hole = (cx, cy, rr) => {
+      for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+        if ((x - cx) ** 2 + (y - cy) ** 2 <= rr * rr + 0.3 && A(x, y)) { d[(y * 16 + x) * 4 + 3] = 0; cut[y * 16 + x] = 1; }
+      }
+    };
+    for (let k = 0; k < n && k < bites.length; k++) {
+      const [bx, by] = bites[k];
+      // «мультяшный» укус: два перекрывающихся кружка — зубчик посередине
+      hole(bx, by - r * 0.45, r * 0.8);
+      hole(bx, by + r * 0.45, r * 0.8);
+    }
+    const near = (x, y, test) => test(x + 1, y) || test(x - 1, y) || test(x, y + 1) || test(x, y - 1);
+    const isCut = (x, y) => x >= 0 && y >= 0 && x < 16 && y < 16 && cut[y * 16 + x] === 1;
+    const flesh = [];
+    const rim = [];
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      if (A(x, y) && near(x, y, isCut)) flesh.push([x, y]);
+      else if (isCut(x, y) && near(x, y, A)) rim.push([x, y]);
+    }
+    for (const [x, y] of flesh) {
+      const i = (y * 16 + x) * 4;
+      d[i] = Math.round(d[i] + (255 - d[i]) * 0.6);
+      d[i + 1] = Math.round(d[i + 1] + (244 - d[i + 1]) * 0.6);
+      d[i + 2] = Math.round(d[i + 2] + (222 - d[i + 2]) * 0.6);
+    }
+    for (const [x, y] of rim) {
+      const i = (y * 16 + x) * 4;
+      d[i] = 43; d[i + 1] = 29; d[i + 2] = 46; d[i + 3] = 255;
+    }
+    g.putImageData(img, 0, 0);
+    this.textures.addCanvas(key, c);
+    return key;
+  }
+
+  applyBites(o) {
+    if (o.bites > 0) o.setTexture(this.biteTex(o.rec, o.bites));
+  }
+
+  /** Укус (или съесть целиком, если укус последний). Недоеденное персонаж держит в руке. */
   feed(ch, o) {
     ch.busy = true;
-    this.objs = this.objs.filter((x) => x !== o);
+    const last = (o.bites || 0) + 1 >= this.biteCount(o);
+    if (o.owner) { o.owner.slots[o.slot] = null; o.owner = null; o.slot = null; }
+    if (last) this.objs = this.objs.filter((x) => x !== o);
     const m = this.mouth(ch);
     const tint = this.itemColor(o);
     o.setDepth(ch.depth + 1);
+    o.eating = true;
     this.tweens.add({
       targets: o, x: m.x, y: m.y + 8, duration: 200,
       onComplete: () => {
-        o.destroy();
+        if (last) o.destroy();
+        else { o.bites = (o.bites || 0) + 1; this.applyBites(o); }
+        const steps = last ? 6 : 4;
         let i = 0;
         this.time.addEvent({
-          delay: 150, repeat: 5, callback: () => {
+          delay: 150, repeat: steps - 1, callback: () => {
             const open = i % 2 === 0;
             ch.setTexture(open ? ch.key + '_open' : ch.key);
             if (open) {
@@ -682,11 +764,11 @@ class Room extends Phaser.Scene {
               this.fxCrumbs.setParticleTint(tint);
               if (!o.beh.drink) this.fxCrumbs.explode(4, m.x, m.y);
             }
-            if (++i === 6) {
+            if (++i === steps) {
               ch.setTexture(ch.key + '_blink');
-              sfx.yum();
-              this.fxHearts.explode(3, m.x, m.y - 10);
-              this.time.delayedCall(400, () => { ch.busy = false; ch.setTexture(ch.key); });
+              if (last) { sfx.yum(); this.fxHearts.explode(3, m.x, m.y - 10); } else this.fxHearts.explode(1, m.x, m.y - 10);
+              if (!last && o.active) { o.eating = false; this.wear(ch, 'hand', o, true); }
+              this.time.delayedCall(400, () => { ch.busy = false; ch.setTexture(ch.key); this.save(); });
             }
           },
         });
@@ -709,6 +791,7 @@ class Room extends Phaser.Scene {
 
   drinkPotion(ch, o) {
     ch.busy = true;
+    if (o.owner) { o.owner.slots[o.slot] = null; o.owner = null; o.slot = null; }
     this.objs = this.objs.filter((x) => x !== o);
     const m = this.mouth(ch);
     this.tweens.add({
@@ -743,7 +826,7 @@ class Room extends Phaser.Scene {
     });
   }
 
-  wear(ch, slot, o) {
+  wear(ch, slot, o, quiet = false) {
     const old = ch.slots[slot];
     if (old) {
       old.owner = null; old.slot = null;
@@ -754,6 +837,7 @@ class Room extends Phaser.Scene {
     }
     ch.slots[slot] = o;
     o.owner = ch; o.slot = slot;
+    if (quiet) return;
     sfx.wear();
     this.fxSparks.explode(6, ch.x, ch.y - ch.displayHeight * (slot === 'hand' ? 0.4 : 0.85));
     this.tweens.add({ targets: ch, y: ch.y - 3, duration: 120, yoyo: true });
@@ -1141,7 +1225,7 @@ class Room extends Phaser.Scene {
       v: 2, night: this.night, W: L.W, ROOM_H: L.ROOM_H, FLOOR_TOP: L.FLOOR_TOP,
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit,
-        contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid,
+        contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
         uid: o.uid, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
@@ -1170,7 +1254,9 @@ class Room extends Phaser.Scene {
       const rec = this.recOf(s.id);
       if (!rec) continue;
       const contents = (s.contents || []).map((id) => this.recOf(id)?.id).filter(Boolean);
-      byUid.set(s.uid, this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents }));
+      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents });
+      if (s.bites && it.beh.edible) { it.bites = s.bites; this.applyBites(it); }
+      byUid.set(s.uid, it);
     }
     for (const s of [...st.objs, ...st.chars]) {
       const o = byUid.get(s.uid);
