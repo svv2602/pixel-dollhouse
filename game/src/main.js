@@ -99,6 +99,15 @@ const GROW = ['strawberry', 'apple', 'carrot', 'tomato', 'pumpkin', 'potato', 'b
 const SEEDS = /seed packet|seed pouch|\bseeds?\b/;
 const PLOT_DX = [-13, 0, 13];
 
+// Темы снов: что персонаж держит в руке, засыпая, — о том и сон; утром — сувенир из сна
+const DREAM_THEMES = [
+  { match: /fish|shell|whale|octopus|starfish|seahorse|boat|duck|crab|dolphin|jellyfish/, items: ['goldfish', 'whale', 'octopus', 'seashell', 'starfish', 'seahorse', 'dolphin', 'pearl'] },
+  { match: /star|moon|wand|rocket|comet|planet|orb/, items: ['star', 'crescent moon', 'shooting star', 'toy rocket', 'crystal ball', 'snowflake'] },
+  { match: /book|crown|tiara|fairy|castle|unicorn|potion|album/, items: ['unicorn', 'fairy', 'crown', 'toy castle', 'magic wand', 'tiara'] },
+  { match: /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron/, items: ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'] },
+  { match: /teddy|plush|kitten|puppy|cat|dog|rabbit|bunny|pony|panda|hamster|owl/, items: ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear'] },
+];
+
 // Что снится спящим в тёмной комнате
 const DREAMS = ['unicorn', 'rainbow', 'star', 'cupcake', 'kitten', 'crown', 'shooting star', 'teddy bear', 'butterfly'];
 
@@ -1806,13 +1815,17 @@ class Room extends Phaser.Scene {
 
   dream(c) {
     if (!c.dreamBubble) {
+      // тема сна — по предмету в руке
+      const held = c.slots.hand?.rec.subject || '';
+      c.dreamTheme = DREAM_THEMES.find((t) => held && t.match.test(held)) || null;
       c.dreamBubble = this.add.image(c.x, c.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setAlpha(0);
       c.dreamIcon = this.add.image(0, 0, 'px').setDepth(10004).setAlpha(0);
       this.tweens.add({ targets: [c.dreamBubble, c.dreamIcon], alpha: 0.9, duration: 600 });
       c.dreamStep = 0;
     }
     if (c.dreamStep++ % 2 === 0) {
-      const rec = this.findRec(DREAMS[Math.floor(Math.random() * DREAMS.length)]);
+      const pool = c.dreamTheme ? c.dreamTheme.items : DREAMS;
+      const rec = this.findRec(pick(pool));
       if (rec) c.dreamIcon.setTexture(rec.cat, rec.frame);
       this.fxSparks.explode(2, c.dreamBubble.x + 9, c.dreamBubble.y - 14);
     }
@@ -2357,9 +2370,26 @@ class Room extends Phaser.Scene {
       // утро: спящие просыпаются, потягиваются и радуются
       for (const c of this.objs) {
         if (c.kind !== 'char' || !c.sleeping) continue;
+        const dreamed = (c.dreamStep || 0) >= 2;
+        const pool = c.dreamTheme ? c.dreamTheme.items : DREAMS;
         c.sleeping = false;
         c.awakeUntil = this.time.now + 12000;
-        this.time.delayedCall(300 + Math.random() * 400, () => this.celebrate(c, 2));
+        if (c.dreamBubble) this.endDream(c);
+        c.dreamStep = 0;
+        this.time.delayedCall(300 + Math.random() * 400, () => {
+          // сувенир из сна: появляется прямо в руке, в искорках
+          if (dreamed) {
+            const rec = this.findRec(pick(pool.filter((sub) => this.findRec(sub))));
+            if (rec) {
+              const it = this.spawnItem(rec, c.x, c.y - 20);
+              this.wear(c, 'hand', it);
+              this.fxSparks.explode(16, c.x, c.y - c.displayHeight / 2);
+              sfx.sparkle();
+            }
+          }
+          this.celebrate(c, 2);
+        });
+        c.dreamTheme = null;
       }
     }
     this.night = night;

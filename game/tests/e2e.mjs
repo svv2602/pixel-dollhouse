@@ -269,6 +269,26 @@ test('день рождения: украсить торт, задуть све�
   assert.equal(st.toy, 'toy', 'в подарке игрушка');
 });
 
+test('сны: с мишкой снятся зверята, утром — сувенир из сна', async () => {
+  await room((s) => {
+    s.goRoom(0);
+    s.applyNight(true);
+    for (const o of s.objs) if (o.beh?.light) o.lit = false;
+    const c = s.objs.find((o) => o.kind === 'char');
+    c.inTub = null; c.awakeUntil = 0;
+    if (c.slots.hand) s.removeObj(c.slots.hand);
+    s.wear(c, 'hand', s.spawnItem(s.findRec('teddy bear'), c.x, 40), true);
+    const bed = s.objs.find((o) => o.rec?.subject === 'bed');
+    s.drop(c, { x: bed.x, y: bed.y - 8 });
+  });
+  await waitFor((s) => { const c = s.objs.find((o) => o.kind === 'char'); return c.dreamTheme && c.dreamStep >= 2; });
+  await room((s) => s.applyNight(false, true));
+  await waitFor((s) => {
+    const h = s.objs.find((o) => o.kind === 'char').slots.hand;
+    return h && ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear'].includes(h.rec.subject) && h.rec.subject !== undefined;
+  });
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });
