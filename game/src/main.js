@@ -32,7 +32,7 @@ function computeLayout() {
   const wh = Math.min(26, L.FLOOR_TOP - 22);
   L.WINDOW = { x: Math.round(L.W * 0.66), y: Math.max(5, Math.round((L.FLOOR_TOP - 16 - wh) / 2)), w: 30, h: wh };
   // мир — две комнаты по ширине экрана: спальня [0, W) и алхимическая кухня [W, 2W)
-  L.ROOMS = 4; // спальня, алхимическая кухня, сад, ванная
+  L.ROOMS = 5; // спальня, алхимическая кухня, сад, ванная, концертный зал
   L.WORLD = L.W * L.ROOMS;
   L.WINDOWS = [L.WINDOW, { ...L.WINDOW, x: L.W + L.WINDOW.x }];
   L.SUN = { x: 2 * L.W + L.W - 26, y: 5, w: 14, h: 14 }; // солнце/луна в саду: тап меняет день и ночь
@@ -284,7 +284,8 @@ class Room extends Phaser.Scene {
     this.ensureGarden();
     this.ensureBath();
     this.ensureParty();
-    this.ensureStage();
+    this.ensureHall();
+    this.ensurePetBed();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
@@ -435,6 +436,33 @@ class Room extends Phaser.Scene {
       for (let x = bx, c = r % 2; x < bx + W; x += 8, c ^= 1) g.fillStyle(c ? 0xffffff : 0xd6eef6).fillRect(x, y, 8, 8);
     }
     g.fillStyle(0xb0d8e4).fillRect(bx - 2, 0, 4, FLOOR_TOP);
+    // ===== концертный зал [4W, 5W): тёмная стена со звёздочками, бархатный занавес, паркет
+    const hx = 4 * W;
+    g.fillStyle(0x3b2160).fillRect(hx, 0, W, FLOOR_TOP);
+    g.fillStyle(0xffd84a);
+    for (let y = 6, r = 0; y < FLOOR_TOP - 20; y += 11, r++) for (let x = hx + (r % 2 ? 12 : 4); x < hx + W; x += 17) {
+      g.fillRect(x, y, 1, 1); if ((x + y) % 3 === 0) g.fillRect(x - 1, y, 3, 1).fillRect(x, y - 1, 1, 3);
+    }
+    const cw = Math.round(W * 0.16);
+    for (const [x1, dir] of [[hx, 1], [hx + W - cw, -1]]) {
+      g.fillStyle(0xb8264a).fillRect(x1, 0, cw, FLOOR_TOP);
+      g.fillStyle(0x8e1838);
+      for (let x = 3; x < cw; x += 6) g.fillRect(x1 + x, 0, 2, FLOOR_TOP);
+      g.fillStyle(0xd8406a);
+      for (let x = 1; x < cw; x += 6) g.fillRect(x1 + x, 0, 1, FLOOR_TOP);
+      g.fillStyle(0xffd84a).fillRect(dir > 0 ? x1 + cw - 3 : x1, Math.round(FLOOR_TOP * 0.55), 3, 3); // подхват
+    }
+    g.fillStyle(0xb8264a).fillRect(hx, 0, W, 8);
+    g.fillStyle(0x8e1838);
+    for (let x = hx; x < hx + W; x += 12) g.fillRect(x, 8, 12, 2).fillRect(x + 3, 10, 6, 1);
+    g.fillStyle(0xffd84a).fillRect(hx, 7, W, 1);
+    g.fillStyle(0x24123c).fillRect(hx, FLOOR_TOP - 2, W, 2);
+    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 4, r++) {
+      g.fillStyle(r % 2 ? 0x9a5a3a : 0xa8683f).fillRect(hx, y, W, 4);
+      g.fillStyle(0x7d4529);
+      for (let x = hx + (r % 3) * 7; x < hx + W; x += 21) g.fillRect(x, y, 1, 4);
+    }
+    g.fillStyle(0x6e3a8a).fillRect(hx - 2, 0, 4, FLOOR_TOP);
     // ===== сад [2W, 3W): трава (небо, холмы и забор — на своих слоях)
     const gx = 2 * W;
     g.fillStyle(0x8fd16a).fillRect(gx, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
@@ -662,7 +690,7 @@ class Room extends Phaser.Scene {
 
   /** Алхимическая кухня: появляется и в старых сохранениях (если во второй комнате пусто). */
   ensureKitchen() {
-    if (this.objs.some((o) => o.x >= L.W)) return;
+    if (this.objs.some((o) => o.x >= L.W && o.x < 2 * L.W)) return;
     const { W, FLOOR_TOP } = L;
     const x0 = W;
     const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
@@ -686,7 +714,7 @@ class Room extends Phaser.Scene {
 
   /** Сад: появляется и в старых сохранениях (если третья комната пуста). */
   ensureGarden() {
-    if (this.objs.some((o) => o.x >= 2 * L.W)) return;
+    if (this.objs.some((o) => o.x >= 2 * L.W && o.x < 3 * L.W)) return;
     const { W, FLOOR_TOP, ROOM_H } = L;
     const x0 = 2 * W;
     const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
@@ -1038,16 +1066,41 @@ class Room extends Phaser.Scene {
     });
   }
 
-  /** Сцена с ксилофоном и гитарой один раз появляется в саду. */
-  ensureStage() {
-    if (this.flags.stage) return;
-    this.flags.stage = true;
-    const { W, FLOOR_TOP } = L;
-    const stage = this.spawnItem(this.big.stage, Math.round(2 * W + W * 0.8), FLOOR_TOP + 4);
-    for (const [sub, dx] of [['xylophone', -14], ['acoustic guitar', 12]]) {
-      const r = this.findRec(sub);
-      if (r) { const it = this.spawnItem(r, stage.x + dx, stage.y - 9); it.restOn = stage; }
+  /** Концертный зал (5-я комната): сцена с инструментами и зрительские стулья.
+   *  В старых сохранениях сцена стояла в саду — переносим её сюда вместе с инструментами на ней. */
+  ensureHall() {
+    if (this.flags.hall) return;
+    this.flags.hall = true;
+    const { W, FLOOR_TOP, ROOM_H } = L;
+    const x0 = 4 * W;
+    const cx = Math.round(x0 + W * 0.5);
+    const sy = FLOOR_TOP + 6;
+    let stage = this.flags.stage && this.objs.find((o) => o.rec?.id === 'big_stage' && o.x >= 2 * W && o.x < 3 * W);
+    if (stage) {
+      const dx = cx - stage.x, dy = sy - stage.y;
+      for (const o of this.objs) if (o.restOn === stage) { o.x += dx; o.y += dy; }
+      stage.x = cx; stage.y = sy;
+    } else {
+      stage = this.spawnItem(this.big.stage, cx, sy);
+      for (const [sub, dx] of [['xylophone', -14], ['acoustic guitar', 12]]) {
+        const r = this.findRec(sub);
+        if (r) { const it = this.spawnItem(r, stage.x + dx, stage.y - 9); it.restOn = stage; }
+      }
     }
+    this.flags.stage = true;
+    const put = (subj, fx, y) => { const r = this.findRec(subj); return r ? this.spawnItem(r, Math.round(x0 + W * fx), Math.round(y)) : null; };
+    put('drum set', 0.22, FLOOR_TOP + 10);
+    put('tambourine', 0.78, FLOOR_TOP + 12);
+    for (const fx of [0.3, 0.42, 0.58, 0.7]) put('chair', fx, ROOM_H - 3);
+    put('heart balloon', 0.9, FLOOR_TOP + 4);
+    this.save();
+  }
+
+  /** Лежанка для питомцев один раз появляется в спальне (если её ещё нигде нет). */
+  ensurePetBed() {
+    if (this.flags.petbed) return;
+    this.flags.petbed = true;
+    if (!this.objs.some((o) => o.rec?.id === 'big_petbed')) this.spawnItem(this.big.petbed, Math.round(L.W * 0.14), L.ROOM_H - 2);
     this.save();
   }
 
@@ -1056,7 +1109,7 @@ class Room extends Phaser.Scene {
   ensureBath() {
     const { W, FLOOR_TOP, ROOM_H } = L;
     if (!this.objs.some((o) => o.beh?.puddle)) this.spawnItem(this.big.puddle, Math.round(2 * W + W * 0.22), FLOOR_TOP + 32);
-    if (this.objs.some((o) => o.x >= 3 * W)) return;
+    if (this.objs.some((o) => o.x >= 3 * W && o.x < 4 * W)) return;
     const x0 = 3 * W;
     const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
     const tub = big('tub', 0.52, FLOOR_TOP + 20);

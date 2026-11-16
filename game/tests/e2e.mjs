@@ -320,7 +320,31 @@ test('сцена: инструменты включают слои джема и
   });
   assert.equal(st.on, 2);
   assert.equal(st.off, 0);
-  assert.ok(st.hasStage, 'сцена в саду');
+  assert.ok(st.hasStage, 'сцена есть');
+});
+
+test('концертный зал: сцена в 5-й комнате, лежанка в спальне, старая сцена из сада переезжает', async () => {
+  const st = await room((s) => {
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    const stage = s.objs.find((o) => o.rec?.id === 'big_stage');
+    const bed = s.objs.find((o) => o.rec?.id === 'big_petbed');
+    const fresh = { stageRoom: Math.floor(stage.x / W), bedRoom: Math.floor(bed.x / W), riders: s.objs.filter((o) => o.restOn === stage).length };
+    // имитация старого сохранения: сцена с гитарой в саду, флага зала нет
+    stage.x = 2 * W + 40;
+    const g = s.objs.find((o) => o.restOn === stage);
+    g.x = stage.x + 12;
+    s.flags.hall = false;
+    s.ensureHall();
+    return { ...fresh, migrated: Math.floor(stage.x / W), riderRoom: Math.floor(g.x / W), stages: s.objs.filter((o) => o.rec?.id === 'big_stage').length };
+  });
+  assert.equal(st.stageRoom, 4);
+  assert.equal(st.bedRoom, 0);
+  assert.ok(st.riders >= 1, 'инструменты на сцене');
+  assert.equal(st.migrated, 4);
+  assert.equal(st.riderRoom, 4);
+  assert.equal(st.stages, 1);
+  await room((s) => s.goRoom(4));
+  await waitFor((s) => Math.round(s.cameras.main.scrollX / (s.sys.game.config.width / s.cameras.main.zoom)) === 4);
 });
 
 test('нет ошибок в консоли', () => {
