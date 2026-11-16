@@ -476,6 +476,34 @@ test('потребности: наелась — облачко с унитаз�
   assert.equal(st.eaten, 0);
 });
 
+test('концертный зал: зритель на стуле, микрофон — песня и аплодисменты, занавес, диско', async () => {
+  const st = await room((s) => {
+    s.goRoom(4);
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    const inHall = (o) => o.x >= 4 * W && o.x < 5 * W;
+    const mic = s.objs.find((o) => o.beh?.mic);
+    const ball = s.objs.find((o) => o.beh?.disco);
+    const teddySeated = s.objs.some((o) => o.rec?.subject === 'teddy bear' && o.restOn?.beh?.seat && inHall(o));
+    const chairs = s.objs.filter((o) => o.beh?.seat && inHall(o)).sort((a, b) => a.x - b.x);
+    const c = s.objs.find((o) => o.kind === 'char' && !o.busy);
+    c.inTub = null;
+    s.sitOn(s.spawnItem(s.findRec('kitten'), chairs[1].x, chairs[1].y), chairs[1]);
+    const stage = s.objs.find((o) => o.beh?.stage && inHall(o));
+    s.onStage(c, stage, stage.x);
+    s.wear(c, 'hand', mic);
+    s.lastApplause = 0;
+    s.testSinger = c;
+    return { mic: !!mic, ball: !!ball, teddySeated, fans: s.audienceIn(4).length, onStage: c.restOn === stage };
+  });
+  assert.deepEqual(st, { mic: true, ball: true, teddySeated: true, fans: 2, onStage: true });
+  await room((s) => s.sing(s.testSinger));
+  await waitFor((s) => !s.testSinger.busy && s.lastApplause > 0 && s.flags.tried?.mic);
+  const cur = await room((s) => { s.toggleCurtain(); const closed = s.flags.curtainClosed; s.toggleCurtain(); return [closed, s.flags.curtainClosed]; });
+  assert.deepEqual(cur, [true, false]);
+  const disco = await room((s) => { const b = s.objs.find((o) => o.beh?.disco); s.toggleDisco(b); const on = s.discoSpots?.length; s.toggleDisco(b); return [on, !!s.discoBall]; });
+  assert.deepEqual(disco, [8, false]);
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });

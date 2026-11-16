@@ -45,6 +45,35 @@ function noise(dur, { vol = 0.12, freq = 1200, delay = 0 } = {}) {
 
 const PENTA = [523, 587, 659, 784, 880, 1047, 1175, 1319];
 
+/** «Голос»: треугольник + октава выше тише, с вибрато — как «ля-ля». */
+function voice(freq, dur, delay = 0) {
+  if (!ctx) return;
+  const t = ctx.currentTime + delay;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.001, t);
+  g.gain.exponentialRampToValueAtTime(0.11, t + 0.04);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  g.connect(ctx.destination);
+  const lfo = ctx.createOscillator();
+  const depth = ctx.createGain();
+  lfo.frequency.value = 6;
+  depth.gain.value = freq * 0.02;
+  lfo.connect(depth);
+  for (const [mul, type, vol] of [[1, 'triangle', 1], [2, 'sine', 0.25]]) {
+    const o = ctx.createOscillator();
+    const og = ctx.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(freq * mul, t);
+    depth.connect(o.frequency);
+    og.gain.value = vol;
+    o.connect(og).connect(g);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+  }
+  lfo.start(t);
+  lfo.stop(t + dur + 0.05);
+}
+
 export const sfx = {
   pick: () => tone(500, 0.08, { slide: 300, vol: 0.12 }),
   drop: () => tone(300, 0.1, { slide: -120, type: 'triangle', vol: 0.15 }),
@@ -88,6 +117,21 @@ export const sfx = {
   },
   purr: () => { tone(70, 0.35, { type: 'sawtooth', vol: 0.05 }); tone(75, 0.35, { type: 'triangle', vol: 0.06, delay: 0.05 }); },
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
+  // концертный зал
+  /** Спеть фразу из n нот пентатоники; возвращает длительность в секундах. */
+  sing: (n = 7) => {
+    let t = 0;
+    let k = 2 + Math.floor(Math.random() * 3);
+    for (let i = 0; i < n; i++) {
+      k = Math.max(0, Math.min(7, k + [-1, 1, 1, -2, 2, 0][Math.floor(Math.random() * 6)]));
+      const d = i === n - 1 ? 0.55 : 0.28;
+      voice(PENTA[k] / 2, d, t);
+      t += d;
+    }
+    return t;
+  },
+  applause: () => { for (let i = 0; i < 26; i++) noise(0.035, { freq: 2500 + Math.random() * 2500, vol: 0.09, delay: Math.random() * 1.6 }); },
+  swish: () => noise(0.7, { freq: 1100, vol: 0.09 }),
   // кухня и ванная
   blend: () => { for (let i = 0; i < 6; i++) tone(140 + i * 25, 0.28, { type: 'sawtooth', vol: 0.05, slide: 60, delay: i * 0.25 }); noise(1.5, { freq: 900, vol: 0.06 }); },
   pop: () => { tone(900 + Math.random() * 500, 0.06, { slide: 900, vol: 0.12 }); noise(0.03, { freq: 4000, vol: 0.08 }); },

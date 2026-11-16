@@ -105,6 +105,32 @@ export function makeSalon(scene) {
   }));
   recs.push({ id: 'toothbrush', subject: 'toothbrush', cat: 'toy', tags: ['toy'], tex: 'toothbrush', toothbrush: true, bbox: [0, 0, 15, 15], order: 26 });
 
+  // концертный зал: микрофон, диско-шар (2 кадра блеска), иконка занавеса для подсказки
+  add('microphone', canvasFor(7, 15, (r) => {
+    r(1, 0, 5, 5, '#c9ccd8'); r(0, 1, 7, 3, '#c9ccd8'); r(1, 0, 5, 1, '#eef0f6');   // сетка
+    r(2, 1, 1, 1, '#8a8fa3'); r(4, 1, 1, 1, '#8a8fa3'); r(3, 2, 1, 1, '#8a8fa3'); r(2, 3, 1, 1, '#8a8fa3'); r(4, 3, 1, 1, '#8a8fa3');
+    r(1, 5, 5, 1, '#f2c94c');                                                       // ободок
+    r(2, 6, 3, 9, '#ff7ab8'); r(2, 6, 1, 9, '#ffb0d0'); r(3, 9, 1, 2, '#ffffff');   // ручка с кнопкой
+  }));
+  recs.push({ id: 'microphone', subject: 'karaoke microphone', cat: 'toy', tags: ['toy'], tex: 'microphone', mic: true, bbox: [0, 0, 15, 15], order: 27 });
+  const ball = (shift) => canvasFor(13, 20, (r) => {
+    r(6, 0, 1, 7, '#8a8fa3');                                                       // подвес
+    r(3, 7, 7, 13, '#c9ccd8'); r(1, 9, 11, 9, '#c9ccd8'); r(2, 8, 9, 11, '#c9ccd8'); r(0, 11, 13, 5, '#c9ccd8');
+    const tile = ['#ffffff', '#9fdcff', '#ff9ac8', '#fff6a8', '#e6e8f0', '#b8f7cc'];
+    for (let y = 8; y < 19; y += 2) for (let x = 1; x < 12; x += 2) {
+      const dx = x - 6; const dy = y - 13;
+      if (dx * dx + dy * dy <= 30) r(x, y, 1, 1, tile[(x + y + shift) % tile.length]);
+    }
+  });
+  add('disco_ball', ball(0));
+  tex(scene, 'disco_ball_b', ball(3));
+  recs.push({ id: 'disco-ball', subject: 'disco ball', cat: 'toy', tags: ['toy'], tex: 'disco_ball', disco: true, wall: true, bbox: [0, 0, 15, 15], order: 28 });
+  tex(scene, 'curtain_icon', canvasFor(14, 14, (r) => {
+    r(0, 0, 14, 3, '#b8264a'); r(0, 3, 14, 1, '#ffd84a');
+    r(0, 4, 5, 10, '#b8264a'); r(9, 4, 5, 10, '#b8264a'); r(2, 4, 1, 10, '#8e1838'); r(11, 4, 1, 10, '#8e1838');
+    r(5, 4, 4, 10, '#3b2160'); r(6, 8, 2, 2, '#ffd84a');
+  }));
+
   // большой пузырь 9×9 — кольцо с бликом (белый, тонируется цветом пены); лопается от касания
   if (!scene.textures.exists('bubble_big')) {
     const c = document.createElement('canvas');

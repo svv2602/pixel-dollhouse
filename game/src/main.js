@@ -118,13 +118,17 @@ const HINTS = {
   bubbles: { room: 3, seq: () => ['big_tub', 'tex:bubble_big'] },
   toilet: { room: 3, seq: () => ['big_toilet', 'tex:bubble_big'] },
   // потребности (room: null) — появляются по состоянию персонажа, а не по комнате
+  mic: { room: 4, seq: () => ['microphone'] },
+  audience: { room: 4, seq: () => ['chair', 'teddy bear'] },
+  curtain: { room: 4, seq: () => ['tex:curtain_icon'] },
+  disco: { room: 4, seq: () => ['disco-ball'] },
   potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
   dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
 };
 const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
 // Что подпрыгивает с искорками, пока его ни разу не трогали (ключ — как в HINTS)
 const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
-  ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush]];
+  ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco]];
 // Любимые игрушки питомцев (у каждого своя — по номеру)
 const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
@@ -181,7 +185,7 @@ function behaviorOf(rec) {
     music: rec.cat === 'music',
     pet: rec.cat === 'animal' && !RX.notPet.test(s),
     furniture: rec.cat === 'furniture',
-    wall: RX.wall.test(s),
+    wall: RX.wall.test(s) || !!rec.wall,
     flat: /\b(rug|carpet|mat|puddle)\b/.test(s),
     tub: s === 'clawfoot bathtub' && !!rec.tex,
     puddle: s === 'mud puddle',
@@ -200,6 +204,10 @@ function behaviorOf(rec) {
     makeup: rec.makeup || null,
     toothbrush: !!rec.toothbrush,
     toilet: s === 'flush toilet',
+    mic: !!rec.mic,
+    disco: !!rec.disco,
+    stage: s === 'music stage',
+    seat: rec.cat === 'furniture' && /\b(chair|stool|bench)\b/.test(s) && !RX.bedLike.test(s),
   };
 }
 
@@ -302,6 +310,8 @@ class Room extends Phaser.Scene {
     this.objs = [];
     this.flags = {};
     this.uidSeq = 1;
+    // временные эффекты прошлой сцены (поворот экрана пересоздаёт сцену)
+    this.discoBall = null; this.discoSpots = null; this.discoDim = null; this.popBubbles = [];
     this.night = false;
     this.press = null;
 
@@ -327,6 +337,8 @@ class Room extends Phaser.Scene {
     this.ensurePetBed();
     this.ensureKitchen2();
     this.ensureBath2();
+    this.ensureHall2();
+    this.buildCurtain();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
@@ -1043,6 +1055,7 @@ class Room extends Phaser.Scene {
       this.lullabyWas = musicPlaying();
       if (this.lullabyWas) { setMusic(false); this.drawMusicIcon(); }
       onJamStep((kinds) => this.onJamBeat(kinds));
+      this.jamStartedAt = this.time.now;
     }
     this.jam.add(o);
     setJamLayer(kind, true);
@@ -1052,6 +1065,8 @@ class Room extends Phaser.Scene {
   }
 
   jamEnded() {
+    const room = Math.round(this.cameras.main.scrollX / L.W);
+    if (this.jam?.size && this.time.now - (this.jamStartedAt || 0) > 3000) this.applause(room);
     stopJam();
     this.jam?.clear();
     if (this.lullabyWas) { setMusic(true); this.drawMusicIcon(); this.lullabyWas = false; }
@@ -1069,6 +1084,12 @@ class Room extends Phaser.Scene {
     }
     if (!this.jam.size) { this.jamEnded(); return; }
     this.jamBeat = (this.jamBeat || 0) + 1;
+    if (this.jamBeat % 4 === 0) {
+      // зрители на стульях качаются в такт
+      for (const a of this.audienceIn(Math.round(this.cameras.main.scrollX / L.W))) {
+        if (!a.busy && !a.dragging) this.tweens.add({ targets: a, y: a.y - 2, duration: 90, yoyo: true });
+      }
+    }
     if (this.jamBeat % 6 === 0) {
       const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && !c.inTub && this.visible(c));
       if (chars.length) this.dance(pick(chars), pick(['hop', 'spin', 'sway']));
@@ -1598,6 +1619,200 @@ class Room extends Phaser.Scene {
     });
   }
 
+  // ---------------------------------------------------------------- концертный зал: микрофон, зрители, занавес, диско
+  /** Микрофон на сцене, диско-шар под потолком и мишка-зритель на стуле — и в старых сохранениях. */
+  ensureHall2() {
+    if (this.flags.hall2) return;
+    this.flags.hall2 = true;
+    const { W, FLOOR_TOP } = L;
+    const x0 = 4 * W;
+    const inHall = (o) => o.x >= x0 && o.x < x0 + W;
+    const stage = this.objs.find((o) => o.beh?.stage && inHall(o));
+    if (!this.objs.some((o) => o.beh?.mic)) {
+      const mic = stage ? this.spawnItem(this.byId.get('microphone'), stage.x, stage.y - 9) : this.spawnItem(this.byId.get('microphone'), Math.round(x0 + W * 0.5), FLOOR_TOP + 16);
+      if (stage) mic.restOn = stage;
+    }
+    if (!this.objs.some((o) => o.beh?.disco)) this.spawnItem(this.byId.get('disco-ball'), Math.round(x0 + W * 0.7), 31);
+    const chair = this.objs.filter((o) => o.beh?.seat && inHall(o)).sort((a, b) => a.x - b.x)[0];
+    const teddy = this.findRec('teddy bear');
+    if (chair && teddy && !this.objs.some((o) => o.restOn === chair)) this.sitOn(this.spawnItem(teddy, chair.x, chair.y), chair, true);
+    this.save();
+  }
+
+  /** Сесть на стул: персонаж, питомец или игрушка — в зале они становятся зрителями. */
+  sitOn(o, seat, quiet = false) {
+    o.x = Math.round(seat.x);
+    o.y = Math.round(seat.y - (o.kind === 'char' ? 4 : 6));
+    o.restOn = seat;
+    o.inTub = null;
+    if (quiet) return;
+    sfx.drop();
+    this.tweens.add({ targets: o, y: o.y - 3, duration: 100, yoyo: true });
+    if (Math.floor(seat.x / L.W) === 4) this.hintDone('audience');
+  }
+
+  audienceIn(room) {
+    return this.objs.filter((o) => o.restOn?.beh?.seat && Math.floor(o.x / L.W) === room && !o.dragging);
+  }
+
+  /** Выйти на сцену: персонаж встаёт на помост; с микрофоном в руке — сразу поёт. */
+  onStage(ch, stage, x) {
+    ch.x = Math.round(Phaser.Math.Clamp(x, stage.x - stage.displayWidth / 2 + 8, stage.x + stage.displayWidth / 2 - 8));
+    ch.y = Math.round(stage.y - 9);
+    ch.restOn = stage;
+    sfx.drop();
+    if (ch.slots.hand?.beh.mic) this.time.delayedCall(300, () => this.sing(ch));
+  }
+
+  /** Спеть в микрофон: «ля-ля» по нотам, рот открывается, летят нотки; зрители хлопают. */
+  sing(ch) {
+    if (ch.busy || ch.sleeping) return;
+    ch.busy = true;
+    const dur = sfx.sing(7) * 1000;
+    const m = this.mouth(ch);
+    let i = 0;
+    const ev = this.time.addEvent({
+      delay: 140, loop: true, callback: () => {
+        ch.setTexture(ch.key + (i++ % 2 ? '_blink' : '_open'));
+        if (i % 2) this.fxNotes.explode(1, m.x + (ch.flipX ? -3 : 3), m.y - 2);
+      },
+    });
+    this.tweens.add({ targets: ch, y: ch.y - 2, duration: 280, yoyo: true, repeat: Math.max(0, Math.round(dur / 560) - 1), ease: 'Sine.easeInOut' });
+    this.time.delayedCall(dur + 100, () => {
+      ev.remove();
+      ch.busy = false;
+      ch.setTexture(ch.key + '_smile');
+      this.time.delayedCall(600, () => { if (!ch.busy) ch.setTexture(ch.key); });
+      this.hintDone('mic', ch);
+      this.checkWish(ch, 'music');
+      this.applause(Math.floor(ch.x / L.W));
+    });
+  }
+
+  /** Аплодисменты: зрители на стульях подпрыгивают, на сцену летят цветы и сердечки. */
+  applause(room) {
+    const fans = this.audienceIn(room);
+    if (!fans.length || this.time.now - (this.lastApplause || 0) < 2500) return;
+    this.lastApplause = this.time.now;
+    sfx.applause();
+    const stage = this.objs.find((o) => o.beh?.stage && Math.floor(o.x / L.W) === room);
+    const tx = stage ? stage.x : room * L.W + L.W / 2;
+    const ty = stage ? stage.y - 12 : L.FLOOR_TOP;
+    const flowers = ['rose', 'tulip', 'daisy flower', 'sunflower'].map((sub) => this.findRec(sub)).filter(Boolean);
+    fans.forEach((a, i) => {
+      this.time.delayedCall(i * 90, () => {
+        if (!a.active) return;
+        if (a.kind === 'char' && !a.busy) { a.setTexture(a.key + '_smile'); this.time.delayedCall(1300, () => { if (!a.busy) a.setTexture(a.key); }); }
+        this.tweens.add({ targets: a, y: a.y - 4, duration: 110, yoyo: true, repeat: 3 });
+        this.fxHearts.explode(2, a.x, a.y - a.displayHeight);
+        const r = flowers.length ? pick(flowers) : null;
+        if (!r) return;
+        // цветок летит дугой на сцену и тает (только эффект — не предмет)
+        const f = this.add.image(a.x, a.y - a.displayHeight, r.cat, r.frame).setDepth(16000);
+        const fx = tx + rnd(-18, 18);
+        this.tweens.add({ targets: f, x: fx, duration: 700 });
+        this.tweens.add({
+          targets: f, y: Math.min(f.y, ty) - 20, duration: 320, ease: 'Quad.easeOut',
+          onComplete: () => this.tweens.add({ targets: f, y: ty, duration: 380, ease: 'Quad.easeIn', onComplete: () => this.tweens.add({ targets: f, alpha: 0, delay: 900, duration: 400, onComplete: () => f.destroy() }) }),
+        });
+      });
+    });
+  }
+
+  /** Занавес из двух половин: открыт — видны только края, закрыт — сходится посередине перед сценой. */
+  buildCurtain() {
+    const { W, FLOOR_TOP } = L;
+    const hw = Math.ceil(W / 2) + 1;
+    const h = FLOOR_TOP + 6 - 10;
+    const key = `hall_curtain_${hw}x${h}`;
+    if (!this.textures.exists(key)) {
+      const c = document.createElement('canvas');
+      c.width = hw; c.height = h;
+      const g = c.getContext('2d');
+      g.fillStyle = '#b8264a'; g.fillRect(0, 0, hw, h);
+      for (let x = 0; x < hw; x += 6) { g.fillStyle = '#8e1838'; g.fillRect(x + 3, 0, 2, h); g.fillStyle = '#d8406a'; g.fillRect(x + 1, 0, 1, h); }
+      g.fillStyle = '#ffd84a'; g.fillRect(0, h - 2, hw, 1);
+      for (let x = 1; x < hw; x += 3) g.fillRect(x, h - 1, 1, 1); // бахрома
+      this.textures.addCanvas(key, c);
+    }
+    const x0 = 4 * W;
+    this.curtainCw = Math.round(W * 0.16);
+    this.curtain = [0, 1].map((i) => {
+      const img = this.add.image(0, 10, key).setOrigin(0, 0).setDepth(FLOOR_TOP + 6.9).setInteractive();
+      img.curtain = true;
+      return img;
+    });
+    this.curtain[1].setFlipX(true);
+    this.placeCurtain(!!this.flags.curtainClosed);
+  }
+
+  placeCurtain(closed, animate = false) {
+    const { W } = L;
+    const x0 = 4 * W;
+    const hw = this.curtain[0].width;
+    const pos = closed ? [x0 + W / 2 - hw, x0 + W / 2] : [x0 + this.curtainCw - hw, x0 + W - this.curtainCw];
+    this.curtain.forEach((c, i) => {
+      this.tweens.killTweensOf(c);
+      if (animate) this.tweens.add({ targets: c, x: Math.round(pos[i]), duration: 750, ease: 'Sine.easeInOut' });
+      else c.x = Math.round(pos[i]);
+    });
+  }
+
+  toggleCurtain() {
+    const closed = !this.flags.curtainClosed;
+    this.flags.curtainClosed = closed;
+    this.placeCurtain(closed, true);
+    sfx.swish();
+    this.hintDone('curtain');
+    if (!closed) {
+      // начало концерта: фанфары, конфетти, зрители хлопают
+      const { W } = L;
+      const cx = 4 * W + W / 2;
+      this.time.delayedCall(450, () => {
+        sfx.fanfare();
+        for (let i = 0; i < 5; i++) this.time.delayedCall(i * 120, () => this.fxSparks.explode(10, cx + rnd(-W * 0.35, W * 0.35), rnd(14, 34)));
+        this.applause(4);
+      });
+    }
+    this.save();
+  }
+
+  /** Диско-шар: тап — крутится, свет приглушается, по залу бегают цветные зайчики. */
+  toggleDisco(ball) {
+    if (this.discoBall) { this.discoOff(); sfx.click(); return; }
+    this.discoBall = ball;
+    this.hintDone('disco');
+    sfx.sparkle();
+    const room = Math.floor(ball.x / L.W);
+    this.discoDim = this.add.rectangle(room * L.W, 0, L.W, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
+    this.tweens.add({ targets: this.discoDim, fillAlpha: 0.4, duration: 400 });
+    const cols = [0xff7ab8, 0x5ac4f2, 0xffd84a, 0x7ad9b5, 0xc48ff2, 0xff9a5a, 0xffffff, 0x9fdcff];
+    this.discoSpots = cols.map((c) => this.add.image(ball.x, ball.y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(c).setScale(0.3).setDepth(10002).setAlpha(0.85));
+    for (const c of this.objs) if (c.kind === 'char' && this.visible(c)) this.time.delayedCall(rnd(200, 900), () => { if (!c.busy && !c.sleeping) this.dance(c, pick(['hop', 'spin', 'sway'])); });
+  }
+
+  discoOff() {
+    if (this.discoBall?.active) this.discoBall.setTexture('disco_ball');
+    this.discoBall = null;
+    this.discoSpots?.forEach((s) => s.destroy());
+    this.discoSpots = null;
+    const dim = this.discoDim;
+    this.discoDim = null;
+    if (dim) this.tweens.add({ targets: dim, fillAlpha: 0, duration: 300, onComplete: () => dim.destroy() });
+  }
+
+  updateDisco(time) {
+    const ball = this.discoBall;
+    if (!ball) return;
+    if (!ball.active || !this.objs.includes(ball)) { this.discoOff(); return; }
+    ball.setTexture(Math.floor(time / 220) % 2 ? 'disco_ball_b' : 'disco_ball');
+    const x0 = Math.floor(ball.x / L.W) * L.W;
+    this.discoSpots.forEach((sp, i) => {
+      sp.x = x0 + L.W * (0.5 + 0.45 * Math.sin(time / 900 + i * 0.8));
+      sp.y = 14 + (L.ROOM_H - 20) * (0.5 + 0.5 * Math.sin(time / 650 + i * 1.7));
+    });
+  }
+
   // ---------------------------------------------------------------- навигация между комнатами
   buildNav() {
     const { W, ROOM_H } = L;
@@ -1639,6 +1854,10 @@ class Room extends Phaser.Scene {
     // неопробованное подпрыгивает с искорками — «потрогай меня»
     if (Math.random() < 0.5) return;
     const tried = this.flags.tried || {};
+    if (!tried.curtain && this.curtain && Math.round(this.cameras.main.scrollX / L.W) === 4 && Math.random() < 0.4) {
+      for (const [i, c] of this.curtain.entries()) this.tweens.add({ targets: c, x: c.x + (i ? -2 : 2), duration: 140, yoyo: true, repeat: 1 });
+      return;
+    }
     const lure = LURES.filter(([k]) => !tried[k])
       .flatMap(([, f]) => this.objs.filter((o) => o.kind === 'item' && f(o.beh) && !o.dragging && !o.owner && !o.blending && this.visible(o)));
     if (!lure.length) return;
@@ -1809,6 +2028,7 @@ class Room extends Phaser.Scene {
     const top = over[0];
     this.press = { sx: q.x, sy: q.y, t: p.downTime, moved: false };
     if (top?.bubble) { this.popBubble(top); this.press = null; return; }
+    if (top?.curtain) { this.toggleCurtain(); this.press = null; return; }
     if (top?.ui) { this.press.ui = top.ui; return; }
     if (top?.drawerRec) { this.press.rec = top.drawerRec; return; }
     if (top && 'drawerRec' in top) return; // пустая ячейка
@@ -1942,6 +2162,10 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char') o.setTexture(o.key);
     for (const c of this.objs) if (c.kind === 'char' && !c.busy) c.setTexture(c.key);
 
+    if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
+      const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.seat && x !== o);
+      if (seat) { this.sitOn(o, seat); this.save(); return; }
+    }
     if (o.beh?.pet && q.y <= L.ROOM_H) {
       const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x !== o && RX.bedLike.test(x.rec.subject));
       if (bed) {
@@ -1972,6 +2196,10 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char' && q.y <= L.ROOM_H) {
       const wc = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.toilet);
       if (wc) { this.sitOnToilet(o, wc); this.save(); return; }
+      const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.seat);
+      if (seat) { this.sitOn(o, seat); this.save(); return; }
+      const stage = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.stage);
+      if (stage) { this.onStage(o, stage, q.x); this.save(); return; }
       const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && RX.bedLike.test(x.rec.subject));
       if (bed) {
         // сесть/лечь на кровать: персонаж на матрасе, через пару секунд засыпает
@@ -2065,6 +2293,7 @@ class Room extends Phaser.Scene {
         else if (o.beh.edible) this.feed(ch, o);
         else if (o.beh.head) this.wear(ch, 'head', o);
         else if (o.beh.face) this.wear(ch, 'face', o);
+        else if (o.beh.mic) { this.wear(ch, 'hand', o); this.time.delayedCall(350, () => this.sing(ch)); }
         else this.wear(ch, 'hand', o);
         this.save();
         return;
@@ -2135,6 +2364,7 @@ class Room extends Phaser.Scene {
       const held = o.slots.hand;
       if (held && !o.busy && held.beh.potion) { this.drinkPotion(o, held); return; }
       if (held && !o.busy && held.beh.edible) { this.feed(o, held); return; }
+      if (held && !o.busy && held.beh.mic) { this.sing(o); return; }
       if (o.sleeping) { o.sleeping = false; o.awakeUntil = this.time.now + 8000; }
       // смех заразителен: соседка рядом тоже смеётся
       for (const c of this.objs) {
@@ -2162,7 +2392,9 @@ class Room extends Phaser.Scene {
     if (o.owner && o.slot === 'hand' && !o.owner.busy) {
       if (b.potion) { this.drinkPotion(o.owner, o); return; }
       if (b.edible) { this.feed(o.owner, o); return; }
+      if (b.mic) { this.sing(o.owner); return; }
     }
+    if (b.disco) { this.toggleDisco(o); return; }
     if (b.fridge) { this.openFridge(o); return; }
     if (b.blender) { this.blend(o); return; }
     if (b.tub) { this.blowBubbles(o); return; }
@@ -2627,7 +2859,7 @@ class Room extends Phaser.Scene {
   }
 
   danceTick() {
-    if (!musicPlaying() || this.dress || this.albumUi || Math.random() < 0.4) return;
+    if (!(musicPlaying() || this.discoBall) || this.dress || this.albumUi || Math.random() < 0.4) return;
     const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && this.visible(c));
     if (chars.length) this.celebrate(pick(chars), 2);
   }
@@ -3199,6 +3431,7 @@ class Room extends Phaser.Scene {
       hat.setDepth(pet.depth + 0.2);
     }
     this.updateSpotlights(time);
+    this.updateDisco(time);
     for (const bed of this.objs) {
       if (!bed.plots || !bed.plantImgs) continue;
       bed.plots.forEach((p, i) => {
