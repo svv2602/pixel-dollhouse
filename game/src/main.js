@@ -124,6 +124,20 @@ function behaviorOf(rec) {
 }
 
 const rnd = (a, b) => a + Math.random() * (b - a);
+const VIEW_SIZE = 24; // предметов в одной подборке вкладки = 2 страницы по 12
+
+/** Детерминированное перемешивание (одна и та же витрина при каждом запуске). */
+function seededShuffle(arr, seedStr) {
+  let h = 2166136261;
+  for (let i = 0; i < seedStr.length; i++) { h ^= seedStr.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    h = (Math.imul(h, 1103515245) + 12345) >>> 0;
+    const j = h % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
 /** Рисует пиксельную картинку из строк ('X' = пиксель) в Graphics. */
@@ -559,21 +573,30 @@ class Room extends Phaser.Scene {
     this.add.rectangle(0, ROOM_H, W, H - ROOM_H, 0x4a3157).setOrigin(0).setDepth(D);
     this.add.rectangle(0, ROOM_H, W, 1, 0x2b1d2e).setOrigin(0).setDepth(D);
     this.add.rectangle(0, ROOM_H + 19, W, 1, 0x3a2546).setOrigin(0).setDepth(D);
+    try { this.recent = JSON.parse(localStorage.getItem('pixel-house-recent')) || []; } catch { this.recent = []; }
     this.cat = this.cats[0];
     this.page = 0;
-    const n = this.cats.length + 2; // + кнопки сброса и музыки
+    this.mode = 'curated';
+    const tabsAll = ['recent', ...this.cats];
+    const n = tabsAll.length + 2; // + кнопки сброса и музыки
     const step = Math.min(22, Math.floor((W - 2) / n));
     const x0 = Math.floor((W - step * n) / 2) + Math.floor(step / 2);
-    this.tabs = this.cats.map((c, i) => {
+    this.tabs = tabsAll.map((c, i) => {
       const x = x0 + i * step;
       const bg = this.add.rectangle(x, TAB_Y, step - 2, 18, 0x6b4a7e).setDepth(D).setInteractive();
       bg.ui = { tab: c };
-      const rec = this.findRec(CAT_ICON[c]) || this.byCat[c][0];
-      this.add.image(x, TAB_Y + 8, rec.cat, rec.frame).setOrigin(0.5, 1).setDepth(D + 1);
+      if (c === 'recent') {
+        // часы — «недавние»
+        const g = this.add.graphics().setDepth(D + 1);
+        pixelMap(g, ['...XXXXX...', '..X.....X..', '.X...X...X.', 'X....X....X', 'X....X....X', 'X....XXX..X', 'X.........X', '.X.......X.', '..X.....X..', '...XXXXX...'], x - 5, TAB_Y - 5, 0xffffff);
+      } else {
+        const rec = this.findRec(CAT_ICON[c]) || this.byCat[c][0];
+        this.add.image(x, TAB_Y + 8, rec.cat, rec.frame).setOrigin(0.5, 1).setDepth(D + 1);
+      }
       return bg;
     });
     // кнопка сброса (держать 2 секунды) — для взрослых
-    const rx = x0 + this.cats.length * step;
+    const rx = x0 + tabsAll.length * step;
     const rb = this.add.rectangle(rx, TAB_Y, step - 2, 18, 0x3a2546).setDepth(D).setInteractive();
     rb.ui = { reset: true };
     const ig = this.add.graphics().setDepth(D + 1);
@@ -585,7 +608,7 @@ class Room extends Phaser.Scene {
     this.musicIcon = this.add.graphics().setDepth(D + 1);
     this.musicIconAt = [mx - 3, TAB_Y - 4];
     this.drawMusicIcon();
-    // стрелки
+    // стрелки страниц
     const arrow = (x, dir) => {
       const hit = this.add.rectangle(x, SLOT_Y, 10, 18, 0x6b4a7e).setDepth(D).setInteractive();
       hit.ui = { page: dir };
@@ -595,8 +618,10 @@ class Room extends Phaser.Scene {
     };
     arrow(6, -1);
     arrow(W - 6, 1);
-    this.perPage = Math.max(1, Math.floor((W - 24) / 20));
-    const sx0 = Math.floor((W - this.perPage * 20) / 2) + 10;
+    // ячейки: последняя — кубик «перемешать»
+    const cells = Math.max(2, Math.floor((W - 24) / 20));
+    this.perPage = Math.min(12, cells - 1);
+    const sx0 = Math.floor((W - (this.perPage + 1) * 20) / 2) + 10;
     this.slots = [];
     for (let i = 0; i < this.perPage; i++) {
       const x = sx0 + i * 20;
@@ -604,7 +629,39 @@ class Room extends Phaser.Scene {
       const img = this.add.image(x, SLOT_Y + 8, this.cats[0], 0).setOrigin(0.5, 1).setDepth(D + 1).setInteractive();
       this.slots.push(img);
     }
+    const dx = sx0 + this.perPage * 20;
+    this.diceBg = this.add.rectangle(dx, SLOT_Y, 18, 18, 0x8a52cc).setDepth(D).setInteractive();
+    this.diceBg.ui = { dice: true };
+    this.dice = this.add.graphics().setDepth(D + 1);
+    this.dice.x = dx;
+    this.dice.y = SLOT_Y;
+    pixelMap(this.dice, ['.XXXXXXXXX.', 'XXXXXXXXXXX', 'XX.XXXXX.XX', 'XXXXXXXXXXX', 'XXXXX.XXXXX', 'XXXXXXXXXXX', 'XX.XXXXX.XX', 'XXXXXXXXXXX', '.XXXXXXXXX.'], -5, -4, 0xffffff);
+    pixelMap(this.dice, ['..X.....X..', '...........', '.....X.....', '...........', '..X.....X..'], -5, -2, 0x4a3157);
+    // точки страниц — на линии между рядами
+    this.pageDots = this.add.graphics().setDepth(D + 1);
+    this.buildView();
+  }
+
+  /** Подборка предметов текущей вкладки: витрина / случайная / недавние (не больше VIEW_SIZE). */
+  buildView() {
+    if (this.cat === 'recent') {
+      this.view = this.recent.map((id) => this.recOf(id)).filter(Boolean).slice(0, VIEW_SIZE);
+    } else {
+      const list = this.byCat[this.cat];
+      const fav = new Set(FAVORITES[this.cat] || []);
+      const top = list.filter((r) => r.tex || fav.has(r.subject));
+      const rest = list.filter((r) => !(r.tex || fav.has(r.subject)));
+      this.view = this.mode === 'shuffle'
+        ? seededShuffle(rest, `${this.cat}-${Math.random()}`).slice(0, VIEW_SIZE)
+        : top.concat(seededShuffle(rest, this.cat)).slice(0, VIEW_SIZE);
+    }
+    this.page = 0;
     this.refreshDrawer();
+  }
+
+  addRecent(rec) {
+    this.recent = [rec.id, ...this.recent.filter((id) => id !== rec.id)].slice(0, VIEW_SIZE);
+    try { localStorage.setItem('pixel-house-recent', JSON.stringify(this.recent)); } catch { /* ignore */ }
   }
 
   drawMusicIcon() {
@@ -615,15 +672,27 @@ class Room extends Phaser.Scene {
   }
 
   refreshDrawer() {
-    const list = this.byCat[this.cat];
-    const pages = Math.ceil(list.length / this.perPage);
+    const list = this.view || [];
+    const pages = Math.max(1, Math.ceil(list.length / this.perPage));
     this.page = (this.page + pages) % pages;
     this.slots.forEach((img, i) => {
       const rec = list[this.page * this.perPage + i];
       img.setVisible(!!rec);
-      if (rec) { if (rec.tex) img.setTexture(`${rec.tex}_icon`); else img.setTexture(rec.cat, rec.frame); img.drawerRec = rec; }
+      img.drawerRec = rec || null;
+      if (rec) { if (rec.tex) img.setTexture(`${rec.tex}_icon`); else img.setTexture(rec.cat, rec.frame); }
     });
+    const showDice = this.cat !== 'recent';
+    this.diceBg.setVisible(showDice);
+    this.dice.setVisible(showDice);
+    this.diceBg.setFillStyle(this.mode === 'shuffle' ? 0xc48ff2 : 0x8a52cc);
     this.tabs.forEach((t) => t.setFillStyle(t.ui.tab === this.cat ? 0xc48ff2 : 0x6b4a7e));
+    // точки страниц
+    const g = this.pageDots.clear();
+    if (pages > 1) {
+      const w = pages * 6 - 2;
+      const x0 = Math.floor((L.W - w) / 2);
+      for (let i = 0; i < pages; i++) g.fillStyle(i === this.page ? 0xffffff : 0x8f6fa3).fillRect(x0 + i * 6, L.ROOM_H + 18, 4, 2);
+    }
   }
 
   // ---------------------------------------------------------------- input
@@ -641,6 +710,7 @@ class Room extends Phaser.Scene {
     this.press = { sx: q.x, sy: q.y, t: p.downTime, moved: false };
     if (top?.ui) { this.press.ui = top.ui; return; }
     if (top?.drawerRec) { this.press.rec = top.drawerRec; return; }
+    if (top && 'drawerRec' in top) return; // пустая ячейка
     if (top?.kind) { this.press.obj = top; this.press.offX = top.x - q.x; this.press.offY = top.y - q.y; return; }
     // пустое место комнаты: возможный свайп между комнатами
     if (!top && q.y <= L.ROOM_H) this.press.swipe = { sx: p.x, cam: this.cameras.main.scrollX };
@@ -663,6 +733,7 @@ class Room extends Phaser.Scene {
       if (Phaser.Math.Distance.Between(pr.sx, pr.sy, q.x, q.y) < 3) return;
       if (pr.ui) return;
       if (pr.rec) {
+        this.addRecent(pr.rec);
         const o = this.spawnItem(pr.rec, q.x, q.y);
         pr.obj = o; pr.offX = 0; pr.offY = Math.round(o.displayHeight / 2);
       }
@@ -699,7 +770,14 @@ class Room extends Phaser.Scene {
     if (pr.ui?.dress || pr.ui?.dressDone || pr.ui?.block) { this.onDressUi(pr.ui); return; }
     if (pr.ui) {
       sfx.click();
-      if (pr.ui.tab) { this.cat = pr.ui.tab; this.page = 0; this.refreshDrawer(); }
+      if (pr.ui.tab) { this.cat = pr.ui.tab; this.mode = 'curated'; this.buildView(); }
+      if (pr.ui.dice) {
+        // «перемешать»: новая случайная подборка
+        this.mode = 'shuffle';
+        this.buildView();
+        sfx.chew(); sfx.chew(0.08); sfx.chew(0.16);
+        this.tweens.add({ targets: this.dice, angle: 360, duration: 300, onComplete: () => { this.dice.angle = 0; } });
+      }
       if (pr.ui.page) { this.page += pr.ui.page; this.refreshDrawer(); }
       if (pr.ui.reset && p.upTime - pr.t > 2000) this.resetRoom();
       if (pr.ui.music) {
@@ -817,6 +895,7 @@ class Room extends Phaser.Scene {
 
   // ---------------------------------------------------------------- actions
   tossIn(rec) {
+    this.addRecent(rec);
     const o = this.spawnItem(rec, Math.round(this.cameras.main.scrollX + rnd(20, L.W - 20)), -4); // в комнату, которую видно
     const ty = Math.round(rnd(L.FLOOR_TOP + 4, L.ROOM_H - 3));
     sfx.pick();

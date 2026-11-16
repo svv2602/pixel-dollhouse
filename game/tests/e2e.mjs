@@ -143,6 +143,24 @@ test('желание питомца: любой питомец в руки ис�
   await waitFor((s) => s.wish === null);
 });
 
+test('каталог: витрина 2 страницы, кубик перемешивает, «недавние» запоминают', async () => {
+  const st = await room((s) => {
+    s.cat = 'food'; s.mode = 'curated'; s.buildView();
+    const curated = s.view.map((r) => r.subject);
+    s.mode = 'shuffle'; s.buildView();
+    const shuffled = s.view.map((r) => r.subject);
+    s.tossIn(s.findRec('banana'));
+    s.cat = 'recent'; s.buildView();
+    return { curated, shuffled, recent: s.view.map((r) => r.subject), perPage: s.perPage };
+  });
+  assert.equal(st.curated.length, 24);
+  assert.equal(st.curated[0], 'strawberry');
+  assert.equal(st.shuffled.length, 24);
+  assert.ok(!st.shuffled.includes('strawberry'), 'в случайной подборке нет витринных');
+  assert.equal(st.recent[0], 'banana');
+  assert.ok(st.perPage >= 10);
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });
