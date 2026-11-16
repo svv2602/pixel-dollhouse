@@ -112,6 +112,37 @@ test('переход на кухню и сохранение комнаты по
   await waitFor((s) => s.objs.length > 10 && s.cameras.main.scrollX > 0);
 });
 
+test('желание: хочет кекс — дали кекс — желание исполнено и танец', async () => {
+  await room((s) => s.goRoom(0));
+  await waitFor((s) => s.cameras.main.scrollX < 1);
+  await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    if (c.slots.hand) { s.removeObj(c.slots.hand); }
+    s.showWish(c, 'food', s.findRec('cupcake'));
+    s.feed(c, s.spawnItem(s.findRec('cupcake'), c.x, 80));
+  });
+  await waitFor((s) => s.wish === null);
+});
+
+test('сон: персонаж на кровати засыпает', async () => {
+  await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    const bed = s.objs.find((o) => o.rec?.subject === 'bed');
+    s.drop(c, { x: bed.x, y: bed.y - 8 });
+  });
+  await waitFor((s) => s.objs.find((o) => o.kind === 'char').sleeping === true);
+});
+
+test('желание питомца: любой питомец в руки исполняет желание', async () => {
+  await room((s) => {
+    const c = s.objs.filter((o) => o.kind === 'char')[1];
+    s.showWish(c, 'pet', s.findRec('kitten'));
+    const pup = s.spawnItem(s.findRec('puppy'), c.x, c.y - 10);
+    s.drop(pup, { x: c.x, y: c.y - 12 });
+  });
+  await waitFor((s) => s.wish === null);
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });

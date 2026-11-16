@@ -73,6 +73,11 @@ const FAVORITES = {
     'pair of maracas'],
   vehicle: ['toy car', 'toy train engine', 'toy sailboat', 'toy airplane', 'hot air balloon', 'bicycle', 'kick scooter', 'skateboard'],
 };
+// Желания персонажей (пузырёк с картинкой) — необязательные поводы для игры, без очков и таймеров
+const WISH_FOOD = ['cupcake', 'apple', 'strawberry', 'ice cream cone', 'chocolate chip cookie', 'banana', 'slice of pizza', 'glazed donut', 'watermelon slice'];
+const WISH_WEAR = ['crown', 'tiara', 'party hat', 'flower crown', 'bunny ear headband'];
+const WISH_PET = ['kitten', 'puppy', 'rabbit', 'hamster'];
+
 // Неаппетитное и странное для 6–7 лет — в ящике не показываем
 const HIDE = /apple core|banana peel|wrapper|century egg|cracked egg|sea cucumber|chamber pot|toilet|plunger|jar of beetles|mystery stew|old boot|trash/;
 
@@ -85,6 +90,8 @@ const RX = {
   container: /\b(chest|drawers|wardrobe|refrigerator|fridge|cabinet|basket|crate|dresser|lunchbox|backpack|purse|handbag|nightstand|bookshelf|oven|cookie jar)\b/,
   notPet: /plush|stuffed|figurine|statue|bath|feeder|nest|coop|hutch|wheel|collar|leash|bed|carrier|rocking|hobby|float|carriage|saddle|harness|horn|jar of/,
   dressUp: /\b(wardrobe|mirror)\b/,
+  // на чём можно спать
+  bedLike: /\b(bed|sofa|crib|cradle|hammock|couch)\b/,
   // водные и медленные животные не бегают по полу
   noWalk: /fish|whale|jellyfish|octopus|dolphin|seahorse|starfish|shark|snail|turtle|seal/,
   // украшения на волосы — подгоняются по размеру головы (иконки датасета для них слишком крупные)
@@ -218,10 +225,16 @@ class Room extends Phaser.Scene {
     // питомцы оживают: прыгают по полу и находят еду
     this.time.addEvent({ delay: 3500, loop: true, callback: () => this.petTick() });
 
+    // жизнь персонажей: желания, сон, танцы под музыку
+    this.wish = null;
+    this.time.addEvent({ delay: 4000, loop: true, callback: () => this.wishTick() });
+    this.time.addEvent({ delay: 1500, loop: true, callback: () => this.sleepTick() });
+    this.time.addEvent({ delay: 6000, loop: true, callback: () => this.danceTick() });
+
     // моргание
     this.time.addEvent({
       delay: 1800, loop: true, callback: () => {
-        const chars = this.objs.filter((o) => o.kind === 'char' && !o.busy && !o.dragging);
+        const chars = this.objs.filter((o) => o.kind === 'char' && !o.busy && !o.dragging && !o.sleeping);
         if (!chars.length) return;
         const c = pick(chars);
         c.setTexture(c.key + '_blink');
@@ -243,7 +256,30 @@ class Room extends Phaser.Scene {
     pixelMap(g, ['..X..', '..X..', 'XXXXX', '..X..', '..X..'], 0, 0, 0xffffff);
     g.generateTexture('spark', 5, 5).clear();
     pixelMap(g, ['..XXX', '..X.X', '..X..', '..X..', 'XXX..', 'XXX..', '.X...'], 0, 0, 0xffffff);
-    g.generateTexture('note', 5, 7).destroy();
+    g.generateTexture('note', 5, 7).clear();
+    pixelMap(g, ['XXXXX', '...X.', '..X..', '.X...', 'XXXXX'], 0, 0, 0xffffff);
+    g.generateTexture('zzz', 5, 5).clear();
+    // иконки желаний «музыка» и «спать» (12×12)
+    pixelMap(g, ['....XXXXXXX', '....XXXXXXX', '....X.....X', '....X.....X', '....X.....X', '....X.....X',
+      '..XXX...XXX', '.XXXX..XXXX', '.XXXX..XXXX', '..XX....XX.'], 0, 1, 0x8a52cc);
+    g.generateTexture('wish_music', 12, 12).clear();
+    pixelMap(g, ['...XXXX.....', '..XXX.......', '.XXX........', '.XXX........', 'XXX.........', 'XXX.........',
+      'XXX.........', '.XXX......X.', '.XXXX....XX.', '..XXXXXXXX..', '....XXXX....'], 0, 1, 0xf2c94c);
+    pixelMap(g, ['XXX', '..X', '.X.', 'XXX'], 8, 1, 0x5a7fd9);
+    g.generateTexture('wish_sleep', 12, 12).destroy();
+    // облачко-мысль 26×22 с «хвостиком» из кружков
+    const bc = document.createElement('canvas');
+    bc.width = 28; bc.height = 24;
+    const bg = bc.getContext('2d', { willReadFrequently: true });
+    bg.fillStyle = '#ffffff';
+    for (let y = 0; y < 24; y++) for (let x = 0; x < 28; x++) {
+      const inMain = ((x - 15) / 12) ** 2 + ((y - 9.5) / 8.6) ** 2 <= 1;
+      const inT1 = (x - 6) ** 2 + (y - 19) ** 2 <= 4.5;
+      const inT2 = (x - 2.5) ** 2 + (y - 22) ** 2 <= 1.6;
+      if (inMain || inT1 || inT2) bg.fillRect(x, y, 1, 1);
+    }
+    outline(bc);
+    this.textures.addCanvas('bubble', bc);
     // мягкое свечение лампы — единственный «не пиксельный» элемент (свет и должен быть мягким)
     const c = document.createElement('canvas');
     c.width = c.height = 64;
@@ -343,6 +379,10 @@ class Room extends Phaser.Scene {
   }
 
   makeParticles() {
+    this.fxZ = this.add.particles(0, 0, 'zzz', {
+      lifespan: 1600, speedX: { min: 4, max: 10 }, speedY: { min: -14, max: -9 },
+      tint: [0x8fa8f2, 0xffffff], alpha: { start: 1, end: 0 }, emitting: false,
+    }).setDepth(10005);
     this.fxCrumbs = this.add.particles(0, 0, 'px', {
       lifespan: 600, speed: { min: 15, max: 45 }, angle: { min: 200, max: 340 }, gravityY: 180, emitting: false,
     }).setDepth(16000);
@@ -685,7 +725,7 @@ class Room extends Phaser.Scene {
     if (o.walkTween) { o.walkTween.stop(); o.walkTween = null; o.walking = false; }
     this.tweens.killTweensOf(o);
     o.setScale(o.kind === 'char' ? o.mul : 1); // масштаб только целый — без «поднятия» ×1.15
-    if (o.kind === 'char') o.setTexture(o.key + '_open');
+    if (o.kind === 'char') { o.sleeping = false; o.setTexture(o.key + '_open'); }
   }
 
   drop(o, q) {
@@ -694,6 +734,18 @@ class Room extends Phaser.Scene {
     for (const c of this.objs) if (c.kind === 'char' && !c.busy) c.setTexture(c.key);
 
     if (o.kind === 'char' && q.y <= L.ROOM_H) {
+      const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && RX.bedLike.test(x.rec.subject));
+      if (bed) {
+        // сесть/лечь на кровать: персонаж на матрасе, через пару секунд засыпает
+        o.x = Math.round(Phaser.Math.Clamp(q.x, bed.x - bed.displayWidth / 2 + 8, bed.x + bed.displayWidth / 2 - 8));
+        o.y = Math.round(bed.y - bed.displayHeight * 0.3);
+        o.restOn = bed;
+        o.awakeUntil = this.time.now + 1500;
+        sfx.drop();
+        this.checkWish(o, 'sleep');
+        this.save();
+        return;
+      }
       const wr = this.objAt(q.x, q.y, (x) => x.kind === 'item' && RX.dressUp.test(x.rec.subject));
       if (wr) {
         o.x = Math.round(Phaser.Math.Clamp(wr.x + wr.displayWidth / 2 + 10, 12, L.WORLD - 12));
@@ -735,6 +787,9 @@ class Room extends Phaser.Scene {
     }
     sfx.drop();
     this.settle(o);
+    if (o.kind === 'item' && o.beh.pet) {
+      for (const c of this.objs) if (c.kind === 'char' && Math.abs(c.x - o.x) < 28 && Math.abs(c.y - o.y) < 24) this.checkWish(c, 'pet', o.rec);
+    }
     this.save();
   }
 
@@ -773,6 +828,18 @@ class Room extends Phaser.Scene {
       const held = o.slots.hand;
       if (held && !o.busy && held.beh.potion) { this.drinkPotion(o, held); return; }
       if (held && !o.busy && held.beh.edible) { this.feed(o, held); return; }
+      if (o.sleeping) { o.sleeping = false; o.awakeUntil = this.time.now + 8000; }
+      // смех заразителен: соседка рядом тоже смеётся
+      for (const c of this.objs) {
+        if (c === o || c.kind !== 'char' || c.busy || c.sleeping || Math.abs(c.x - o.x) > 45 || Math.abs(c.y - o.y) > 30) continue;
+        this.time.delayedCall(220, () => {
+          if (c.busy) return;
+          sfx.giggle();
+          c.setTexture(c.key + '_blink');
+          this.tweens.add({ targets: c, y: c.y - 6, duration: 150, yoyo: true, onComplete: () => { if (!c.busy) c.setTexture(c.key); } });
+          this.fxHearts.explode(1, c.x, c.y - c.displayHeight);
+        });
+      }
       sfx.giggle();
       o.busy = true;
       o.setTexture(o.key + '_blink');
@@ -807,7 +874,11 @@ class Room extends Phaser.Scene {
       }
     }
     if (b.light) { o.lit = !o.lit; sfx.click(); this.save(); }
-    else if (b.music) { sfx.note(); this.fxNotes.explode(2, o.x, o.y - o.displayHeight); }
+    else if (b.music) {
+      sfx.note();
+      this.fxNotes.explode(2, o.x, o.y - o.displayHeight);
+      for (const c of this.objs) if (c.kind === 'char' && Math.floor(c.x / L.W) === Math.floor(o.x / L.W)) this.checkWish(c, 'music');
+    }
     else if (b.pet) { sfx.squeak(); this.fxHearts.explode(1, o.x, o.y - o.displayHeight); }
     else sfx.boing();
     // подпрыгивание вместо дробного «сплющивания» — пиксели остаются ровными
@@ -891,6 +962,8 @@ class Room extends Phaser.Scene {
 
   /** Укус (или съесть целиком, если укус последний). Недоеденное персонаж держит в руке. */
   feed(ch, o) {
+    this.checkWish(ch, 'food', o.rec);
+    ch.sleeping = false;
     ch.busy = true;
     const last = (o.bites || 0) + 1 >= this.biteCount(o);
     if (o.owner) { o.owner.slots[o.slot] = null; o.owner = null; o.slot = null; }
@@ -918,6 +991,12 @@ class Room extends Phaser.Scene {
             if (++i === steps) {
               ch.setTexture(ch.key + '_blink');
               if (last) { sfx.yum(); this.fxHearts.explode(3, m.x, m.y - 10); } else this.fxHearts.explode(1, m.x, m.y - 10);
+              if (o.rec.subject === this.favFood(ch)) {
+                // любимая еда: больше сердечек и радостный прыжок
+                sfx.yum();
+                this.fxHearts.explode(5, m.x, m.y - 12);
+                this.tweens.add({ targets: ch, y: ch.y - 6, duration: 140, yoyo: true, repeat: 1 });
+              }
               if (!last && o.active) { o.eating = false; this.wear(ch, 'hand', o, true); }
               this.time.delayedCall(400, () => { ch.busy = false; ch.setTexture(ch.key); this.save(); });
             }
@@ -925,6 +1004,109 @@ class Room extends Phaser.Scene {
         });
       },
     });
+  }
+
+  // ---------------------------------------------------------------- жизнь персонажей
+  /** Любимая еда — постоянная для каждого персонажа (по его номеру). */
+  favFood(ch) { return WISH_FOOD[(ch.uid * 7) % WISH_FOOD.length]; }
+
+  visible(o) {
+    const cx = this.cameras.main.scrollX;
+    return o.x > cx + 8 && o.x < cx + L.W - 8;
+  }
+
+  wishTick() {
+    if (this.dress || this.albumUi) return;
+    if (this.wish) {
+      if (this.time.now > this.wish.until || !this.wish.ch.active) this.clearWish(false);
+      return;
+    }
+    if (Math.random() > 0.22) return;
+    const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && this.visible(c));
+    if (!chars.length) return;
+    const ch = pick(chars);
+    const r = Math.random();
+    const kinds = this.night ? ['sleep', 'sleep', 'food', 'music'] : ['food', 'food', 'wear', 'pet', 'music', 'food', 'wear', 'sleep'];
+    const type = kinds[Math.floor(r * kinds.length)];
+    let rec = null;
+    if (type === 'food') rec = this.findRec(Math.random() < 0.5 ? this.favFood(ch) : pick(WISH_FOOD));
+    if (type === 'wear') rec = this.findRec(pick(WISH_WEAR));
+    if (type === 'pet') rec = this.findRec(pick(WISH_PET));
+    if ((type === 'food' || type === 'wear' || type === 'pet') && !rec) return;
+    this.showWish(ch, type, rec);
+  }
+
+  showWish(ch, type, rec) {
+    if (this.wish) this.clearWish(false);
+    const bubble = this.add.image(ch.x, ch.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setScale(0);
+    const key = rec ? (rec.tex ? `${rec.tex}_icon` : rec.cat) : type === 'music' ? 'wish_music' : 'wish_sleep';
+    const icon = (rec && !rec.tex ? this.add.image(0, 0, key, rec.frame) : this.add.image(0, 0, key)).setDepth(10004).setAlpha(0);
+    this.wish = { ch, type, rec, bubble, icon, until: this.time.now + 30000 };
+    sfx.squeak();
+    this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut', onComplete: () => bubble.setScale(1) });
+    this.tweens.add({ targets: icon, alpha: 1, duration: 200, delay: 150 });
+  }
+
+  clearWish(happy) {
+    const w = this.wish;
+    if (!w) return;
+    this.wish = null;
+    if (happy) {
+      this.fxSparks.explode(12, w.bubble.x + 8, w.bubble.y - 12);
+      w.bubble.destroy();
+      w.icon.destroy();
+      return;
+    }
+    this.tweens.add({ targets: [w.bubble, w.icon], alpha: 0, duration: 600, onComplete: () => { w.bubble.destroy(); w.icon.destroy(); } });
+  }
+
+  /** Проверить, исполнилось ли желание персонажа (питомец — любой, остальное — именно то, что на картинке). */
+  checkWish(ch, type, rec) {
+    const w = this.wish;
+    if (!w || w.ch !== ch || w.type !== type) return false;
+    if ((type === 'food' || type === 'wear') && rec?.subject !== w.rec.subject) return false;
+    if (type === 'pet' && !(rec && behaviorOf(rec).pet)) return false;
+    this.clearWish(true);
+    sfx.fanfare();
+    this.fxHearts.explode(6, ch.x, ch.y - ch.displayHeight);
+    this.celebrate(ch);
+    return true;
+  }
+
+  /** Радость: танец с поворотами (ждёт, пока персонаж доест/допьёт). */
+  celebrate(ch, hops = 4) {
+    if (!ch.active) return;
+    if (ch.busy) { this.time.delayedCall(250, () => this.celebrate(ch, hops)); return; }
+    ch.busy = true;
+    ch.sleeping = false;
+    ch.setTexture(ch.key + '_blink');
+    let n = 0;
+    const y0 = ch.y;
+    this.tweens.add({
+      targets: ch, y: y0 - 6, duration: 150, yoyo: true, repeat: hops - 1, ease: 'Quad.easeOut',
+      onYoyo: () => { ch.setFlipX(!ch.flipX); if (n++ % 2 === 0) sfx.giggle(); },
+      onComplete: () => { ch.y = y0; ch.setFlipX(false); ch.busy = false; ch.setTexture(ch.key); },
+    });
+  }
+
+  sleepTick() {
+    for (const c of this.objs) {
+      if (c.kind !== 'char' || c.dragging) continue;
+      const onBed = c.restOn && RX.bedLike.test(c.restOn.rec?.subject || '');
+      const should = onBed && !c.busy && this.time.now > (c.awakeUntil || 0);
+      if (should && !c.sleeping) { c.sleeping = true; c.setTexture(c.key + '_blink'); }
+      if (!should && c.sleeping && !c.busy) { c.sleeping = false; c.setTexture(c.key); }
+      if (c.sleeping) {
+        c.setTexture(c.key + '_blink');
+        this.fxZ.explode(1, c.x + 6, c.y - c.displayHeight + 4);
+      }
+    }
+  }
+
+  danceTick() {
+    if (!musicPlaying() || this.dress || this.albumUi || Math.random() < 0.4) return;
+    const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && this.visible(c));
+    if (chars.length) this.celebrate(pick(chars), 2);
   }
 
   petTick() {
@@ -1052,6 +1234,12 @@ class Room extends Phaser.Scene {
     ch.slots[slot] = o;
     o.owner = ch; o.slot = slot;
     if (quiet) return;
+    if (slot === 'head') this.checkWish(ch, 'wear', o.rec);
+    if (slot === 'hand' && (o.beh.pet || o.rec.cat === 'toy')) {
+      // подарок: игрушка или питомец в руки — радость
+      this.checkWish(ch, 'pet', o.rec);
+      this.time.delayedCall(150, () => { sfx.giggle(); this.fxHearts.explode(2, ch.x, ch.y - ch.displayHeight); });
+    }
     sfx.wear();
     this.fxSparks.explode(6, ch.x, ch.y - ch.displayHeight * (slot === 'hand' ? 0.4 : 0.85));
     this.tweens.add({ targets: ch, y: ch.y - 3, duration: 120, yoyo: true });
@@ -1370,6 +1558,14 @@ class Room extends Phaser.Scene {
   // ---------------------------------------------------------------- frame update
   update(time) {
     const cam = this.cameras.main;
+    if (this.wish) {
+      const { ch, bubble, icon } = this.wish;
+      const s = ch.scaleY;
+      bubble.x = Math.round(ch.x + 3 * s);
+      bubble.y = Math.round(ch.y - ch.displayHeight + 3 * s);
+      icon.x = Math.round(bubble.x - 6 + 15);
+      icon.y = Math.round(bubble.y - 14); // центр облачка (у иконки центр по середине)
+    }
     if (this.nav) {
       this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && !this.dress && !this.albumUi));
       this.nav[1].forEach((o) => o.setVisible(cam.scrollX < L.WORLD - L.W - 2 && !this.dress && !this.albumUi));
