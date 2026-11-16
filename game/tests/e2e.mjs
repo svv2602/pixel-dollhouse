@@ -221,8 +221,10 @@ test('сад: посадить клубнику → полить ×3 → соб�
     await room((s) => s.waterPlot(s.testBed, 0));
     await waitFor((s, st) => s.testBed.plots[0]?.stage === st, stage);
   }
-  await room((s) => s.plotTap(s.testBed, s.testBed.x - 13));
-  await waitFor((s, n) => s.objs.filter((o) => o.rec?.subject === 'strawberry').length === n + 2 && s.testBed.plots[0] === null, before);
+  // считаем сразу после сбора: кролик в саду может успеть съесть урожай с травы
+  const after = await room((s) => { s.plotTap(s.testBed, s.testBed.x - 13); return s.objs.filter((o) => o.rec?.subject === 'strawberry').length; });
+  assert.equal(after, before + 2, 'двойной урожай');
+  assert.equal(await room((s) => s.testBed.plots[0]), null);
 });
 
 test('ванная: лужа пачкает, ванна отмывает, пена и фен', async () => {
@@ -287,6 +289,38 @@ test('сны: с мишкой снятся зверята, утром — сув
     const h = s.objs.find((o) => o.kind === 'char').slots.hand;
     return h && ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear'].includes(h.rec.subject) && h.rec.subject !== undefined;
   });
+});
+
+test('питомцы: бантик на голову, лежанка — сон, щётка — блеск', async () => {
+  const st = await room((s) => {
+    s.goRoom(0);
+    const pet = s.spawnItem(s.findRec('puppy'), 60, 85);
+    s.drop(s.spawnItem(s.findRec('crown'), 60, 40), { x: pet.x, y: pet.y - 8 });
+    const bedRec = s.byId.get('big_petbed');
+    const pb = s.spawnItem(bedRec, 90, 88);
+    s.drop(pet, { x: pb.x, y: pb.y - 4 });
+    const cat = s.spawnItem(s.findRec('kitten'), 40, 86);
+    s.brushPet(cat);
+    s.testPet = pet;
+    return { hat: pet.slots.pethat?.rec.subject, fitted: pet.slots.pethat?.fitted, onBed: pet.restOn === pb, shiny: cat.shinyUntil > s.time.now };
+  });
+  assert.equal(st.hat, 'crown');
+  assert.equal(st.onBed, true);
+  assert.equal(st.shiny, true);
+  await waitFor((s) => s.testPet.sleeping === true);
+});
+
+test('сцена: инструменты включают слои джема и выключаются', async () => {
+  const st = await room((s) => {
+    const band = s.objs.filter((o) => o.beh?.music).slice(0, 2);
+    band.forEach((o) => s.toggleJam(o));
+    const on = s.jam.size;
+    band.forEach((o) => s.toggleJam(o));
+    return { on, off: s.jam.size, hasStage: s.objs.some((o) => o.rec?.id === 'big_stage') };
+  });
+  assert.equal(st.on, 2);
+  assert.equal(st.off, 0);
+  assert.ok(st.hasStage, 'сцена в саду');
 });
 
 test('нет ошибок в консоли', () => {

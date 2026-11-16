@@ -46,6 +46,12 @@ export function makeBath(scene) {
     scene.textures.addCanvas(key, canvas);
     scene.textures.addCanvas(`${key}_icon`, canvas);
   };
+  add('petbrush', canvasFor(14, 12, (r) => {
+    r(0, 0, 10, 5, '#c98a52'); r(0, 0, 10, 1, '#e0a971'); r(0, 4, 10, 1, '#a8693c');   // колодка
+    for (let x = 1; x < 10; x += 2) r(x, 5, 1, 3, '#f6f7fb');                          // щетинки
+    r(9, 1, 5, 3, '#ff7ab8'); r(9, 1, 5, 1, '#ffb0d0');                                // ручка
+  }));
+  recs.push({ id: 'pet-brush', subject: 'pet brush', cat: 'animal', tags: [], tex: 'petbrush', brush: true, bbox: [0, 0, 15, 15], order: 0 });
   add('hairdryer', dryer());
   recs.push({ id: 'hair-dryer', subject: 'hair dryer', cat: 'toy', tags: ['toy'], tex: 'hairdryer', dryer: true, bbox: [0, 0, 15, 15], order: 10 });
   FOAMS.forEach((f, i) => {

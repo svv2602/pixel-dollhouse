@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { sfx, unlockAudio, setMusic, musicPlaying } from './sfx.js';
+import { sfx, unlockAudio, setMusic, musicPlaying, setJamLayer, stopJam, jamActive, onJamStep } from './sfx.js';
 import { makeCharTextures, ANCHOR, HAIR, DRESS, SKIN, HAIR_STYLE_KEYS, OUTFIT_KEYS } from './character.js';
 import { BIG_FURNITURE, makeFurnitureTextures, outline } from './furniture.js';
 import { Alchemy, recipeKey } from './alchemy.js';
@@ -98,6 +98,8 @@ const GROW = ['strawberry', 'apple', 'carrot', 'tomato', 'pumpkin', 'potato', 'b
   'cabbage', 'radish', 'pineapple', 'sunflower', 'tulip', 'rose', 'daisy flower', 'button mushroom'];
 const SEEDS = /seed packet|seed pouch|\bseeds?\b/;
 const PLOT_DX = [-13, 0, 13];
+// Любимые игрушки питомцев (у каждого своя — по номеру)
+const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
 // Темы снов: что персонаж держит в руке, засыпая, — о том и сон; утром — сувенир из сна
 const DREAM_THEMES = [
@@ -226,7 +228,8 @@ class Room extends Phaser.Scene {
     for (const r of party) this.byId.set(r.id, r);
     this.byCat = {
       furniture: Object.values(this.big), magic: potions.slice(),
-      food: party.filter((r) => r.cat === 'food'), toy: [...party.filter((r) => r.cat === 'toy'), ...bath],
+      food: party.filter((r) => r.cat === 'food'), toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy')],
+      animal: bath.filter((r) => r.cat === 'animal'),
     };
     for (const r of this.items) {
       if (HIDE.test(r.subject) || bigSubjects.has(r.subject)) continue;
@@ -256,6 +259,7 @@ class Room extends Phaser.Scene {
         return res;
       };
     }
+    stopJam(); // перестройка сцены (поворот, полный экран) — джем начинается заново
     this.objs = [];
     this.flags = {};
     this.uidSeq = 1;
@@ -280,6 +284,7 @@ class Room extends Phaser.Scene {
     this.ensureGarden();
     this.ensureBath();
     this.ensureParty();
+    this.ensureStage();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
@@ -553,6 +558,7 @@ class Room extends Phaser.Scene {
       contents: extra.contents || [], lit: extra.lit ?? true, owner: null, slot: null, restOn: null,
       plots: beh.gardenBed ? (extra.plots || [null, null, null]) : null,
       deco: beh.cake ? (extra.deco || {}) : null,
+      slots: beh.pet ? { pethat: null } : undefined,
     });
     this.uidSeq = Math.max(this.uidSeq, o.uid + 1);
     // накладки (слои торта, пятна, пена, свечение) исчезают вместе с предметом, как бы он ни был уничтожен
@@ -906,6 +912,145 @@ class Room extends Phaser.Scene {
     this.celebrate(ch, 3);
   }
 
+  // ---------------------------------------------------------------- уход за питомцами
+  favToy(p) { return PET_TOYS[(p.uid * 5) % PET_TOYS.length]; }
+
+  /** Надеть на питомца шапку/бантик/ушки — уменьшенной копией (по пикселям). */
+  petWear(pet, o) {
+    const old = pet.slots.pethat;
+    if (old) { old.owner = null; old.slot = null; old.x = pet.x + 14; this.settle(old); }
+    pet.slots.pethat = o;
+    o.owner = pet;
+    o.slot = 'pethat';
+    const key = this.fitTex(o.rec, 10, 8);
+    if (key) { o.setTexture(key); o.fitted = 'pethat'; }
+    sfx.wear(); sfx.squeak();
+    this.fxSparks.explode(6, pet.x, pet.y - pet.displayHeight);
+    this.tweens.add({ targets: pet, y: pet.y - 4, duration: 120, yoyo: true });
+  }
+
+  /** Расчёсывание: урчание, искорки, сердечки; шёрстка блестит какое-то время. */
+  brushPet(pet) {
+    const now = this.time.now;
+    if (now < (pet.brushT || 0)) return;
+    pet.brushT = now + 260;
+    pet.shinyUntil = now + 9000;
+    pet.strokes = (pet.strokes || 0) + 1;
+    sfx.purr();
+    this.fxSparks.explode(2, pet.x + rnd(-5, 5), pet.y - pet.displayHeight * 0.6);
+    if (pet.strokes % 4 === 0) {
+      this.fxHearts.explode(3, pet.x, pet.y - pet.displayHeight);
+      if (!pet.walking) this.tweens.add({ targets: pet, y: pet.y - 4, duration: 120, yoyo: true });
+    }
+  }
+
+  /** Поиграть с игрушкой: игрушка подпрыгивает, питомец скачет вокруг. */
+  playWith(p, t) {
+    if (!t.active || t.owner || t.dragging) return;
+    const fav = t.rec.subject === this.favToy(p);
+    this.tweens.add({ targets: t, y: t.y - 8, duration: 160, yoyo: true, repeat: fav ? 2 : 0, ease: 'Quad.easeOut' });
+    this.tweens.add({ targets: p, y: p.y - 5, duration: 130, yoyo: true, repeat: 2, onRepeat: () => p.setFlipX(!p.flipX) });
+    this.fxHearts.explode(fav ? 5 : 1, p.x, p.y - p.displayHeight);
+    sfx.squeak();
+    if (fav) this.time.delayedCall(300, () => sfx.squeak());
+  }
+
+  // ---------------------------------------------------------------- сцена и джем
+  /** Тап по инструменту: включить/выключить его партию в общем такте. */
+  toggleJam(o) {
+    this.jam ||= new Set();
+    const kind = this.instrumentKind(o);
+    if (this.jam.has(o)) {
+      this.jam.delete(o);
+      setJamLayer(kind, false);
+      sfx.instrument(kind, 0);
+      if (!this.jam.size) this.jamEnded();
+      return;
+    }
+    if (!this.jam.size) {
+      // колыбельная уступает место джему
+      this.lullabyWas = musicPlaying();
+      if (this.lullabyWas) { setMusic(false); this.drawMusicIcon(); }
+      onJamStep((kinds) => this.onJamBeat(kinds));
+    }
+    this.jam.add(o);
+    setJamLayer(kind, true);
+    this.fxNotes.explode(3, o.x, o.y - o.displayHeight);
+    this.tweens.add({ targets: o, y: o.y - 4, duration: 100, yoyo: true });
+    for (const c of this.objs) if (c.kind === 'char' && Math.floor(c.x / L.W) === Math.floor(o.x / L.W)) this.checkWish(c, 'music');
+  }
+
+  jamEnded() {
+    stopJam();
+    this.jam?.clear();
+    if (this.lullabyWas) { setMusic(true); this.drawMusicIcon(); this.lullabyWas = false; }
+    if (this.spots) { this.spots.forEach((sp) => sp.destroy()); this.spots = null; }
+  }
+
+  /** На каждый удар: играющие инструменты подпрыгивают, персонажи в комнате танцуют. */
+  onJamBeat(kinds) {
+    if (!this.jam) return;
+    for (const o of this.jam) {
+      if (!o.active || !this.objs.includes(o)) { this.jam.delete(o); continue; }
+      if (!kinds.includes(this.instrumentKind(o))) continue;
+      if (!o.dragging) { o.y += 0; this.tweens.add({ targets: o, y: o.y - 2, duration: 70, yoyo: true }); }
+      if (Math.random() < 0.35) this.fxNotes.explode(1, o.x, o.y - o.displayHeight);
+    }
+    if (!this.jam.size) { this.jamEnded(); return; }
+    this.jamBeat = (this.jamBeat || 0) + 1;
+    if (this.jamBeat % 6 === 0) {
+      const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && !c.inTub && this.visible(c));
+      if (chars.length) this.dance(pick(chars), pick(['hop', 'spin', 'sway']));
+    }
+  }
+
+  /** Танец в разных стилях. */
+  dance(ch, style) {
+    if (style === 'hop') { this.celebrate(ch, 2); return; }
+    ch.busy = true;
+    ch.setTexture(ch.key + '_blink');
+    const done = () => { ch.busy = false; ch.setFlipX(false); ch.setTexture(ch.key); };
+    if (style === 'spin') {
+      let n = 0;
+      this.time.addEvent({ delay: 110, repeat: 5, callback: () => { ch.setFlipX(!ch.flipX); if (++n === 6) done(); } });
+    } else {
+      const x0 = ch.x;
+      this.tweens.add({ targets: ch, x: x0 + 2, duration: 160, yoyo: true, repeat: 2, ease: 'Sine.easeInOut', onComplete: () => { ch.x = x0; done(); } });
+    }
+  }
+
+  /** Прожекторы над сценой, пока играет музыка. */
+  updateSpotlights(time) {
+    const stage = this.objs.find((o) => o.rec?.id === 'big_stage' && this.visible(o));
+    if (!stage || !jamActive()) {
+      if (this.spots && !jamActive()) { this.spots.forEach((sp) => sp.destroy()); this.spots = null; }
+      if (this.spots && !stage) this.spots.forEach((sp) => sp.setVisible(false));
+      return;
+    }
+    if (!this.spots) {
+      this.spots = [0xff7ab8, 0x5ac4f2, 0xffd84a].map((c) => this.add.image(0, 0, 'glow').setBlendMode(Phaser.BlendModes.ADD).setTint(c).setScale(0.65).setDepth(10002));
+    }
+    this.spots.forEach((sp, i) => {
+      sp.setVisible(true);
+      sp.x = stage.x + Math.sin(time / 500 + i * 2.1) * 22;
+      sp.y = stage.y - 26 + Math.cos(time / 700 + i) * 4;
+      sp.setAlpha(this.night ? 0.9 : 0.45);
+    });
+  }
+
+  /** Сцена с ксилофоном и гитарой один раз появляется в саду. */
+  ensureStage() {
+    if (this.flags.stage) return;
+    this.flags.stage = true;
+    const { W, FLOOR_TOP } = L;
+    const stage = this.spawnItem(this.big.stage, Math.round(2 * W + W * 0.8), FLOOR_TOP + 4);
+    for (const [sub, dx] of [['xylophone', -14], ['acoustic guitar', 12]]) {
+      const r = this.findRec(sub);
+      if (r) { const it = this.spawnItem(r, stage.x + dx, stage.y - 9); it.restOn = stage; }
+    }
+    this.save();
+  }
+
   // ---------------------------------------------------------------- ванная
   /** Ванная (4-я комната) и лужа грязи в саду — появляются и в старых сохранениях. */
   ensureBath() {
@@ -998,6 +1143,7 @@ class Room extends Phaser.Scene {
     const now = this.time.now;
     for (const o of this.objs) {
       if (o.beh?.tub && this.visible(o) && (o.foam || this.objs.some((x) => x.inTub === o && (x.kind === 'char' || x.beh?.pet)))) this.bubbles(o, 2);
+      if (o.shinyUntil > now && Math.random() < 0.6) this.fxSparks.explode(1, o.x + rnd(-6, 6), o.y - rnd(2, o.displayHeight));
       if (o.wetUntil > now && !o.inTub) {
         this.fxCrumbs.setParticleTint(0x9fdcff);
         this.fxCrumbs.explode(1, o.x + rnd(-4, 4), o.y - o.displayHeight * 0.6);
@@ -1040,6 +1186,7 @@ class Room extends Phaser.Scene {
 
   goRoom(idx) {
     const cam = this.cameras.main;
+    if (this.jam?.size && Phaser.Math.Clamp(idx, 0, L.ROOMS - 1) !== Math.round(this.cameras.main.scrollX / L.W)) this.jamEnded();
     this.targetRoom = Phaser.Math.Clamp(idx, 0, L.ROOMS - 1);
     const target = this.targetRoom * L.W;
     if (Math.abs(cam.scrollX - target) > 1) sfx.pick();
@@ -1254,6 +1401,11 @@ class Room extends Phaser.Scene {
     const o = pr.obj;
     o.x = Phaser.Math.Clamp(q.x + pr.offX, 4, L.WORLD - 4);
     o.y = Phaser.Math.Clamp(q.y + pr.offY, o.displayHeight * 0.6, L.H + 10);
+    // щётка над питомцем — расчёсывание
+    if (o.kind === 'item' && o.rec.id === 'pet-brush') {
+      const pet = this.objAt(q.x, q.y + 4, (x) => x !== o && x.beh?.pet);
+      if (pet) this.brushPet(pet);
+    }
     // лейка над грядкой — поливает лунку под носиком
     if (o.kind === 'item' && /watering can/.test(o.rec.subject)) {
       const bed = this.objs.find((x) => x.beh?.gardenBed && Math.abs(x.x - o.x) < 24 && o.y < x.y && o.y > x.y - 26);
@@ -1341,6 +1493,19 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char') o.setTexture(o.key);
     for (const c of this.objs) if (c.kind === 'char' && !c.busy) c.setTexture(c.key);
 
+    if (o.beh?.pet && q.y <= L.ROOM_H) {
+      const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x !== o && RX.bedLike.test(x.rec.subject));
+      if (bed) {
+        // питомец сворачивается на лежанке и засыпает
+        o.x = Math.round(Phaser.Math.Clamp(q.x, bed.x - bed.displayWidth / 2 + 6, bed.x + bed.displayWidth / 2 - 6));
+        o.y = Math.round(bed.y - bed.displayHeight * 0.35);
+        o.restOn = bed;
+        o.awakeUntil = this.time.now + 1500;
+        sfx.squeak();
+        this.save();
+        return;
+      }
+    }
     if ((o.kind === 'char' || o.beh?.pet) && q.y <= L.ROOM_H) {
       const tub = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.tub);
       if (tub) { this.bathe(o, tub, q.x); this.save(); return; }
@@ -1386,6 +1551,10 @@ class Room extends Phaser.Scene {
     if (o.kind === 'item' && (o.beh.icing || o.beh.sprinkles || o.beh.candles)) {
       const cake = this.objAt(q.x, q.y, (x) => x !== o && x.beh?.cake);
       if (cake) { this.decorate(cake, o); this.save(); return; }
+    }
+    if (o.kind === 'item' && (o.beh.head || o.beh.face)) {
+      const pet = this.objAt(q.x, q.y, (x) => x !== o && x.beh?.pet && x.slots);
+      if (pet) { this.petWear(pet, o); this.save(); return; }
     }
     if (o.kind === 'item' && o.beh.gift) {
       const ch = this.objAt(q.x, q.y, (x) => x.kind === 'char');
@@ -1552,12 +1721,14 @@ class Room extends Phaser.Scene {
       this.save();
     }
     else if (b.music) {
-      const room = Math.floor(o.x / L.W);
-      const band = this.objs.filter((x) => x.kind === 'item' && x.beh.music && !x.owner && Math.floor(x.x / L.W) === room);
-      if (band.length >= 2) this.playBand(band); else { sfx.instrument(this.instrumentKind(o), Math.floor(Math.random() * 8)); this.fxNotes.explode(2, o.x, o.y - o.displayHeight); }
+      this.toggleJam(o);
       for (const c of this.objs) if (c.kind === 'char' && Math.floor(c.x / L.W) === Math.floor(o.x / L.W)) this.checkWish(c, 'music');
     }
-    else if (b.pet) { sfx.squeak(); this.fxHearts.explode(1, o.x, o.y - o.displayHeight); }
+    else if (b.pet) {
+      if (o.sleeping) { o.sleeping = false; o.awakeUntil = this.time.now + 8000; }
+      sfx.squeak();
+      this.fxHearts.explode(1, o.x, o.y - o.displayHeight);
+    }
     else sfx.boing();
     // подпрыгивание вместо дробного «сплющивания» — пиксели остаются ровными
     this.tweens.add({ targets: o, y: o.y - (b.pet ? 5 : 3), duration: 110, yoyo: true, ease: 'Quad.easeOut' });
@@ -1792,6 +1963,12 @@ class Room extends Phaser.Scene {
   }
 
   sleepTick() {
+    for (const p of this.objs) {
+      if (!p.beh?.pet || p.dragging) continue;
+      const onBed = p.restOn && RX.bedLike.test(p.restOn.rec?.subject || '');
+      p.sleeping = !!onBed && this.time.now > (p.awakeUntil || 0);
+      if (p.sleeping) this.fxZ.explode(1, p.x + 4, p.y - p.displayHeight + 2);
+    }
     for (const c of this.objs) {
       if (c.kind !== 'char' || c.dragging) continue;
       const onBed = c.restOn && RX.bedLike.test(c.restOn.rec?.subject || '');
@@ -1916,6 +2093,26 @@ class Room extends Phaser.Scene {
         this.hopTo(p, f.x + (p.x < f.x ? -8 : 8), f.y, () => {
           if (f.active && !f.owner && !f.dragging && this.objs.includes(f)) { this.feedPet(p, f); this.save(); }
         });
+        return;
+      }
+    }
+    // игрушка на полу рядом -> подбежать и поиграть (любимая — больше радости)
+    const toys = this.objs.filter((t) => t.kind === 'item' && t.rec.cat === 'toy' && !t.owner && !t.dragging && !t.restOn && !t.inTub && t.y >= FLOOR_TOP);
+    for (const p of pets) {
+      const t = toys.find((it) => Math.abs(it.x - p.x) < 60 && Math.abs(it.y - p.y) < 30 && Math.floor(it.x / W) === Math.floor(p.x / W));
+      if (t && Math.random() < 0.45) {
+        this.hopTo(p, t.x + (p.x < t.x ? -9 : 9), t.y, () => this.playWith(p, t));
+        return;
+      }
+    }
+    // двое питомцев рядом иногда играют друг с другом
+    if (pets.length >= 2 && Math.random() < 0.3) {
+      const a = pick(pets);
+      const b = pets.find((x) => x !== a && Math.abs(x.x - a.x) < 50 && Math.abs(x.y - a.y) < 25);
+      if (b) {
+        const mx = Math.round((a.x + b.x) / 2);
+        this.hopTo(a, mx - 6, a.y, () => { a.setFlipX(false); this.fxHearts.explode(2, mx, a.y - 14); sfx.squeak(); });
+        this.hopTo(b, mx + 6, b.y, () => b.setFlipX(true));
         return;
       }
     }
@@ -2434,6 +2631,19 @@ class Room extends Phaser.Scene {
       }
       if (o.foamImg) { o.foamImg.x = o.x; o.foamImg.y = o.y - o.displayHeight + 6; o.foamImg.setDepth(o.depth + 0.1); }
     }
+    // наряды питомцев: уменьшенная копия на макушке, с учётом поворота
+    for (const pet of this.objs) {
+      const hat = pet.slots?.pethat;
+      if (!hat || pet.kind === 'char') continue;
+      if (!pet.active) continue;
+      if (!hat.fitted) { const key = this.fitTex(hat.rec, 10, 8); if (key) hat.setTexture(key); hat.fitted = 'pethat'; } // после загрузки
+      const [bx0, by0, bx1] = pet.rec.bbox || [0, 0, 15, 15];
+      const cx = ((bx0 + bx1) / 2 - 7.5) * (pet.flipX ? -1 : 1);
+      hat.x = Math.round(pet.x + cx);
+      hat.y = Math.round(pet.y - (16 - by0) + 4);
+      hat.setDepth(pet.depth + 0.2);
+    }
+    this.updateSpotlights(time);
     for (const bed of this.objs) {
       if (!bed.plots || !bed.plantImgs) continue;
       bed.plots.forEach((p, i) => {

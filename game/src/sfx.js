@@ -86,6 +86,7 @@ export const sfx = {
       t += d * beat;
     }
   },
+  purr: () => { tone(70, 0.35, { type: 'sawtooth', vol: 0.05 }); tone(75, 0.35, { type: 'triangle', vol: 0.06, delay: 0.05 }); },
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
 };
 
@@ -110,3 +111,49 @@ export function setMusic(on) {
   if (!on && musicTimer) { clearInterval(musicTimer); musicTimer = null; }
 }
 export const musicPlaying = () => !!musicTimer;
+
+// ---------------------------------------------------------------- джем-сессия (сцена)
+// Каждый включённый инструмент добавляет свой слой в общий такт (16 шагов по 1/8 при ~120 BPM).
+const JAM = {
+  drum: (st) => (st % 8 === 0 ? 'kick' : st % 8 === 4 ? 'snare' : st % 2 === 1 ? 'hat' : null),
+  bell: (st, bar) => [4, -1, 5, 4, 2, -1, 4, -1, 5, 7, 5, 4, 2, -1, 0, -1][st] + (bar % 2 ? 1 : 0),
+  string: (st, bar) => (st % 8 === 0 ? [0, 3, 4, 0][bar % 4] : null),
+  wind: (st, bar) => (st === 2 || st === 10 ? [7, 5, 6, 4][bar % 4] : null),
+};
+const jamLayers = new Map(); // kind -> количество включённых инструментов
+let jamTimer = null;
+let jamStep = 0;
+let jamListener = null;
+
+function jamTick() {
+  if (!ctx || ctx.state !== 'running' || document.hidden) return;
+  const st = jamStep % 16;
+  const bar = Math.floor(jamStep / 16);
+  const played = [];
+  for (const kind of jamLayers.keys()) {
+    const n = JAM[kind](st, bar);
+    if (n === null || n === undefined || n < 0) continue;
+    if (kind === 'drum') {
+      if (n === 'kick') { tone(110, 0.15, { slide: -60, vol: 0.22 }); noise(0.05, { freq: 200, vol: 0.15 }); }
+      else if (n === 'snare') noise(0.1, { freq: 2500, vol: 0.12 });
+      else noise(0.03, { freq: 7000, vol: 0.04 });
+    } else if (kind === 'bell') { tone(PENTA[n % 8], 0.3, { type: 'sine', vol: 0.09 }); tone(PENTA[n % 8] * 2, 0.15, { type: 'sine', vol: 0.03 }); }
+    else if (kind === 'string') { tone(SCALE[n] / 2, 0.9, { type: 'sawtooth', vol: 0.04 }); tone(SCALE[n] / 4, 0.9, { type: 'triangle', vol: 0.08 }); }
+    else if (kind === 'wind') tone(SCALE[n % 8], 0.9, { type: 'sine', vol: 0.06, slide: 4 });
+    played.push(kind);
+  }
+  if (played.length && jamListener) jamListener(played, st);
+  jamStep++;
+}
+
+/** Включить/выключить слой инструмента. Возвращает, играет ли джем вообще. */
+export function setJamLayer(kind, on) {
+  const n = (jamLayers.get(kind) || 0) + (on ? 1 : -1);
+  if (n > 0) jamLayers.set(kind, n); else jamLayers.delete(kind);
+  if (jamLayers.size && !jamTimer) { jamStep = 0; jamTimer = setInterval(jamTick, 250); }
+  if (!jamLayers.size && jamTimer) { clearInterval(jamTimer); jamTimer = null; }
+  return jamLayers.size > 0;
+}
+export function stopJam() { jamLayers.clear(); if (jamTimer) { clearInterval(jamTimer); jamTimer = null; } }
+export const jamActive = () => jamLayers.size > 0;
+export function onJamStep(fn) { jamListener = fn; }

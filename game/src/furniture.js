@@ -253,6 +253,23 @@ const PIECES = {
     r(7, 2, 12, 2, '#8d6040'); r(9, 2, 4, 1, '#a87a55'); r(20, 4, 3, 1, '#a87a55');
   }],
 
+  // ------------------------------------------------------------ лежанка для питомца 24×10
+  petbed: [24, 10, (r) => {
+    r(0, 3, 24, 7, '#b47cf2'); r(0, 3, 24, 1, '#e2ccff'); r(0, 9, 24, 1, '#8a52cc');   // бортик
+    r(3, 1, 18, 4, '#b47cf2'); r(3, 1, 18, 1, '#e2ccff');
+    r(4, 4, 16, 3, '#ffd0e4'); r(4, 4, 16, 1, '#ffffff');                           // подушка
+    r(8, 5, 1, 1, '#ff9ac8'); r(14, 6, 1, 1, '#ff9ac8'); r(11, 5, 1, 1, '#ff9ac8');
+  }],
+
+  // ------------------------------------------------------------ музыкальная сцена 56×12
+  stage: [56, 12, (r) => {
+    r(0, 0, 56, 3, '#a8714d'); r(0, 0, 56, 1, '#c98a52');                           // настил
+    for (let x = 6; x < 56; x += 10) r(x, 1, 1, 2, '#8d5a3b');
+    r(0, 3, 56, 9, '#6e2a4a'); r(0, 3, 56, 1, '#8a3a60'); r(0, 11, 56, 1, '#4a1c32'); // занавес-юбка
+    const bulbs = ['#ff7ab8', '#ffd84a', '#5ac4f2', '#7ad9b5', '#b47cf2'];
+    for (let i = 0; i < 9; i++) r(3 + i * 6, 6, 2, 2, bulbs[i % bulbs.length]);    // лампочки
+  }],
+
   // ------------------------------------------------------------ ковёр 50×11
   rug: [50, 11, (r) => {
     const ell = (k, col) => {
@@ -285,6 +302,8 @@ export const BIG_FURNITURE = [
   { key: 'tub', subject: 'clawfoot bathtub', icon: 'clawfoot bathtub' },
   { key: 'sink', subject: 'pedestal sink', icon: 'pedestal sink' },
   { key: 'puddle', subject: 'mud puddle' },
+  { key: 'petbed', subject: 'cozy pet bed', icon: 'pet bed' },
+  { key: 'stage', subject: 'music stage' },
   { key: 'tree', subject: 'apple tree', icon: 'apple tree' },
   { key: 'album', subject: 'discovery album' },
 ];
