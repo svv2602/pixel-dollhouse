@@ -4,6 +4,7 @@ import { makeCharTextures, ANCHOR, HAIR, DRESS, SKIN, HAIR_STYLE_KEYS, OUTFIT_KE
 import { BIG_FURNITURE, makeFurnitureTextures, outline } from './furniture.js';
 import { Alchemy, recipeKey } from './alchemy.js';
 import { makePotions } from './potions.js';
+import { makeBath } from './bath.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -30,7 +31,7 @@ function computeLayout() {
   const wh = Math.min(26, L.FLOOR_TOP - 22);
   L.WINDOW = { x: Math.round(L.W * 0.66), y: Math.max(5, Math.round((L.FLOOR_TOP - 16 - wh) / 2)), w: 30, h: wh };
   // мир — две комнаты по ширине экрана: спальня [0, W) и алхимическая кухня [W, 2W)
-  L.ROOMS = 3; // спальня, алхимическая кухня, сад
+  L.ROOMS = 4; // спальня, алхимическая кухня, сад, ванная
   L.WORLD = L.W * L.ROOMS;
   L.WINDOWS = [L.WINDOW, { ...L.WINDOW, x: L.W + L.WINDOW.x }];
   L.SUN = { x: 2 * L.W + L.W - 26, y: 5, w: 14, h: 14 }; // солнце/луна в саду: тап меняет день и ночь
@@ -142,7 +143,12 @@ function behaviorOf(rec) {
     pet: rec.cat === 'animal' && !RX.notPet.test(s),
     furniture: rec.cat === 'furniture',
     wall: RX.wall.test(s),
-    flat: /\b(rug|carpet|mat)\b/.test(s),
+    flat: /\b(rug|carpet|mat|puddle)\b/.test(s),
+    tub: s === 'clawfoot bathtub' && !!rec.tex,
+    puddle: s === 'mud puddle',
+    paint: /paint (can|bucket|tube|palette)|jar of paint|watercolor paint set/.test(s),
+    foam: rec.foam || 0,
+    dryer: !!rec.dryer,
     gardenBed: s === 'veggie patch',
     appleTree: s === 'apple tree' && !!rec.tex,
     shelf: rec.cat === 'furniture' && RX.shelf.test(s),
@@ -203,7 +209,9 @@ class Room extends Phaser.Scene {
     // цветные зелья (рисуются в коде): у каждого цвета свой постоянный эффект
     const potions = makePotions(this);
     for (const r of potions) this.byId.set(r.id, r);
-    this.byCat = { furniture: Object.values(this.big), magic: potions.slice() };
+    const bath = makeBath(this); // фен и пена для ванны — во вкладке игрушек
+    for (const r of bath) this.byId.set(r.id, r);
+    this.byCat = { furniture: Object.values(this.big), magic: potions.slice(), toy: bath.slice() };
     for (const r of this.items) {
       if (HIDE.test(r.subject) || bigSubjects.has(r.subject)) continue;
       (this.byCat[r.cat] ||= []).push(r);
@@ -253,6 +261,7 @@ class Room extends Phaser.Scene {
     if (!this.loadState()) this.defaultRoom();
     this.ensureKitchen();
     this.ensureGarden();
+    this.ensureBath();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
@@ -275,6 +284,7 @@ class Room extends Phaser.Scene {
     this.time.addEvent({ delay: 1500, loop: true, callback: () => this.sleepTick() });
     this.time.addEvent({ delay: 6000, loop: true, callback: () => this.danceTick() });
     this.time.addEvent({ delay: 2600, loop: true, callback: () => this.potIdle() });
+    this.time.addEvent({ delay: 600, loop: true, callback: () => this.bathTick() });
 
     // моргание
     this.time.addEvent({
@@ -388,6 +398,20 @@ class Room extends Phaser.Scene {
     // проём между комнатами
     g.fillStyle(0xc9a3b9).fillRect(W - 2, 0, 4, FLOOR_TOP - 2);
     g.fillStyle(0xa77f97).fillRect(W + 1, 0, 1, FLOOR_TOP - 2);
+    // ===== ванная [3W, 4W): голубая плитка, пол в крупную клетку
+    const bx = 3 * W;
+    g.fillStyle(0xdff6fb).fillRect(bx, 0, W, FLOOR_TOP);
+    g.fillStyle(0xc2e6f0);
+    for (let y = 0; y < FLOOR_TOP; y += 8) g.fillRect(bx, y, W, 1);
+    for (let x = bx; x < bx + W; x += 8) g.fillRect(x, 0, 1, FLOOR_TOP);
+    g.fillStyle(0xb7e0ec).fillRect(bx, FLOOR_TOP - 16, W, 14);
+    g.fillStyle(0x9fd2e2);
+    for (let x = bx; x < bx + W; x += 8) g.fillRect(x, FLOOR_TOP - 16, 1, 14);
+    g.fillStyle(0x7fbfd2).fillRect(bx, FLOOR_TOP - 17, W, 1).fillRect(bx, FLOOR_TOP - 2, W, 2);
+    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 8, r++) {
+      for (let x = bx, c = r % 2; x < bx + W; x += 8, c ^= 1) g.fillStyle(c ? 0xffffff : 0xd6eef6).fillRect(x, y, 8, 8);
+    }
+    g.fillStyle(0xb0d8e4).fillRect(bx - 2, 0, 4, FLOOR_TOP);
     // ===== сад [2W, 3W): трава (небо, холмы и забор — на своих слоях)
     const gx = 2 * W;
     g.fillStyle(0x8fd16a).fillRect(gx, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
@@ -542,6 +566,8 @@ class Room extends Phaser.Scene {
     if (o.owner) o.owner.slots[o.slot] = null;
     o.glow?.destroy();
     o.plantImgs?.forEach((x) => x?.destroy());
+    o.stainImg?.destroy();
+    o.foamImg?.destroy();
     o.dropImgs?.forEach((x) => x?.destroy());
     o.destroy();
   }
@@ -766,6 +792,118 @@ class Room extends Phaser.Scene {
     const ty = Math.round(Phaser.Math.Clamp(tree.y + rnd(2, 14), L.FLOOR_TOP + 4, L.ROOM_H - 2));
     sfx.pick();
     this.tweens.add({ targets: o, y: ty, duration: 520, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } });
+  }
+
+  // ---------------------------------------------------------------- ванная
+  /** Ванная (4-я комната) и лужа грязи в саду — появляются и в старых сохранениях. */
+  ensureBath() {
+    const { W, FLOOR_TOP, ROOM_H } = L;
+    if (!this.objs.some((o) => o.beh?.puddle)) this.spawnItem(this.big.puddle, Math.round(2 * W + W * 0.22), FLOOR_TOP + 32);
+    if (this.objs.some((o) => o.x >= 3 * W)) return;
+    const x0 = 3 * W;
+    const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
+    const tub = big('tub', 0.52, FLOOR_TOP + 20);
+    const sink = big('sink', 0.17, FLOOR_TOP + 12);
+    const mirror = this.findRec('oval mirror');
+    if (mirror) this.spawnItem(mirror, Math.round(x0 + W * 0.17), FLOOR_TOP - 24);
+    this.spawnItem(this.byId.get('hair-dryer'), Math.round(sink.x + 18), FLOOR_TOP + 14); // фен — на полу у раковины
+    const shelf = big('shelf', 0.82, FLOOR_TOP - 28);
+    ['pink', 'blue', 'green'].forEach((c, i) => {
+      const b = this.spawnItem(this.byId.get(`foam-${c}`), Math.round(shelf.x - 12 + i * 12), shelf.y - 4);
+      b.restOn = shelf;
+    });
+    const duck = this.findRec('rubber duck');
+    if (duck) { const d = this.spawnItem(duck, tub.x, tub.y); d.inTub = tub; d.tubDx = 10; }
+    const towelRec = this.findRec('laundry basket');
+    if (towelRec) this.spawnItem(towelRec, Math.round(x0 + W * 0.85), ROOM_H - 4);
+    this.save();
+  }
+
+  /** Пятна грязи/краски поверх персонажа или питомца (тонированная накладка, смывается в ванне). */
+  stain(o, color, quiet = false) {
+    o.stain = color;
+    if (!o.stainImg) o.stainImg = this.add.image(o.x, o.y, o.kind === 'char' ? 'stain_char' : 'stain_pet').setOrigin(0.5, 1);
+    o.stainImg.setTint(color);
+    if (quiet) return;
+    this.tweens.add({ targets: o, y: o.y - 3, duration: 100, yoyo: true });
+    // персонаж просит искупаться
+    if (o.kind === 'char') this.time.delayedCall(1500, () => { if (o.stain && !this.wish && !o.inTub) this.showWish(o, 'bath'); });
+  }
+
+  clean(o) {
+    o.stain = null;
+    o.stainImg?.destroy();
+    o.stainImg = null;
+    if (o.kind === 'char') {
+      // вода смывает и волшебство: радугу, заморозку, розовые волосы
+      o.rainbow = 0; o.ice = 0; o.clearTint();
+      if (o.look.prevHair && o.look.hair === HAIR[6]) {
+        o.look = { ...o.look, hair: o.look.prevHair, prevHair: undefined };
+        makeCharTextures(this, o.key, o.look);
+        o.setTexture(o.key);
+      }
+    }
+  }
+
+  /** Опустить в ванну: персонаж/питомец по пояс в воде, игрушки плавают. Через секунду — чистые. */
+  bathe(o, tub, x) {
+    o.inTub = tub;
+    o.tubDx = Math.round(Phaser.Math.Clamp(x - tub.x, -tub.displayWidth / 2 + 9, tub.displayWidth / 2 - 9));
+    o.restOn = null;
+    o.sleeping = false;
+    sfx.splash();
+    this.fxCrumbs.setParticleTint(0x9fdcff);
+    this.fxCrumbs.explode(12, tub.x + o.tubDx, tub.y - tub.displayHeight + 2);
+    if (o.kind !== 'char' && !o.beh.pet) { if (/duck/.test(o.rec.subject)) sfx.squeak(); return; }
+    this.bubbles(tub, 10);
+    if (o.kind === 'char') this.checkWish(o, 'bath');
+    this.time.delayedCall(1200, () => {
+      if (o.inTub !== tub) return;
+      const was = o.stain || o.rainbow || o.ice || o.look?.prevHair;
+      this.clean(o);
+      this.bubbles(tub, 14);
+      sfx.sparkle();
+      this.fxHearts.explode(was ? 4 : 2, o.x, o.y - o.displayHeight);
+      if (o.kind === 'char') sfx.giggle(); else sfx.squeak();
+      this.save();
+    });
+  }
+
+  renderFoam(tub) {
+    if (!tub.foamImg) tub.foamImg = this.add.image(tub.x, tub.y, 'foam').setOrigin(0.5, 1);
+    tub.foamImg.setTint(tub.foam);
+  }
+
+  bubbles(tub, n) {
+    const top = tub.y - tub.displayHeight + 2;
+    for (let i = 0; i < n; i++) {
+      const b = this.add.image(tub.x + rnd(-18, 18), top, 'bubble_p').setDepth(16000).setTint(tub.foam || 0xffffff);
+      this.tweens.add({ targets: b, y: top - rnd(10, 30), x: b.x + rnd(-6, 6), alpha: 0, duration: rnd(700, 1400), delay: i * 40, onComplete: () => b.destroy() });
+    }
+  }
+
+  bathTick() {
+    const now = this.time.now;
+    for (const o of this.objs) {
+      if (o.beh?.tub && this.visible(o) && (o.foam || this.objs.some((x) => x.inTub === o && (x.kind === 'char' || x.beh?.pet)))) this.bubbles(o, 2);
+      if (o.wetUntil > now && !o.inTub) {
+        this.fxCrumbs.setParticleTint(0x9fdcff);
+        this.fxCrumbs.explode(1, o.x + rnd(-4, 4), o.y - o.displayHeight * 0.6);
+      }
+    }
+  }
+
+  /** Фен: сушит и делает новую причёску. */
+  blowDry(ch) {
+    ch.wetUntil = 0;
+    const i = HAIR_STYLE_KEYS.indexOf(ch.look.hairStyle || 'bob');
+    ch.look = { ...ch.look, hairStyle: HAIR_STYLE_KEYS[(i + 1) % HAIR_STYLE_KEYS.length] };
+    makeCharTextures(this, ch.key, ch.look);
+    ch.setTexture(ch.key);
+    sfx.poof(); sfx.sparkle();
+    this.fxPoof.explode(12, ch.x - 8, ch.y - ch.displayHeight + 6);
+    this.fxSparks.explode(8, ch.x, ch.y - ch.displayHeight);
+    this.celebrate(ch, 2);
   }
 
   // ---------------------------------------------------------------- навигация между комнатами
@@ -1071,6 +1209,10 @@ class Room extends Phaser.Scene {
 
   startDrag(o) {
     sfx.pick();
+    if (o.inTub) {
+      if (o.kind === 'char' || o.beh?.pet) o.wetUntil = this.time.now + 7000; // с персонажа капает
+      o.inTub = null;
+    }
     if (o.owner) { o.owner.slots[o.slot] = null; o.owner = null; o.slot = null; }
     o.restOn = null;
     for (const x of this.objs) if (x.restOn === o) { x.restOn = null; this.settle(x); }
@@ -1087,6 +1229,20 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char') o.setTexture(o.key);
     for (const c of this.objs) if (c.kind === 'char' && !c.busy) c.setTexture(c.key);
 
+    if ((o.kind === 'char' || o.beh?.pet) && q.y <= L.ROOM_H) {
+      const tub = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.tub);
+      if (tub) { this.bathe(o, tub, q.x); this.save(); return; }
+      const mud = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.puddle);
+      if (mud) {
+        o.x = Math.round(q.x); o.y = Math.round(Math.max(q.y, mud.y - 2));
+        this.stain(o, 0x7a5232);
+        sfx.splash();
+        this.fxCrumbs.setParticleTint(0x7a5232);
+        this.fxCrumbs.explode(10, o.x, o.y - 2);
+        this.save();
+        return;
+      }
+    }
     if (o.kind === 'char' && q.y <= L.ROOM_H) {
       const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && RX.bedLike.test(x.rec.subject));
       if (bed) {
@@ -1114,6 +1270,35 @@ class Room extends Phaser.Scene {
       if (o.kind === 'char') { o.y = L.ROOM_H - 3; this.settle(o); } else this.removeObj(o);
       this.save();
       return;
+    }
+    if (o.kind === 'item' && (o.beh.paint || o.beh.dryer)) {
+      const t = this.objAt(q.x, q.y, (x) => x !== o && (x.kind === 'char' || (o.beh.paint && x.beh?.pet)));
+      if (t) {
+        if (o.beh.paint) {
+          this.stain(t, Phaser.Display.Color.HexStringToColor(pick(DRESS)).color);
+          sfx.splash();
+        } else if (t.kind === 'char') this.blowDry(t);
+        o.x = Math.round(t.x + (o.x < t.x ? -16 : 16));
+        this.settle(o);
+        this.save();
+        return;
+      }
+    }
+    if (o.kind === 'item' && !o.beh.furniture && !o.beh.pet) {
+      const tub = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.tub);
+      if (tub) {
+        if (o.beh.foam) {
+          // вылить пену: шапка пены цвета бутылочки, бутылочка остаётся рядом
+          tub.foam = o.beh.foam;
+          this.renderFoam(tub);
+          sfx.splash(); sfx.sparkle();
+          this.bubbles(tub, 12);
+          o.x = Math.round(tub.x + tub.displayWidth / 2 + 8);
+          this.settle(o);
+        } else this.bathe(o, tub, q.x); // уточка и прочие игрушки плавают
+        this.save();
+        return;
+      }
     }
     if (o.kind === 'item') {
       const ch = this.objAt(q.x, q.y, (x) => x.kind === 'char' && x !== o);
@@ -1419,7 +1604,7 @@ class Room extends Phaser.Scene {
   showWish(ch, type, rec, magic = null) {
     if (this.wish) this.clearWish(false);
     const bubble = this.add.image(ch.x, ch.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setScale(0);
-    const key = rec ? (rec.tex ? `${rec.tex}_icon` : rec.cat) : type === 'music' ? 'wish_music' : type === 'magic' ? 'big_cauldron_icon' : 'wish_sleep';
+    const key = rec ? (rec.tex ? `${rec.tex}_icon` : rec.cat) : type === 'music' ? 'wish_music' : type === 'magic' ? 'big_cauldron_icon' : type === 'bath' ? 'big_tub_icon' : 'wish_sleep';
     const icon = (rec && !rec.tex ? this.add.image(0, 0, key, rec.frame) : this.add.image(0, 0, key)).setDepth(10004).setAlpha(0);
     this.wish = { ch, type, rec, bubble, icon, until: this.time.now + (magic ? 60000 : 30000), key: magic?.key };
     if (magic) {
@@ -1594,7 +1779,7 @@ class Room extends Phaser.Scene {
   petTick() {
     if (this.dress || this.albumUi || this.press?.moved) return;
     const { W, FLOOR_TOP, ROOM_H } = L;
-    const pets = this.objs.filter((o) => o.kind === 'item' && o.beh.pet && !o.owner && !o.dragging && !o.restOn
+    const pets = this.objs.filter((o) => o.kind === 'item' && o.beh.pet && !o.owner && !o.dragging && !o.restOn && !o.inTub
       && !o.walking && o.y >= FLOOR_TOP && !RX.noWalk.test(o.rec.subject));
     if (!pets.length) return;
     // еда на полу рядом -> подбежать и съесть
@@ -2083,6 +2268,23 @@ class Room extends Phaser.Scene {
       icon.x = Math.round(bubble.x - 6 + 15);
       icon.y = Math.round(bubble.y - 14); // центр облачка (у иконки центр по середине)
     }
+    for (const o of this.objs) {
+      if (o.inTub && !o.dragging) {
+        const tub = o.inTub;
+        if (!tub.active) { o.inTub = null; continue; }
+        const rim = tub.y - tub.displayHeight + 3;
+        const sink = o.kind === 'char' ? Math.round(o.displayHeight * 0.45) : Math.round(o.displayHeight * 0.4);
+        o.x = Math.round(tub.x + o.tubDx);
+        o.y = Math.round(rim + sink + (o.kind === 'item' && !o.beh.pet ? Math.sin(time / 300 + o.uid) * 1 : 0)); // игрушки покачиваются
+        o.restOn = null;
+      }
+      if (o.stainImg) {
+        o.stainImg.x = o.x; o.stainImg.y = o.y;
+        o.stainImg.setScale(o.scaleX, o.scaleY).setFlipX(o.flipX);
+        o.stainImg.setDepth(o.depth + 0.05);
+      }
+      if (o.foamImg) { o.foamImg.x = o.x; o.foamImg.y = o.y - o.displayHeight + 6; o.foamImg.setDepth(o.depth + 0.1); }
+    }
     for (const bed of this.objs) {
       if (!bed.plots || !bed.plantImgs) continue;
       bed.plots.forEach((p, i) => {
@@ -2191,9 +2393,11 @@ class Room extends Phaser.Scene {
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
+        stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
         uid: o.uid, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
+        stain: o.stain || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx,
       })),
     };
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch { /* приватный режим — играем без сохранения */ }
@@ -2228,6 +2432,9 @@ class Room extends Phaser.Scene {
       const o = byUid.get(s.uid);
       if (!o) continue;
       if (s.restOn && byUid.get(s.restOn)) o.restOn = byUid.get(s.restOn);
+      if (s.stain) this.stain(o, s.stain, true);
+      if (s.foam) { o.foam = s.foam; this.renderFoam(o); }
+      if (s.inTub && byUid.get(s.inTub)) { o.inTub = byUid.get(s.inTub); o.tubDx = s.tubDx || 0; }
       if (s.owner && byUid.get(s.owner)) {
         const ch = byUid.get(s.owner);
         ch.slots[s.slot] = o; o.owner = ch; o.slot = s.slot;

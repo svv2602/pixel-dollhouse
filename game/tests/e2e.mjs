@@ -70,12 +70,14 @@ test('комната загружается: персонажи, кухня, к�
     chars: s.objs.filter((o) => o.kind === 'char').length,
     kitchen: s.objs.some((o) => o.x >= 293 && o.beh?.cauldron),
     garden: s.objs.some((o) => o.beh?.gardenBed) && s.objs.some((o) => o.beh?.appleTree),
+    bath: s.objs.some((o) => o.beh?.tub && o.x >= 3 * 293),
     album: s.objs.some((o) => o.beh?.album),
   }));
   assert.equal(st.chars, 2);
   assert.ok(st.kitchen, 'котёл на кухне');
   assert.ok(st.album, 'альбом в комнате');
   assert.ok(st.garden, 'сад с грядками и яблоней');
+  assert.ok(st.bath, 'ванная с ванной');
 });
 
 test('еда по кусочку: укус, остаток в руке', async () => {
@@ -220,6 +222,31 @@ test('сад: посадить клубнику → полить ×3 → соб�
   }
   await room((s) => s.plotTap(s.testBed, s.testBed.x - 13));
   await waitFor((s, n) => s.objs.filter((o) => o.rec?.subject === 'strawberry').length === n + 2 && s.testBed.plots[0] === null, before);
+});
+
+test('ванная: лужа пачкает, ванна отмывает, пена и фен', async () => {
+  await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    const mud = s.objs.find((o) => o.beh?.puddle);
+    s.drop(c, { x: mud.x, y: mud.y - 2 });
+  });
+  await waitFor((s) => !!s.objs.find((o) => o.kind === 'char').stain);
+  await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    const tub = s.objs.find((o) => o.beh?.tub);
+    s.drop(c, { x: tub.x, y: tub.y - 10 });
+    const foam = s.spawnItem(s.byId.get('foam-pink'), tub.x, 40);
+    s.drop(foam, { x: tub.x + 5, y: tub.y - 10 });
+  });
+  await waitFor((s) => { const c = s.objs.find((o) => o.kind === 'char'); return !c.stain && c.inTub && s.objs.find((o) => o.beh?.tub).foam; });
+  const hs = await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    const before = c.look.hairStyle;
+    const d = s.objs.find((o) => o.rec?.id === 'hair-dryer');
+    s.drop(d, { x: c.x, y: c.y - 20 });
+    return [before, c.look.hairStyle];
+  });
+  assert.notEqual(hs[0], hs[1], 'фен меняет причёску');
 });
 
 test('нет ошибок в консоли', () => {

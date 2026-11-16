@@ -30,7 +30,7 @@ export function outline(c) {
   for (const [x, y] of edge) g.fillRect(x, y, 1, 1);
 }
 
-function canvasFor(w, h, draw) {
+export function canvasFor(w, h, draw) {
   const c = document.createElement('canvas');
   c.width = w + 2;
   c.height = h + 2;
@@ -219,6 +219,40 @@ const PIECES = {
     }
   }],
 
+  // ------------------------------------------------------------ ванна на ножках 46×24
+  tub: [46, 24, (r, clear) => {
+    const w = C.white;
+    const d = '#d6dfe8';
+    r(1, 2, 44, 3, w); r(1, 2, 44, 1, '#ffffff'); r(3, 3, 40, 1, '#9fdcff');          // бортик и вода
+    for (let y = 5; y < 19; y++) {
+      const inset = y < 14 ? 2 : [3, 4, 5, 7, 9][y - 14];
+      r(inset, y, 46 - inset * 2, 1, w);
+      r(inset, y, 1, 1, '#ffffff'); r(46 - inset - 2, y, 2, 1, d);
+    }
+    r(6, 8, 10, 1, '#eef6fb'); r(6, 10, 6, 1, '#eef6fb');                              // блик
+    r(6, 18, 4, 4, C.gold); r(36, 18, 4, 4, C.gold); r(5, 22, 6, 2, C.goldD); r(35, 22, 6, 2, C.goldD); // лапки
+    r(41, 0, 2, 3, '#c9ccd8'); r(38, 0, 5, 1, '#c9ccd8');                              // кран
+    clear(1, 2); clear(44, 2);
+  }],
+
+  // ------------------------------------------------------------ раковина на ножке 18×30
+  sink: [18, 30, (r) => {
+    const w = C.white;
+    r(8, 0, 2, 4, '#c9ccd8'); r(6, 0, 6, 1, '#c9ccd8'); r(3, 1, 2, 2, C.pink); r(13, 1, 2, 2, '#5ac4f2'); // кран и вентили
+    r(0, 4, 18, 6, w); r(0, 4, 18, 1, '#ffffff'); r(2, 5, 14, 2, '#9fdcff'); r(0, 9, 18, 1, '#d6dfe8');
+    r(6, 10, 6, 17, w); r(6, 10, 1, 17, '#ffffff'); r(11, 10, 1, 17, '#d6dfe8');
+    r(4, 27, 10, 3, w); r(4, 29, 10, 1, '#d6dfe8');
+  }],
+
+  // ------------------------------------------------------------ лужа грязи 30×8 (плоская, в саду)
+  puddle: [30, 8, (r) => {
+    for (let y = 0; y < 8; y++) {
+      const hw = Math.round(15 * Math.sqrt(Math.max(0, 1 - ((y - 3.5) / 4) ** 2)));
+      if (hw > 0) r(15 - hw, y, hw * 2, 1, '#7a5232');
+    }
+    r(7, 2, 12, 2, '#8d6040'); r(9, 2, 4, 1, '#a87a55'); r(20, 4, 3, 1, '#a87a55');
+  }],
+
   // ------------------------------------------------------------ ковёр 50×11
   rug: [50, 11, (r) => {
     const ell = (k, col) => {
@@ -248,6 +282,9 @@ export const BIG_FURNITURE = [
   { key: 'stove', subject: 'kitchen stove', icon: 'kitchen stove' },
   { key: 'shelf', subject: 'wall shelf', icon: 'wall shelf' },
   { key: 'gardenbed', subject: 'veggie patch' },
+  { key: 'tub', subject: 'clawfoot bathtub', icon: 'clawfoot bathtub' },
+  { key: 'sink', subject: 'pedestal sink', icon: 'pedestal sink' },
+  { key: 'puddle', subject: 'mud puddle' },
   { key: 'tree', subject: 'apple tree', icon: 'apple tree' },
   { key: 'album', subject: 'discovery album' },
 ];
