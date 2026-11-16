@@ -107,6 +107,15 @@ function lighten(hex, t) {
   return `rgb(${c((n >> 16) & 255)},${c((n >> 8) & 255)},${c(n & 255)})`;
 }
 
+// Косметика из ванной: ключ -> [[цвет, [[x, y], ...]], ...] (координаты в шаблоне 20×34)
+export const MAKEUP = {
+  lips: [],  // помада перекрашивает рот (см. draw)
+  blush: [['#ff5f8a', [[5, 9], [6, 9], [13, 9], [14, 9], [5, 10], [14, 10]]]],
+  freckles: [['#b8703f', [[5, 10], [7, 9], [12, 9], [14, 10], [6, 11], [13, 11]]]],
+  whiskers: [['#ff6f9a', [[9, 9], [10, 9]]], ['#2b1d2e', [[4, 9], [5, 9], [5, 11], [6, 11], [14, 9], [15, 9], [13, 11], [14, 11]]]],
+  hearts: [['#ff3b6b', [[4, 9], [6, 9], [5, 10], [13, 9], [15, 9], [14, 10]]]],
+};
+
 function buildMap(look, face) {
   const rows = BASE.slice();
   if (look.outfit === 'pants') for (const [y, r] of Object.entries(PANTS)) rows[+y] = r;
@@ -114,11 +123,31 @@ function buildMap(look, face) {
   if (face === 'open') {
     rows[10] = '..HHSSSSSmmSSSSSHH..';
     rows[11] = '..HHHSSSSmmSSSSHHH..';
-  } else if (face === 'blink') {
+  } else if (face === 'blink' || face === 'yuck') {
     rows[7] = '..HHSSSSSSSSSSSSHH..';
     rows[8] = '..HHSEEESSSSEEESHH..';
   }
+  if (face === 'yuck') {          // зажмурилась и высунула язык
+    rows[10] = '..HHSSSSMMMMSSSSHH..';
+    rows[11] = '..HHHSSSSTTSSSSHHH..';
+    rows[12] = '..HHHHSSSTTSSSHHHH..';
+  } else if (face === 'sour') {   // глаза-щёлочки > <, губы дугой вниз
+    rows[6] = '..HHSSESSSSSSESSHH..';
+    rows[7] = '..HHSSSESSSSESSSHH..';
+    rows[8] = '..HHSSESSSSSSESSHH..';
+    rows[10] = '..HHSSSSSmmSSSSSHH..';
+    rows[11] = '..HHHSSSmSSmSSSHHH..';
+  } else if (face === 'hot') {    // рот широко открыт — «ой, горячо!»
+    rows[10] = '..HHSSSSmmmmSSSSHH..';
+    rows[11] = '..HHHSSSmmmmSSSHHH..';
+  } else if (face === 'smile') {  // улыбка до ушей — видно чистые зубки
+    rows[10] = '..HHSSSSMWWMSSSSHH..';
+  }
   (HAIR_STYLES[look.hairStyle] || HAIR_STYLES.bob)(rows);
+  if (look.frazzled) {            // волосы дыбом после взрыва в котле (до купания)
+    rows[0] = '..H..H..H..H..H..H..';
+    rows[1] = '..HH.HH.HHHH.HH.HH..';
+  }
   return rows;
 }
 
@@ -130,8 +159,10 @@ function draw(map, look) {
   const col = {
     H: look.hair, h: lighten(look.hair, 0.35), S: look.skin, D: look.dress, d: shade(look.dress, 0.75), C: '#ffffff',
     E: '#2b1d2e', W: '#ffffff', B: '#f59aa8', M: '#a8434f', m: '#6e2233', L: look.skin, O: '#5a3a4a',
-    P: PANTS_COLOR, p: shade(PANTS_COLOR, 0.8),
+    P: PANTS_COLOR, p: shade(PANTS_COLOR, 0.8), T: '#ff7a9a',
   };
+  const mk = look.makeup || [];
+  if (mk.includes('lips')) col.M = '#ff2f6d';
   const solid = new Set();
   map.forEach((row, y) => {
     for (let x = 0; x < 20; x++) {
@@ -142,6 +173,10 @@ function draw(map, look) {
       solid.add(`${x + 1},${y + 1}`);
     }
   });
+  // косметика и «усы» от коктейля — поверх лица (внутри силуэта, контур не меняется)
+  const dot = (list, color) => { g.fillStyle = color; for (const [x, y] of list) g.fillRect(x + 1, y + 1, 1, 1); };
+  for (const k of mk) if (MAKEUP[k]) for (const [color, list] of MAKEUP[k]) dot(list, color);
+  if (look.mustache) dot([[8, 9], [9, 9], [10, 9], [11, 9], [7, 10], [12, 10]], look.mustache);
   g.fillStyle = '#2b1d2e';
   for (let y = 0; y < CHAR_H; y++) {
     for (let x = 0; x < CHAR_W; x++) {
@@ -154,10 +189,10 @@ function draw(map, look) {
   return c;
 }
 
-/** Создаёт (или пересоздаёт) три текстуры персонажа: обычная, рот открыт, глаза закрыты.
+/** Создаёт (или пересоздаёт) текстуры персонажа: обычная, рот открыт, глаза закрыты и реакции (фу, кисло, горячо, улыбка).
  *  После пересоздания у изображений надо заново вызвать setTexture(). */
 export function makeCharTextures(scene, key, look) {
-  for (const [suffix, face] of [['', 'normal'], ['_open', 'open'], ['_blink', 'blink']]) {
+  for (const [suffix, face] of [['', 'normal'], ['_open', 'open'], ['_blink', 'blink'], ['_yuck', 'yuck'], ['_sour', 'sour'], ['_hot', 'hot'], ['_smile', 'smile']]) {
     const k = key + suffix;
     if (scene.textures.exists(k)) scene.textures.remove(k);
     scene.textures.addCanvas(k, draw(buildMap(look, face), look));

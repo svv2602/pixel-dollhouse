@@ -112,6 +112,32 @@ const PIECES = {
     clear(0, 0); clear(21, 0);
   }],
 
+  // ------------------------------------------------------------ открытый холодильник 22×38 (на миг при тапе)
+  fridgeOpen: [22, 38, (r, clear) => {
+    r(0, 0, 22, 37, C.fridge); r(21, 0, 1, 37, C.fridgeD);
+    r(2, 2, 18, 9, '#f4fffb'); r(2, 14, 18, 21, '#f4fffb');                       // морозилка и камера
+    r(9, 2, 4, 1, '#fff6a8');                                                    // лампочка
+    for (const y of [10, 20, 27, 34]) r(2, y, 18, 1, '#cfe9df');                // полки
+    const food = [[3, 6, '#9fdcff'], [8, 7, '#ffffff'], [14, 6, '#f49ac1'],
+      [3, 16, '#ef5a6f'], [8, 17, '#f2c94c'], [13, 16, '#ffffff'], [17, 17, '#7ad9b5'],
+      [3, 23, '#f2955a'], [7, 24, '#ef5a6f'], [12, 23, '#8fd16a'], [16, 24, '#c48ff2'],
+      [4, 30, '#ffe0a0'], [9, 31, '#f27aa6'], [14, 30, '#f2c94c']];
+    for (const [x, y, c] of food) r(x, y, 3, 3, c);
+    r(1, 37, 3, 1, C.fridgeK); r(18, 37, 3, 1, C.fridgeK);
+    clear(0, 0); clear(21, 0);
+  }],
+
+  // ------------------------------------------------------------ унитаз 18×24 (смывает предметы)
+  toilet: [18, 24, (r) => {
+    const w = C.white;
+    r(2, 0, 14, 9, w); r(2, 0, 14, 1, '#ffffff'); r(15, 1, 1, 8, '#d6dfe8');      // бачок
+    r(12, 2, 3, 2, '#c9ccd8');                                                   // кнопка смыва
+    r(0, 9, 18, 3, '#9fdcff'); r(0, 9, 18, 1, '#ffffff'); r(2, 10, 14, 1, '#5ac4f2'); // сиденье и вода
+    r(1, 12, 16, 5, w); r(1, 12, 1, 5, '#ffffff'); r(15, 12, 2, 5, '#d6dfe8');    // чаша
+    r(4, 17, 10, 5, w); r(12, 17, 2, 5, '#d6dfe8');                               // ножка
+    r(3, 22, 12, 2, w); r(3, 23, 12, 1, '#d6dfe8');
+  }],
+
   // ------------------------------------------------------------ сундук для игрушек 28×18 (контейнер)
   chest: [28, 18, (r, clear) => {
     r(0, 6, 28, 12, C.pink); r(0, 6, 28, 1, C.pinkL); r(0, 17, 28, 1, C.pinkD);
@@ -303,6 +329,7 @@ export const BIG_FURNITURE = [
   { key: 'sink', subject: 'pedestal sink', icon: 'pedestal sink' },
   { key: 'puddle', subject: 'mud puddle' },
   { key: 'petbed', subject: 'cozy pet bed', icon: 'pet bed' },
+  { key: 'toilet', subject: 'flush toilet' },
   { key: 'stage', subject: 'music stage' },
   { key: 'tree', subject: 'apple tree', icon: 'apple tree' },
   { key: 'album', subject: 'discovery album' },

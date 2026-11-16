@@ -88,6 +88,15 @@ export const sfx = {
   },
   purr: () => { tone(70, 0.35, { type: 'sawtooth', vol: 0.05 }); tone(75, 0.35, { type: 'triangle', vol: 0.06, delay: 0.05 }); },
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
+  // кухня и ванная
+  blend: () => { for (let i = 0; i < 6; i++) tone(140 + i * 25, 0.28, { type: 'sawtooth', vol: 0.05, slide: 60, delay: i * 0.25 }); noise(1.5, { freq: 900, vol: 0.06 }); },
+  pop: () => { tone(900 + Math.random() * 500, 0.06, { slide: 900, vol: 0.12 }); noise(0.03, { freq: 4000, vol: 0.08 }); },
+  flush: () => { noise(1.1, { freq: 700, vol: 0.18 }); [0, 1, 2, 3, 4].forEach((i) => tone(260 - i * 30, 0.14, { slide: -120, vol: 0.08, delay: 0.25 + i * 0.15 })); },
+  scrub: (delay = 0) => noise(0.08, { freq: 6000, vol: 0.07, delay }),
+  yuck: () => { tone(320, 0.18, { type: 'sawtooth', slide: -160, vol: 0.08 }); tone(200, 0.25, { type: 'sawtooth', slide: -90, vol: 0.07, delay: 0.18 }); },
+  sour: () => { for (let i = 0; i < 4; i++) tone(i % 2 ? 620 : 560, 0.09, { type: 'square', vol: 0.05, delay: i * 0.09 }); },
+  spicy: () => { noise(0.6, { freq: 2500, vol: 0.12 }); tone(400, 0.5, { slide: 900, type: 'triangle', vol: 0.1 }); },
+  boom: () => { noise(0.45, { freq: 500, vol: 0.28 }); tone(90, 0.4, { slide: -40, vol: 0.2 }); },
 };
 
 // ---------------------------------------------------------------- фоновая музыка

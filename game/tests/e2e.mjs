@@ -347,6 +347,95 @@ test('концертный зал: сцена в 5-й комнате, лежан
   await waitFor((s) => Math.round(s.cameras.main.scrollX / (s.sys.game.config.width / s.cameras.main.zoom)) === 4);
 });
 
+test('кухня: холодильник выдаёт еду, блендер делает коктейль, коктейль оставляет усы', async () => {
+  const st = await room((s) => {
+    const fr = s.objs.find((o) => o.beh?.fridge);
+    const n0 = s.objs.length;
+    s.openFridge(fr);
+    const popped = s.objs.length - n0;
+    const bl = s.objs.find((o) => o.beh?.blender);
+    s.addToBlender(bl, s.spawnItem(s.findRec('strawberry'), bl.x, bl.y - 30));
+    s.addToBlender(bl, s.spawnItem(s.findRec('banana'), bl.x, bl.y - 30));
+    s.testBl = bl;
+    return { popped, inside: bl.contents.length };
+  });
+  assert.equal(st.popped, 1);
+  assert.equal(st.inside, 2);
+  await room((s) => s.blend(s.testBl));
+  await waitFor((s) => !s.testBl.blending && s.objs.some((o) => o.beh?.smoothie));
+  const sm = await room((s) => {
+    const g = s.objs.find((o) => o.beh?.smoothie);
+    const c = s.objs.find((o) => o.kind === 'char' && !o.busy);
+    s.testCh = c;
+    s.feed(c, g);
+    return { color: g.color, empty: s.testBl.contents.length };
+  });
+  assert.ok(sm.color > 0, 'у коктейля есть цвет');
+  assert.equal(sm.empty, 0);
+  await waitFor((s) => !!s.testCh.look.mustache && !s.testCh.busy);
+});
+
+test('вкусы: нелюбимое — «фу» и отбрасывает, лимон — кисло, перец — горячо и просит молока', async () => {
+  const st = await room((s) => {
+    const c = s.testCh;
+    const bad = ['broccoli', 'onion', 'button mushroom', 'cabbage', 'radish', 'eggplant'].find((x) => s.dislikes(c, x));
+    const veg = s.spawnItem(s.findRec(bad), c.x, c.y);
+    s.feed(c, veg);
+    return { refused: c.texture.key.endsWith('_yuck'), stays: s.objs.includes(veg) };
+  });
+  assert.equal(st.refused, true);
+  assert.equal(st.stays, true);
+  await waitFor((s) => !s.testCh.busy);
+  await room((s) => { s.clearWish?.(false); s.feed(s.testCh, s.spawnItem(s.findRec('chili pepper'), s.testCh.x, s.testCh.y)); });
+  await waitFor((s) => s.testCh.texture.key.endsWith('_hot'));
+  await waitFor((s) => s.wish?.ch === s.testCh && s.wish.rec?.subject === 'glass of milk');
+});
+
+test('котёл бахает: персонаж рядом в саже и с волосами дыбом, ванна отмывает', async () => {
+  await room((s) => {
+    const pot = s.objs.find((o) => o.beh?.cauldron);
+    const c = s.testCh;
+    c.x = pot.x + 10; c.y = pot.y;
+    s.potBlast(pot, [0xff0000, 0x00ff00]);
+  });
+  const st = await room((s) => ({ fr: !!s.testCh.look.frazzled, stain: s.testCh.stain }));
+  assert.equal(st.fr, true);
+  assert.ok(st.stain);
+  await room((s) => { const tub = s.objs.find((o) => o.beh?.tub); s.bathe(s.testCh, tub, tub.x); });
+  await waitFor((s) => !s.testCh.look.frazzled && !s.testCh.stain && !s.testCh.look.mustache);
+});
+
+test('ванная: косметика, зубная щётка, пузыри и унитаз', async () => {
+  const st = await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    c.inTub = null;
+    s.testCh2 = c;
+    const lip = s.objs.find((o) => o.beh?.makeup === 'lips');
+    const cat = s.objs.find((o) => o.beh?.makeup === 'whiskers');
+    s.applyMakeup(c, lip);
+    s.applyMakeup(c, cat);
+    const tub = s.objs.find((o) => o.beh?.tub);
+    s.blowBubbles(tub);
+    const wc = s.objs.find((o) => o.beh?.toilet);
+    const ball = s.spawnItem(s.findRec('beach ball'), wc.x, wc.y - 10);
+    s.flushItem(wc, ball);
+    return {
+      mk: c.look.makeup.join(','), flushed: !s.objs.includes(ball),
+      brush: !!s.objs.find((o) => o.beh?.toothbrush), bath: [!!wc, !!s.objs.find((o) => o.beh?.makeup === 'freckles')],
+    };
+  });
+  assert.equal(st.mk, 'lips,whiskers');
+  assert.equal(st.flushed, true);
+  assert.equal(st.brush, true);
+  assert.deepEqual(st.bath, [true, true]);
+  await waitFor((s) => (s.popBubbles?.length || 0) >= 3);
+  const popped = await room((s) => { const n = s.popBubbles.length; s.popBubble(s.popBubbles[0]); return n - s.popBubbles.length; });
+  assert.equal(popped, 1);
+  await waitFor((s) => !s.testCh2.busy);
+  await room((s) => s.brushTeeth(s.testCh2));
+  await waitFor((s) => s.testCh2.texture.key.endsWith('_smile'));
+});
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });
