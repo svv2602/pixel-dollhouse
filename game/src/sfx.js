@@ -78,6 +78,14 @@ export const sfx = {
     if (kind === 'string') { tone(f / 2, 0.5, { type: 'sawtooth', vol: 0.05, delay }); tone(f, 0.4, { type: 'triangle', vol: 0.06, delay }); return; }
     tone(f, 0.45, { type: 'sine', vol: 0.12, delay, slide: 6 });
   },
+  /** Сыграть мелодию: [[полутон от C4, доли], ...]. */
+  tune: (notes, beat = 0.32) => {
+    let t = 0;
+    for (const [n, d] of notes) {
+      tone(261.63 * 2 ** (n / 12), d * beat * 0.95, { type: 'triangle', vol: 0.12, delay: t });
+      t += d * beat;
+    }
+  },
   squeak: () => tone(900, 0.1, { slide: 500, vol: 0.1 }),
 };
 

@@ -158,7 +158,8 @@ test('каталог: витрина 2 страницы, кубик переме
     return { curated, shuffled, recent: s.view.map((r) => r.subject), perPage: s.perPage };
   });
   assert.equal(st.curated.length, 24);
-  assert.equal(st.curated[0], 'strawberry');
+  assert.equal(st.curated[0], 'party cake', 'нарисованные в коде — первыми');
+  assert.ok(st.curated.includes('strawberry'), 'любимые — в витрине');
   assert.equal(st.shuffled.length, 24);
   assert.ok(!st.shuffled.includes('strawberry'), 'в случайной подборке нет витринных');
   assert.equal(st.recent[0], 'banana');
@@ -247,6 +248,25 @@ test('ванная: лужа пачкает, ванна отмывает, пен
     return [before, c.look.hairStyle];
   });
   assert.notEqual(hs[0], hs[1], 'фен меняет причёску');
+});
+
+test('день рождения: украсить торт, задуть свечи, открыть подарок', async () => {
+  const st = await room((s) => {
+    const cake = s.spawnItem(s.byId.get('party-cake'), 120, 85);
+    s.drop(s.spawnItem(s.byId.get('icing-blue'), 120, 40), { x: 120, y: 78 });
+    s.drop(s.spawnItem(s.byId.get('candles'), 120, 40), { x: 120, y: 78 });
+    const lit = cake.deco.lit;
+    s.tapPoint = { x: cake.x, y: cake.y - 4 };
+    s.tap(cake);
+    const c = s.objs.filter((o) => o.kind === 'char')[1];
+    if (c.slots.hand) s.removeObj(c.slots.hand);
+    s.drop(s.spawnItem(s.byId.get('gift-1'), c.x, 40), { x: c.x, y: c.y - 15 });
+    return { frost: cake.deco.frost, lit, after: cake.deco.lit, toy: c.slots.hand?.rec.cat };
+  });
+  assert.equal(st.frost, 0x9fdcff);
+  assert.equal(st.lit, true);
+  assert.equal(st.after, false, 'свечи задуты');
+  assert.equal(st.toy, 'toy', 'в подарке игрушка');
 });
 
 test('нет ошибок в консоли', () => {

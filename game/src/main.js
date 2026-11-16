@@ -5,6 +5,7 @@ import { BIG_FURNITURE, makeFurnitureTextures, outline } from './furniture.js';
 import { Alchemy, recipeKey } from './alchemy.js';
 import { makePotions } from './potions.js';
 import { makeBath } from './bath.js';
+import { makeParty, BIRTHDAY_TUNE } from './party.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -126,7 +127,7 @@ const RX = {
   // ободки (часто с ушками): дуга обхватывает голову — концы на уровне глаз, ушки торчат над макушкой
   earBand: /headband|\bears?\b/,
   shelf: /\bshelf\b/,
-  wall: /window|painting|picture frame|collage|wall clock|cuckoo clock|wall shelf|curtain|chandelier|ceiling lamp|^mirror$|oval mirror|magic mirror|blinds|shutter/,
+  wall: /garland|window|painting|picture frame|collage|wall clock|cuckoo clock|wall shelf|curtain|chandelier|ceiling lamp|^mirror$|oval mirror|magic mirror|blinds|shutter/,
 };
 
 function behaviorOf(rec) {
@@ -149,6 +150,7 @@ function behaviorOf(rec) {
     paint: /paint (can|bucket|tube|palette)|jar of paint|watercolor paint set/.test(s),
     foam: rec.foam || 0,
     dryer: !!rec.dryer,
+    cake: !!rec.cake, icing: rec.icing || 0, sprinkles: !!rec.sprinkles, candles: !!rec.candles, gift: !!rec.gift,
     gardenBed: s === 'veggie patch',
     appleTree: s === 'apple tree' && !!rec.tex,
     shelf: rec.cat === 'furniture' && RX.shelf.test(s),
@@ -211,7 +213,12 @@ class Room extends Phaser.Scene {
     for (const r of potions) this.byId.set(r.id, r);
     const bath = makeBath(this); // фен и пена для ванны — во вкладке игрушек
     for (const r of bath) this.byId.set(r.id, r);
-    this.byCat = { furniture: Object.values(this.big), magic: potions.slice(), toy: bath.slice() };
+    const party = makeParty(this); // торт, глазурь, посыпка, свечи — в еде; подарки и гирлянда — в игрушках
+    for (const r of party) this.byId.set(r.id, r);
+    this.byCat = {
+      furniture: Object.values(this.big), magic: potions.slice(),
+      food: party.filter((r) => r.cat === 'food'), toy: [...party.filter((r) => r.cat === 'toy'), ...bath],
+    };
     for (const r of this.items) {
       if (HIDE.test(r.subject) || bigSubjects.has(r.subject)) continue;
       (this.byCat[r.cat] ||= []).push(r);
@@ -241,6 +248,7 @@ class Room extends Phaser.Scene {
       };
     }
     this.objs = [];
+    this.flags = {};
     this.uidSeq = 1;
     this.night = false;
     this.press = null;
@@ -262,6 +270,7 @@ class Room extends Phaser.Scene {
     this.ensureKitchen();
     this.ensureGarden();
     this.ensureBath();
+    this.ensureParty();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
@@ -534,8 +543,15 @@ class Room extends Phaser.Scene {
       kind: 'item', uid: extra.uid || this.uidSeq++, rec, beh,
       contents: extra.contents || [], lit: extra.lit ?? true, owner: null, slot: null, restOn: null,
       plots: beh.gardenBed ? (extra.plots || [null, null, null]) : null,
+      deco: beh.cake ? (extra.deco || {}) : null,
     });
     this.uidSeq = Math.max(this.uidSeq, o.uid + 1);
+    // накладки (слои торта, пятна, пена, свечение) исчезают вместе с предметом, как бы он ни был уничтожен
+    o.once('destroy', () => {
+      if (o.cakeLayers) Object.values(o.cakeLayers).forEach((l) => l.destroy());
+      o.stainImg?.destroy(); o.foamImg?.destroy();
+    });
+    if (beh.cake) this.time.delayedCall(0, () => this.renderCake(o));
     if (beh.light) {
       o.glow = this.add.image(x, y, 'glow').setBlendMode(Phaser.BlendModes.ADD).setDepth(10001).setVisible(false);
     }
@@ -792,6 +808,93 @@ class Room extends Phaser.Scene {
     const ty = Math.round(Phaser.Math.Clamp(tree.y + rnd(2, 14), L.FLOOR_TOP + 4, L.ROOM_H - 2));
     sfx.pick();
     this.tweens.add({ targets: o, y: ty, duration: 520, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } });
+  }
+
+  // ---------------------------------------------------------------- день рождения
+  /** Праздничный набор один раз появляется в спальне (и в старых сохранениях). */
+  ensureParty() {
+    if (this.flags.party) return;
+    this.flags.party = true;
+    const { W, ROOM_H } = L;
+    this.spawnItem(this.byId.get('party-cake'), Math.round(W * 0.53), ROOM_H - 9, { deco: { frost: 0xff9ac8, sprinkles: true, candles: true, lit: true } });
+    this.spawnItem(this.byId.get('gift-0'), Math.round(W * 0.73), ROOM_H - 3);
+    this.spawnItem(this.byId.get('garland'), Math.round(W * 0.18), 14);
+    this.save();
+  }
+
+  renderCake(o) {
+    if (!o.active) return;
+    if (!o.cakeLayers) {
+      o.cakeLayers = {
+        fr: this.add.image(o.x, o.y, 'cake_frost').setOrigin(0.5, 1),
+        sp: this.add.image(o.x, o.y, 'cake_sprinkles').setOrigin(0.5, 1),
+        ca: this.add.image(o.x, o.y, 'cake_candles').setOrigin(0.5, 1),
+        fl: this.add.image(o.x, o.y, 'cake_flames').setOrigin(0.5, 1),
+      };
+    }
+    const d = o.deco;
+    const L2 = o.cakeLayers;
+    L2.fr.setVisible(!!d.frost).setTint(d.frost || 0xffffff);
+    L2.sp.setVisible(!!d.sprinkles);
+    L2.ca.setVisible(!!d.candles);
+    L2.fl.setVisible(!!(d.candles && d.lit));
+  }
+
+  /** Украсить торт: глазурь (цвет), посыпка, свечи (сразу горят). Инструмент остаётся рядом. */
+  decorate(cake, o) {
+    const d = cake.deco;
+    if (o.beh.icing) d.frost = o.beh.icing;
+    if (o.beh.sprinkles) d.sprinkles = true;
+    if (o.beh.candles) { d.candles = true; d.lit = true; }
+    this.renderCake(cake);
+    sfx.wear(); sfx.sparkle();
+    this.fxSparks.explode(10, cake.x, cake.y - 10);
+    this.tweens.add({ targets: cake, y: cake.y - 2, duration: 90, yoyo: true });
+    o.x = Math.round(cake.x + (o.x < cake.x ? -14 : 14));
+    this.settle(o);
+  }
+
+  /** Задуть свечи: дымок, конфетти, мелодия, все в комнате танцуют. */
+  blowCandles(cake) {
+    cake.deco.lit = false;
+    this.renderCake(cake);
+    sfx.poof();
+    this.fxPoof.explode(10, cake.x, cake.y - 18);
+    this.time.delayedCall(300, () => {
+      this.fxSparks.explode(40, cake.x, cake.y - 20);
+      this.fxHearts.explode(8, cake.x, cake.y - 24);
+      sfx.tune(BIRTHDAY_TUNE);
+      const room = Math.floor(cake.x / L.W);
+      for (const c of this.objs) {
+        if (c.kind !== 'char' || Math.floor(c.x / L.W) !== room) continue;
+        this.checkWish(c, 'party');
+        if (!c.sleeping) this.celebrate(c, 6);
+      }
+    });
+    this.save();
+  }
+
+  lightCandles(cake) {
+    cake.deco.lit = true;
+    this.renderCake(cake);
+    sfx.click();
+    this.fxSparks.explode(4, cake.x, cake.y - 18);
+    this.save();
+  }
+
+  /** Подарок персонажу: коробка открывается, внутри — игрушка прямо в руки. */
+  openGift(ch, gift) {
+    const x = gift.x;
+    const y = gift.y;
+    this.removeObj(gift);
+    const toys = (FAVORITES.toy || []).map((sub) => this.findRec(sub)).filter(Boolean);
+    const rec = pick(toys);
+    this.fxSparks.explode(20, ch.x, ch.y - ch.displayHeight / 2);
+    sfx.fanfare();
+    if (!rec) return;
+    const toy = this.spawnItem(rec, Math.round(x), Math.round(y));
+    this.wear(ch, 'hand', toy);
+    this.celebrate(ch, 3);
   }
 
   // ---------------------------------------------------------------- ванная
@@ -1271,6 +1374,14 @@ class Room extends Phaser.Scene {
       this.save();
       return;
     }
+    if (o.kind === 'item' && (o.beh.icing || o.beh.sprinkles || o.beh.candles)) {
+      const cake = this.objAt(q.x, q.y, (x) => x !== o && x.beh?.cake);
+      if (cake) { this.decorate(cake, o); this.save(); return; }
+    }
+    if (o.kind === 'item' && o.beh.gift) {
+      const ch = this.objAt(q.x, q.y, (x) => x.kind === 'char');
+      if (ch) { this.openGift(ch, o); this.save(); return; }
+    }
     if (o.kind === 'item' && (o.beh.paint || o.beh.dryer)) {
       const t = this.objAt(q.x, q.y, (x) => x !== o && (x.kind === 'char' || (o.beh.paint && x.beh?.pet)));
       if (t) {
@@ -1407,6 +1518,7 @@ class Room extends Phaser.Scene {
     }
     if (b.container && o.contents.length) { this.spill(o); return; }
     if (b.album) { this.openAlbum(); return; }
+    if (b.cake && o.deco.candles) { if (o.deco.lit) this.blowCandles(o); else this.lightCandles(o); return; }
     if (b.gardenBed) { this.plotTap(o, this.tapPoint?.x ?? o.x); return; }
     if (b.appleTree) { this.shakeTree(o); return; }
     if (b.cauldron) {
@@ -1583,7 +1695,7 @@ class Room extends Phaser.Scene {
     if (!chars.length) return;
     const ch = pick(chars);
     const r = Math.random();
-    const kinds = this.night ? ['sleep', 'sleep', 'food', 'music', 'magic'] : ['food', 'food', 'wear', 'pet', 'music', 'food', 'wear', 'sleep', 'magic', 'magic'];
+    const kinds = this.night ? ['sleep', 'sleep', 'food', 'music', 'magic'] : ['food', 'food', 'wear', 'pet', 'music', 'food', 'wear', 'sleep', 'magic', 'magic', 'party'];
     const type = kinds[Math.floor(r * kinds.length)];
     if (type === 'magic') {
       // подсказка неоткрытого рецепта: ингредиент → ингредиент → котёл
@@ -1604,7 +1716,7 @@ class Room extends Phaser.Scene {
   showWish(ch, type, rec, magic = null) {
     if (this.wish) this.clearWish(false);
     const bubble = this.add.image(ch.x, ch.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setScale(0);
-    const key = rec ? (rec.tex ? `${rec.tex}_icon` : rec.cat) : type === 'music' ? 'wish_music' : type === 'magic' ? 'big_cauldron_icon' : type === 'bath' ? 'big_tub_icon' : 'wish_sleep';
+    const key = rec ? (rec.tex ? `${rec.tex}_icon` : rec.cat) : type === 'music' ? 'wish_music' : type === 'magic' ? 'big_cauldron_icon' : type === 'bath' ? 'big_tub_icon' : type === 'party' ? 'candle_box_icon' : 'wish_sleep';
     const icon = (rec && !rec.tex ? this.add.image(0, 0, key, rec.frame) : this.add.image(0, 0, key)).setDepth(10004).setAlpha(0);
     this.wish = { ch, type, rec, bubble, icon, until: this.time.now + (magic ? 60000 : 30000), key: magic?.key };
     if (magic) {
@@ -2283,6 +2395,13 @@ class Room extends Phaser.Scene {
         o.stainImg.setScale(o.scaleX, o.scaleY).setFlipX(o.flipX);
         o.stainImg.setDepth(o.depth + 0.05);
       }
+      if (o.cakeLayers) {
+        let k = 1;
+        for (const [name, l] of Object.entries(o.cakeLayers)) {
+          l.x = o.x; l.y = o.y; l.setDepth(o.depth + 0.01 * k++);
+          if (name === 'fl') l.setAlpha(0.75 + 0.25 * Math.sin(time / 90 + o.uid));
+        }
+      }
       if (o.foamImg) { o.foamImg.x = o.x; o.foamImg.y = o.y - o.displayHeight + 6; o.foamImg.setDepth(o.depth + 0.1); }
     }
     for (const bed of this.objs) {
@@ -2390,10 +2509,11 @@ class Room extends Phaser.Scene {
     const state = {
       v: 2, night: this.night, W: L.W, ROOM_H: L.ROOM_H, FLOOR_TOP: L.FLOOR_TOP,
       room: this.targetRoom ?? Math.round(this.cameras.main.scrollX / L.W),
+      flags: this.flags,
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
-        stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx,
+        stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
         uid: o.uid, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
@@ -2410,6 +2530,7 @@ class Room extends Phaser.Scene {
     // экран мог поменяться (поворот, полноэкранный режим) — переносим координаты в новую раскладку
     const fx = (x) => Math.round(Phaser.Math.Clamp(x * L.W / (st.W || L.W), 6, L.WORLD - 6));
     this.roomIdx = Phaser.Math.Clamp(st.room || 0, 0, L.ROOMS - 1);
+    this.flags = st.flags || {};
     const fy = (y) => {
       const oldFloor = st.FLOOR_TOP || L.FLOOR_TOP;
       const oldRoom = st.ROOM_H || L.ROOM_H;
@@ -2424,7 +2545,7 @@ class Room extends Phaser.Scene {
       const rec = this.recOf(s.id);
       if (!rec) continue;
       const contents = (s.contents || []).map((id) => this.recOf(id)?.id).filter(Boolean);
-      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots });
+      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots, deco: s.deco });
       if (s.bites && it.beh.edible) { it.bites = s.bites; this.applyBites(it); }
       byUid.set(s.uid, it);
     }
