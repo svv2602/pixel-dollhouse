@@ -1,0 +1,11642 @@
+{
+ "abalone shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "acacia tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "acai bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "accordion": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "acorn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "acorn charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "acorn creature": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "acoustic guitar": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "adventurer boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "airplane": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "alchemy book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "almond": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "amethyst": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "amethyst cluster": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "amethyst ore": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "anemone flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "angora rabbit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "ankle boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ankle sock": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "antenna slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "apothecary jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "apple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "apple core": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "apple crumble": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "apple pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "apple slice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "apple tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "apron": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "arcade cabinet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "arched door": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "arched window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "archer's glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "arctic fox": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "arm ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "armchair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "aspen tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "attic window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "aviator sunglasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "avocado": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "avocado half": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "avocado tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "axolotl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "baby bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "baby rattle": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "backpack": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bag of gold coins": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bag of marbles": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "bag of pet food": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bag of popcorn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bagel": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "baguette": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "baguette-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "baked potato": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "baking tray": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "ball cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ball of yarn": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "balloon": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "balloon dog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bamboo flute": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "banana": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "banana bread loaf": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "banana split": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "banana tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "band ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "banh mi sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "banyan tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "baobab tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bar stool": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bard hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "barn door": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "barn owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "barrel cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "baseball cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "baseball glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "basket of painted eggs": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bass drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "bass fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bass guitar": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "bath salts jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bathroom sink": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bathtub": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bay window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "beach ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "beach umbrella": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bean bag chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "beanie": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bear cub": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bearskin hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bed": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bed sheet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bee": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bee brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "beech tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "beef rice bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "beehive box": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "beet": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "beet plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "beetle shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "belgian waffle": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bell charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "bell mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bell ornament": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "belt bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "beluga whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bench": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bengal cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bent coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "beret": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "berry bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "betta fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bibimbap bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bicorne hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bicycle": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "bicycle basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bike rack": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "billiard ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "bingo ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "birch sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "birch tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bird bath": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bird egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bird feeder": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bird nest": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bird of paradise flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "birdhouse": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "birthday cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "black bear": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "black cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "black pearl": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "blackberry bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "blanket": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "blender": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "blt sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "blue morpho butterfly": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "blue tang fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "blue whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "blueberry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "blueberry bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "blueberry muffin": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "blueberry pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bluebird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "boater hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bobble hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bocce ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "boiled egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bonnet": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bonsai tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "bookmark ribbon": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bookshelf": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "boots of speed": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "boston fern": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bottle cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bottle opener": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bouncy ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "bow brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bow tie": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of baked beans": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of beef stew": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of borscht": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of bran flakes": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of butter chicken": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bowl of cereal": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of chicken soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of chili": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of chocolate cereal": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of chow mein": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of clam chowder": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of colorful cereal": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of congee": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of fried rice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of green salad": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of gumbo": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of ice cream": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of lentil dal": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of lentil soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of minestrone": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of miso soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of muesli": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of mushroom soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of mystery stew": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of oatmeal": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of onion soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of pho": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of popcorn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of porridge": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of potato soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of puffed rice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of puffed wheat": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of pumpkin soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of ramen": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of rice pudding": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of risotto": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of shaved ice": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of tom yum": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of tomato soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of udon": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bowl of vegetable soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowl of white rice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bowler hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bowling ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "bowling shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "box jellyfish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "box kite": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "box of crayons": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "box of pasta": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "box turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "boxwood shrub": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bracelet": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "braided ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bread basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bread bowl soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bread box": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bread oven": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bread pudding": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "breakfast sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "british shorthair cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "broccoli": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "broccoli plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "broken bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "broken half coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "brown bear": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "brown egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "brownie sundae": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "brussels sprout": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bubble coral": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "bubble slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bubble tea cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "bubble wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "bucket hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "buckled boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "bud vase": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bunch of grapes": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bunch of green grapes": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bundle of cinnamon sticks": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "bunk bed": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "bunny ear cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "bunny ear headband": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "burnt tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "burrito bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "burrowing owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "bushel basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "butter dish": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "buttered corn cob": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "buttered toast": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "butterfly": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "butterfly brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "butterfly hair clip": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "button mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "button-up shirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cabbage": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cabbage plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cabinet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cabinet knob": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cable car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "cadet cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cake box": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cake pan": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "cake pop": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cake stand": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "calico cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "calla lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "cameo brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cameo pendant": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "camp kettle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "camping lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "camping mug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "camping pillow": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "camping shovel": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "camping stove": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "can of corn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "can of soup": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "candelabra cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "candle": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "candle chandelier": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "candle flame": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "candlestick": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "candy apple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "candy cane": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "candy corn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "candy dish": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "candy necklace": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "canna lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "canopy bed": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "caprese salad": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "captain hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "caramel apple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "caramel candy": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "card table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cardinal bird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "carrot": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "carrot plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "carton of milk": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "castle key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cat ear headband": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cat figurine": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cat statue": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cat tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "caterpillar": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cavalier hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cedar tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ceiling lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cereal box": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "chandelier": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "chandelier earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "chanterelle mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "charm bracelet": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "charm necklace": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cheese board": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cheese pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cheese puff": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chef hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "chef jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "chelsea boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cherry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cherry hand pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cherry pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cherry tomato": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cherry tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "chest key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "chest of drawers": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "chestnut tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "chew toy": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "chia pudding cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "chicken": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "chicken burger": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chicken coop": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "chicken drumstick": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chicken feeder": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "chicken pot pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chili pepper": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "china cabinet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "chocolate bar": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate brownie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate chip cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "chocolate covered strawberry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate croissant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate cupcake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate frosted donut": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate heart": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "chocolate milkshake": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "chocolate mousse cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "chocolate souffle": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate tart": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chocolate truffle": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cholla cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "chorizo sausage": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "chukka boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cinnamon roll": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cinnamon stick": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cinnamon toast": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "city bus": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "clam shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "clawfoot bathtub": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "climbing rose": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "cloche hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "clock key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "clockwork heart": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cloud sheep": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "clover charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "clover clump": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "clutch purse": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "coat hook": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "coat of plates": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "coat rack": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cockle shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cocoa bean": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "coconut": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "coconut crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "coconut drink": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "coconut half": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "coconut palm": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cod fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "coil spring toy": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "coin on a string": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "coin pouch": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "coin purse": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "colored pencil": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "colored pencil set": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "comic book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "compass": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "compass rose": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "conch shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cone shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "conga drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "conical hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "convertible car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "cookie jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "cooking pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "cool sunglasses face emoji": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "corn stalk": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cosmic egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cosmic orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cotton candy": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cottontail rabbit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "covered wagon": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "cow": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cow calf": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cowboy boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cowboy hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cowrie shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cracked egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cradle": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "crate of corn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "crate of eggs": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "crate of fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "crate of grapes": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "crayon": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "crayon box": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "cream puff": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "crescent moon": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crib": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cricket ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "croissant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "croquet ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "crown key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crown on a cushion": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "crown ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "crystal apple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "crystal ball": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal chunk": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal cluster": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "crystal flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "crystal formation": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal geode": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "crystal pillar": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal prism": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal shard": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "crystal snail": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "crystal spike": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "crystal tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "crystal turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "cube crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cuckoo clock": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cucumber": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cucumber slice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "cucumber vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "cuff bracelet": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cuffed boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "cup and ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "cup of green tea": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "cup of herbal tea": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "cup of tea": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "cupcake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "curly fries": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "curly-toed shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "curtain": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cushion": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "cushion-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "cutting board": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "cypress tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "daikon radish": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "daisy flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "deck chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "decorated holiday tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "decorative bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "decorative bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "decorative tray": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "deer": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "deerstalker hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "desert boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "desk": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "desk lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "desk organizer": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "desk telephone": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "deviled egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "diamond": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "diamond ore": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "diamond-pane window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "dice bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "dice cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "dining table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "dinner roll": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "dinosaur egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "display cabinet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "dog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "dog collar": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "dog leash": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "dog sled": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "dolphin": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "domino tile": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "donut hole": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "door": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "door handle": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "door hinge": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "door key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "door knob": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "door knocker": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "dormer window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "double door": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "double ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "double-decker bus": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "double-rolled scroll": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "drafting table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "drawer handle": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "drawing compass": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "dream orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "dress form": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "dress shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "dresser": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "dressing table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "drippy slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "driving glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "drizzle cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "drop earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "dropper bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "drum set": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "duckling": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "duffel bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "duffle coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "dumbo octopus": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "dump truck": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "dust bunny": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "dutch baby pancake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "dutch oven": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "dwarf rabbit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "eagle feather": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "eagle owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "ear of corn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "earth orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "egg basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "egg carton": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "egg creature": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "egg cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "egg tart": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "egg-filled nest": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "eggplant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "eggplant plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "eggs benedict": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "electric guitar": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "electric kettle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "electric orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "elephant seal": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "elf hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "elixir bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "ellipsis speech bubble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "elm tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "elven boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ember mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "emerald": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "emerald ore": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "emperor penguin": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "energy orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "energy ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "engagement ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "eucalyptus tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "exclamation emote bubble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "fairy": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "fairy cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fairy castle cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fairy queen": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "fairy wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "farm duck": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "farm tractor": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "feather": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "feather boa": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "feather charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "feather duster": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "feathered hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "fern frond": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fiddle leaf fig": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fiddlehead fern": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fiddler crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "field jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "field mouse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "fig tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "filing cabinet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "fingerless gloves": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "fir tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fire berry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fire pepper": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fire slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "fire truck": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "firefly": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "fireplace": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "fireplace screen": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "fish on a stick": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "fish taco": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fishhook cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fishing boat": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "flame key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "flame lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "flame orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "flamingo": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "flapper dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "flat cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "flight jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "floating orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "floor lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "flower basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "flower brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "flower crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "flower deer": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "flower fairy": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "flower pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "flower ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "flower wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "flute": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "flying carpet": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "flying saucer": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "flying squirrel": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "folded blanket": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "folded map": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "folding camp chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "folding chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "food truck": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "footed bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "fork": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "fork and spoon set": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "forsythia bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "fortune cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fountain drink cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "four leaf clover": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "four-poster bed": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "fox": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "fox kit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "frame drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "framed painting": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "french fries": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "french toast": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fried chicken drumstick": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fried egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "friendship bracelet": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "fringe boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "frock coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "frog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "frost berry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "frost fairy": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "frost fox": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "frost lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "frost mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "frosted window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "frozen yogurt cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "fruit tart": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "frying pan": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "fudge square": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "full moon": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "funnel cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "fur-lined boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "gambler hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "game bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "gaming chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "garden fork": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "garden rake": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "garden salad": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "garden snail": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "gardening glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "garlic bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "garlic sausage": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "gelatin dessert": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "gelato cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "gem key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "gem pendant": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "gem pouch": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "gem-tipped wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "gerbera daisy": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "gift bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "gift basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "ginger cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "ginkgo leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ginkgo tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "glass bottle of milk": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass bottle of soda": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass marble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "glass of apple juice": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass of chocolate milk": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass of iced tea": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass of lemonade": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass of milk": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass of orange juice": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glass of soda": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "glazed donut": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "glazed ring cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "gloves": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "glowcap mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "gnarled wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "go-go boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "goat cheese log": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "goji berry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "gold coin tower": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "gold coin tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "golden acorn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "golden apple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "golden egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "goldfish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "golf bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "golf ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "gooseberry bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "graduation cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "grand piano": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "grandfather clock": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "granola bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "grape vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "greek salad": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "green apple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "green bell pepper": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "green onion": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "green smoothie": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "griffin egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "griffin feather": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "grilled cheese sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "guinea pig": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "guitar case": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "guitar pick": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "gummy bear": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "gym bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "gyoza dumpling": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hair bow ribbon": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hair clip": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hamburger": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hamburger bun": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hamburger patty": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hammock": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "hamster": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hamster wheel": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hand bell": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "hand mirror": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "handbag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hanging basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "hanging vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "harbor seal": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hard hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hard shell taco": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hardcover book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "harmonica": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "harp": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "harp seal": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "harvest basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "hat pin": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hat stand": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hatchling chick": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "head of lettuce": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "headband": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "healing berry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "heart balloon": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "heart crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "heart emote bubble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "heart key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart locket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "heart ornament": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart padlock": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart pendant": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "heart ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "heart shaped cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "heart shaped lollipop": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "heart wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart-eyed face emoji": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart-shaped gift box": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "heart-shaped potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "heart-shaped sunglasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hedgehog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hedgehog cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "heeled boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "helicopter": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "henley shirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hermit crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hexagonal coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "hexagonal crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "hexagonal gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "hibiscus flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "high chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "high heel shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "high-top sneaker": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "highland cow": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hiking backpack": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hiking boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hobby horse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "holiday lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "holly bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "holly leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "homburg hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "honey bear bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "honey dipper": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "honey pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "honey slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "honey toast": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "honeydew melon": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hooded jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hoodie": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hoop earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "horse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse bow": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse carriage": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse figurine": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse harness": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse saddle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse statue": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horse with a fish tail": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "horseshoe charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "horseshoe crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hot air balloon": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "hot dog": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "hot pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "hot sauce bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "hot water bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "hourglass": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "hourglass amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "hover bike": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "hover car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "humpback whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "hunter boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hunter's cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "hurricane lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "hydrangea bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ice cream bar": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice cream cone": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice cream sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice cream scoop": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice cream sundae": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice cream truck": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice cream tub": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ice crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "ice orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "ice slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "imperial crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "inari sushi": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "inbox tray": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "inflatable flamingo float": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "inflatable swim ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "instant noodle cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "insulated jug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "island map": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "ivy leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ivy vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "jack-in-the-box": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "jack-o'-lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "jalapeno pepper": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of chocolate spread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jar of crystals": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of fairy dust": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "jar of feathers": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of fireflies": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of honey": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jar of marmalade": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of mist": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of mushrooms": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of olives": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of paint": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "jar of peanut butter": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jar of pickles": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "jar of stardust": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "jar of strawberry jam": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jasmine vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "jelly bean": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jelly blob": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jelly cube": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jelly donut": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jelly fungus": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jellyfish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "jester hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "jet boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "jewel casket": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "jeweled egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "jigsaw puzzle piece": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "jingle bell": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "joshua tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "jug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "juice box": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "juice pouch": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "jump rope": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "juniper shrub": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "juniper tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "junk boat": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "kale leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "katsu sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ketchup bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "kettle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "kettle drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "kettle hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "key fob": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "key lime pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "key pendant": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "kick scooter": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "king crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "king slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "king trumpet mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "king's crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "kitchen stove": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "kite": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "kitten": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "kiwi bird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "kiwi fruit": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "kiwi half": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "kiwi vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "knee sock": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "knee-high boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "koala": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "koi fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "lab coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "labrador dog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "lace-up boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "lacrosse ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "ladle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "ladybug": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "lamb": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "lamp post": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "lantern mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "lantern staff": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "lantern tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "large coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "large hanging bell": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "lattice window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "laundry basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "lawn chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "lawn flamingo": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "layer cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "leaf brooch": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "leaf circlet": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "leaf fox": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "leaf key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "leaf rake": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "leaf slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "leaf spirit": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "leafy bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "leatherback turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "lemon": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "lemon meringue pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "lemon tart": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "lemon tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "lemon wedge": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "lettuce plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "lidded basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "life preserver ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "light orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "lighthouse lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "lily of the valley": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "lily pad": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "lime": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "lion head ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "lion's mane mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "loaded baked potato": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "loaded fries": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "loaf of bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "loaf of mana bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "loaf pan": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "locked treasure chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "locket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "lollipop": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "long evening glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "long scarf": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "long skirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "long sleeve shirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "long-necked potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "lop-eared rabbit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "lotion bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "lotus flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "lotus root": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "loving cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "lucky charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "lunch bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "lunchbox": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "mac and cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "macaron": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mage coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "magic bean": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic beanstalk": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic compass": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic dice": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "magic hourglass": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "magic mirror": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "magic orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic quill": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic rod": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic sparkle": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic staff": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic swirl": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic tome": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magic wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "magnolia tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "maine coon cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "mallard duck": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "mana berry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mana crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "mana orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "mandarin duck": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "mango": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mango lassi": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mango tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "mangrove tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "mantel clock": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "map": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "map case": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "map fragment": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "maple leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "maple sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "maple seed": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "maple syrup bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "maple tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "marble block": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "marble maze": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "marching drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "margherita pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "marimo moss ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "marquise-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "marshmallow": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mary jane shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "master key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "matsutake mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "maxi dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "measuring cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "meatball": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mechanical pencil": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "medal on ribbon": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "melon vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "melon wedge": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "meringue cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "message in a bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "messenger bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "mexican street corn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "microwave oven": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "milk bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "milk carton": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "milk crate": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "milk jug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "milking stool": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "miner's lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "mini fridge": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "mini pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mirror": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "mittens on a string": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "mixing bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "mob cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "mochi": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "mochi ice cream": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "moka pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "monarch butterfly": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "money bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "monkey puzzle tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "monorail car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "monstera leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "moon behind cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moon cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "moon fruit": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moon key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moon mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "moon rabbit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "moon snail shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moon staff": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moon wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moonlight mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "morel mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "morning star": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "moss turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "moth fairy": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "motor scooter": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "motorcycle boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "mud slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "mug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "mug of cocoa": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "mug of milk": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "mug of tea": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "munchkin cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "muscle car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "mushroom cluster": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "mushroom coral": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "mushroom pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "music box": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "music note emote bubble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "musical triangle": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "mussel shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "mustard bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "mystery egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "naan bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "napa cabbage": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "nasturtium vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "nature orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "necklace": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "nesting doll": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "newsboy cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "nightstand": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "nine-tailed fox": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "norwegian forest cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "oak leaf": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "oak sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "oak tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "oatmeal raisin cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "octagonal coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "octagonal gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "octopus": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "office chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "old boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "old man cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "olive tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "onigiri": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "onion": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "onion plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "onion rings": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "open book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "open scroll": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "open treasure chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "open window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "opera glasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "orange": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "orange slice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "orange tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "orb on a stand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "orb staff": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "orb wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "orchid": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ornament ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "ornamental egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ostrich egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "oval coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "oval mirror": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "oval window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "oval-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "oven": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "oven mitt": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "overflowing treasure chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "overnight oats jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "owl amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "owl figurine": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "owl statue": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "owl wizard": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "oxford shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "oyster mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "oyster shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "paella pan": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "paint bucket": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "paint can": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "paint palette": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "paint roller": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "paint tube": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "paintbrush": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "painted egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pair of cherries": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pair of dice": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "pair of maracas": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "pair of work gloves": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pajamas": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "palm sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "palm tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pan flute": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "panama hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pancake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "panda": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "paper airplane": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "paper boat": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "paper cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "paper cup of soda": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "paper lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "paperback book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "parasol mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "park bench": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "parrot": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "party cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "party dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "party hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pasta salad": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "patio umbrella": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pea plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pea pod": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "peace lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "peach": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "peach cobbler": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "peach tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "peacock feather": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "peanut": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "peanut butter cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "peanut butter sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pear": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pear tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pear-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "pearl": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "peasant dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pecan pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pedal boat": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "pedestal sink": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "pencil": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "pencil case": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "pencil cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pencil sharpener": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "pendant necklace": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "penguin": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "penguin egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pepper plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "peppermint candy": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pepperoni pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "perch fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "perfume bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "periwinkle shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "persian cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "pet bed": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "pet bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pet mouse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "phoenix amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "phoenix egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "phoenix feather": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "photo collage frame": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "piano bench": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "piccolo trumpet": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "pickup truck": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "picnic basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "picnic blanket": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "picnic table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "picture book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "picture frame": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "pie dish": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pig": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "piglet": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "pike fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "pillbox hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pillow": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "pinafore dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pincushion cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pine sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pine tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pineapple": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pineapple ham pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pineapple plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pineapple ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ping pong ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "pinwheel": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "piping bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pita bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pitcher": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pitcher and washbowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pitcher plant": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pizza bagel": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pizza box": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "platform boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "platform shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pleated skirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "plum": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "plum tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "plush duck": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush fox": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush frog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush octopus": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush penguin": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush unicorn": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "plush whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "poached egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pointe shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pointed boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pointed cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "polar bear": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "police cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "police car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "polo shirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pomegranate tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pony": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "pool table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "poplar tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "porcini mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "porkpie hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "portobello mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "pot of gold": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pot roast": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "pot-bellied stove": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "potato": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "potato chip": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "potato plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "potato salad": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "potato wedges": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pothos vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "potion belt": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "potion decanter": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "potion shelf": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "potion vial": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "power crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "pretzel twist": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "prickly pear cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "prize ribbon rosette": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "propeller beanie": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "propeller plane": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "pudding cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "puddle slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "puffball mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "puffer jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "pull-along duck toy": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "pumpkin": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pumpkin candy pail": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pumpkin pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "pumpkin vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "punch bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "puppy": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "purse": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "puzzle box": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "puzzle cube": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "quad bike": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "quail egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "quartz crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "queen's crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "question emote bubble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "rabbit": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rabbit foot charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rabbit hutch": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "raccoon": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "race car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "radish": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "radish plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "rag doll": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "ragdoll cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rain boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "rain cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rainbow": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rainbow carrot": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "raincoat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ranger boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ranger hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "raspberry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "raspberry bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "reading glasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "recipe book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rectangular-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "red bell pepper": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "red cabbage": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "red onion": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "red panda": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "red velvet cake slice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "red-eyed tree frog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "redwood tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "refrigerator": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "reusable water bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "ribbon candy": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "ribbon spool": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "rice cooker": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "rice cracker": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "rice plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "riding boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "riding gloves": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ring box": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ring of fire": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ring of keys": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "river otter": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "roasting pan": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "robin bird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "robin egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "roc bird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rock candy stick": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "rock slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rocking chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "rocking horse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rolled map": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rolled scroll": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rolling pin": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "rose": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "rose bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "rose quartz": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "rosemary bush": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "round bread loaf": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "round door": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "round hard candy": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "round potion flask": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "round rug": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "round sunglasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "round window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "round-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "rowan tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "rubber ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "rubber chicken": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rubber duck": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "rubber glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "ruby": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "ruby ore": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "ruffled skirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "rug": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "rugby ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "runner rug": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "running shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "russian blue cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "rye bread loaf": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sack of corn": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sack of rice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "safari hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "saguaro cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "sailboat": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "sailor cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sailor dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "salad bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "salmon fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sandwich cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "sapphire": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sapphire ore": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "saucer": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "sausage link": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sausage on a stick": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "scale coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "scallop shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "scalloped coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "scarab amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "scarf": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "school backpack": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "school bus": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "school desk": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "scotch egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "scottish fold cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "scrambled eggs": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "scroll": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "scroll bundle": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "scrying orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sea chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sea cucumber": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sea otter": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sea turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "seahorse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sealed scroll": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "seashell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "seed packet": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "seed pouch": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "seedling creature": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "seedling sprout": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "service bell": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "serving spoon": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "serving tray": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "sewing basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "shadowcap mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "sheep": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sheet music book": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "shelf bracket": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "shepherd's pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sheriff star badge": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "shiitake mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "ship in a bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "ship lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "ship's bell": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "shoe rack": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "shooting star": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "shopping bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "shopping basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "shore crab": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "shortbread cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "shoulder bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "shovel": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "shrimp dumpling": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "shuttered window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "siamese cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "side table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "signet ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sippy cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "skateboard": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "ski boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "skirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sky jellyfish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sky lantern": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "sky whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sled": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "sleeping bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "slice of apple pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of birthday cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of cheese pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of cherry pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of chocolate cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of mushroom pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of pepperoni pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of pumpkin pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of strawberry shortcake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slice of toast": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slide whistle": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "sliding door": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "slime ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "slime core": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "slime egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slime jelly": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "slip dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "slipper sock": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "slotted spoon": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "slouch boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "smoothie bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "snapping turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "snare drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "snow boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "snow cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "snow globe": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "snow shovel": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "snowdrop flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "snowflake": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "snowflake key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "snowflake ornament": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "snowy owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "soccer ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "sock": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "soda bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "soda can": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "sofa": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "soft boiled egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "soft pretzel": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "soft taco": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "solitaire ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "souffle pancake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "soup bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "soup dumpling": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "soup tureen": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "soy sauce bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "spaghetti and meatballs": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sparrow": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "spatula": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "spell scroll": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "spellbook": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sperm whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "spice jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "spiky slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "spinning coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "spinning top": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "spiral amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "spiral mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "spiral potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "spiral ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "spiral shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "spiral wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "spirit deer": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "spirit lotus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "spirit orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "spirit tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "spoon": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "sports bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "sports car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "sports drink bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "spring roll": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "spruce tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "square coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "square potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "square window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "square-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "squirrel": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "squirrel nest": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "stack of pancakes": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "stacking rings toy": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "stamped coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "standing mirror": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "star": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star anise": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star berry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "star cactus": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "star chart": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "star fruit": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "star ornament": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star pendant": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "star rank badge": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star shaped cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "star shaped lollipop": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "star sparkle": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star staff": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star tome": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star tree topper": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "star wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star-shaped medal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "star-shaped potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "star-shaped sunglasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "starfish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "starlight tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "starry owl": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "steamed broccoli": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "steamed bun": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "steel drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "stick of butter": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "stirring spoon": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "stock pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "stool": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "storage basket": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "storage chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "storage pot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "storm cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "storm orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "strawberry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "strawberry cupcake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "strawberry milkshake": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "strawberry plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "strawberry rhubarb pie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "strawberry smoothie": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "street clock": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "street lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "string cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "string of pearls succulent": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "stud earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "stuffed bunny": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "stuffed kitten": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "stuffed puppy": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sub sandwich": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "subway car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "sugar bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "sugar cookie": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sun": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun behind cloud": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun fruit": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sun key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun staff": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun visor": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sun wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "sunburst crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sunflower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "sunglasses": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "swallow bird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "swallowtail butterfly": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "swan": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "sweater": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sweater vest": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "sweet potato": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sweet potato plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "swim cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "swirl lollipop": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "swiss roll": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "sycamore tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "t-shirt": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tabby cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "table": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "table coral": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "table lamp": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "table runner": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "taiko drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "takoyaki ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "talking drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "tall crown": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tall narrow window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "tall potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "tall slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "tambourine": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "tandoor oven": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "tap shoe": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tea bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tea caddy": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "tea light": {
+  "cat": "drink",
+  "tags": [
+   "edible",
+   "drink"
+  ]
+ },
+ "tea tray": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "teacup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "teacup and saucer": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "teacup pig": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "teapot": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "teardrop earring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "teardrop pendant": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "teardrop potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "teddy bear": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "tennis ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "thigh-high boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "thistle flower": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "three tier cake": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "throw pillow": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "thumb ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tiara": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tiger lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "toaster": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "toaster pastry": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "toe sock": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "token coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "tom drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "tomato": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "tomato plant": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "tonic bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "toothbrush cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "top hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "topiary ball": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "tote bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "toy airplane": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "toy boomerang": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "toy bucket": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "toy building block": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "toy car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "toy castle": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "toy chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "toy drum": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "toy piano": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "toy robot": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "toy rocket": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "toy sailboat": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "toy train engine": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "toy truck": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "toy wagon": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "tracksuit jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "trail mix bowl": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "train carriage": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "trapper hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "travel boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "travel bread": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "travel mug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "treasure chest": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "treasure hunter": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "treasure map": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "treasure pile": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "treasure sack": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "treasure x mark": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "tree branch": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "tree fern": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "tree frog": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "tree stump": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "trench coat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "triangle-cut gem": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "triangular coin": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "triangular potion bottle": {
+  "cat": "magic",
+  "tags": [
+   "magic",
+   "potion"
+  ]
+ },
+ "trick-or-treat bag": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tricorne hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "trout fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "trucker cap": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "trucker jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "trumpet": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "trumpet vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "tub of cream cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "tub of yogurt": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "tulip": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "tulip bulb": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "tuna fish": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "turkey bird": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "turtle": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "turtle egg": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "turtle figurine": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "turtleneck sweater": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "tuxedo cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "twig wand": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "twin crystal": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "ukulele": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "umbrella": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "umbrella mushroom": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "umbrella stand": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "unicorn": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "unicorn horn": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "upright piano": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "vanity mirror": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "varsity jacket": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "vase": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "veggie burger": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "veggie pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "victory cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "vintage car": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "violin": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "violin bow": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "violin case": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "vitamin jar": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "waffle": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "waffle on a stick": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "wagon wheel": {
+  "cat": "vehicle",
+  "tags": [
+   "toy",
+   "vehicle"
+  ]
+ },
+ "wall clock": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "wall shelf": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "walnut tree": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "wardrobe": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "water bottle": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "water bubble": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "water jug": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "water lily": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "water orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "water slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "watercolor paint set": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "watering can": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "watermelon": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "watermelon slice": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "watermelon vine": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "wedding dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "wedge of blue cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "wedge of cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "whale": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "wheel of cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "wheel of moon cheese": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "wheelbarrow": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "whelk shell": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "whipped cream can": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "whisk": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "white pizza": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "whole chicken": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "whoopee cushion": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "wide-brimmed hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "wild beehive": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "wild strawberry": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "willow sapling": {
+  "cat": "garden",
+  "tags": [
+   "plant",
+   "living"
+  ]
+ },
+ "wind orb": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "wind-up key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "wind-up toy mouse": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "window": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "window blinds": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "window box": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "window shutter": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "wingback chair": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "winged amulet": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "winged boots": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "winged bunny": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "winged cat": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "winged key": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "winged pig": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "winged ring": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "winged slime": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "winged unicorn": {
+  "cat": "animal",
+  "tags": [
+   "pet",
+   "living"
+  ]
+ },
+ "winter boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "winter glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "wishbone charm": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "wizard hat": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "wood stove": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ },
+ "work boot": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "work glove": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "world map": {
+  "cat": "magic",
+  "tags": [
+   "magic"
+  ]
+ },
+ "wrap dress": {
+  "cat": "clothing",
+  "tags": [
+   "wearable"
+  ]
+ },
+ "wrapped hard candy": {
+  "cat": "food",
+  "tags": [
+   "edible"
+  ]
+ },
+ "writing desk": {
+  "cat": "furniture",
+  "tags": [
+   "furniture"
+  ]
+ },
+ "xylophone": {
+  "cat": "music",
+  "tags": [
+   "music"
+  ]
+ },
+ "yo-yo": {
+  "cat": "toy",
+  "tags": [
+   "toy"
+  ]
+ },
+ "yogurt cup": {
+  "cat": "kitchen",
+  "tags": [
+   "kitchen",
+   "container"
+  ]
+ }
+}

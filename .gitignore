@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+
+# Сырой датасет (~1 ГБ) и производные для ручного просмотра — пересоздаются скриптами
+data/raw/
+data/review/
+data/classify_report.txt
+
+# Игра
+game/node_modules/
+game/dist/
+
+# Скриншоты с телефона для обсуждения (содержат локальный адрес сети)
+development-checklists/*.jpg
+development-checklists/*.png
