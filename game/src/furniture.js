@@ -16,7 +16,7 @@ const C = {
 };
 
 export function outline(c) {
-  const g = c.getContext('2d');
+  const g = c.getContext('2d', { willReadFrequently: true }); // контур читает пиксели
   const img = g.getImageData(0, 0, c.width, c.height);
   const a = (x, y) => (x < 0 || y < 0 || x >= c.width || y >= c.height ? 0 : img.data[(y * c.width + x) * 4 + 3]);
   const edge = [];
@@ -34,7 +34,7 @@ function canvasFor(w, h, draw) {
   const c = document.createElement('canvas');
   c.width = w + 2;
   c.height = h + 2;
-  const g = c.getContext('2d');
+  const g = c.getContext('2d', { willReadFrequently: true }); // контур читает пиксели
   const r = (x, y, ww, hh, col) => { g.fillStyle = col; g.fillRect(x + 1, y + 1, ww, hh); };
   const clear = (x, y) => g.clearRect(x + 1, y + 1, 1, 1);
   draw(r, clear);
@@ -234,7 +234,7 @@ export function makeFurnitureTextures(scene) {
     // иконка 16×16 для ящика — уменьшенная копия той же мебели (без сглаживания)
     const ic = document.createElement('canvas');
     ic.width = ic.height = 16;
-    const g = ic.getContext('2d');
+    const g = ic.getContext('2d', { willReadFrequently: true });
     g.imageSmoothingEnabled = false;
     // рисуем «внутренность» без старого контура в 14×14, затем обводим заново
     const sc = Math.min(14 / (big.width - 2), 14 / (big.height - 2));

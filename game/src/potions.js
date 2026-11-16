@@ -16,7 +16,7 @@ const RAINBOW = ['#ff6b6b', '#ffb84a', '#ffe66b', '#6be08a', '#5ac4f2', '#b47cf2
 function drawPotion(p) {
   const c = document.createElement('canvas');
   c.width = c.height = 16;
-  const g = c.getContext('2d');
+  const g = c.getContext('2d', { willReadFrequently: true }); // контур читает пиксели
   const px = (x, y, col) => { g.fillStyle = col; g.fillRect(x, y, 1, 1); };
   // пробка и горлышко
   for (let x = 6; x <= 9; x++) { px(x, 1, '#b07a4e'); px(x, 2, '#8d5a3b'); }

@@ -14,3 +14,6 @@ game/dist/
 # Скриншоты с телефона для обсуждения (содержат локальный адрес сети)
 development-checklists/*.jpg
 development-checklists/*.png
+
+# Логи внешних инструментов (playwright-cli)
+.playwright-cli/

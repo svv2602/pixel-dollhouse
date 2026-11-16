@@ -424,7 +424,7 @@ class Room extends Phaser.Scene {
     const c = document.createElement('canvas');
     c.width = dw + 2;
     c.height = dh + 2;
-    const g = c.getContext('2d');
+    const g = c.getContext('2d', { willReadFrequently: true });
     g.imageSmoothingEnabled = false;
     g.drawImage(fr.source.image, fr.cutX + x0 + 1, fr.cutY + y0 + 1, bw - 2, bh - 2, 1, 1, dw, dh);
     const d = g.getImageData(0, 0, c.width, c.height);
