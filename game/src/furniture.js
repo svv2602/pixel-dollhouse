@@ -194,6 +194,31 @@ const PIECES = {
     r(4, 3, 2, 4, C.woodD); r(34, 3, 2, 4, C.woodD); r(5, 3, 1, 3, C.wood); r(35, 3, 1, 3, C.wood);
   }],
 
+  // ------------------------------------------------------------ грядка 44×10 (3 лунки)
+  gardenbed: [44, 10, (r) => {
+    r(0, 2, 44, 8, C.woodD); r(0, 2, 44, 1, C.wood); r(0, 9, 44, 1, C.woodK);       // деревянный бортик
+    r(2, 0, 40, 6, '#6b4a32'); r(2, 0, 40, 1, '#8a6446');                            // земля
+    for (let x = 4; x < 42; x += 5) r(x, 2 + (x % 3), 1, 1, '#4f3524');               // комочки
+    r(0, 2, 2, 8, C.wood); r(42, 2, 2, 8, C.wood);
+  }],
+
+  // ------------------------------------------------------------ яблоня 34×44
+  tree: [34, 44, (r) => {
+    r(14, 24, 6, 20, '#8d5a3b'); r(14, 24, 2, 20, '#a8714d'); r(19, 24, 1, 20, '#6e4430'); // ствол
+    r(10, 42, 14, 2, '#6e4430');
+    const crown = (cx, cy, rx, ry, col) => {
+      for (let y = 0; y < 44; y++) for (let x = 0; x < 34; x++) {
+        if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1) r(x, y, 1, 1, col);
+      }
+    };
+    crown(17, 14, 16, 13, '#4fa83d');
+    crown(13, 10, 9, 7, '#6cc455');
+    crown(22, 16, 8, 6, '#3f9030');
+    for (const [x, y] of [[8, 12], [20, 7], [25, 17], [12, 20], [16, 13], [27, 10]]) {
+      r(x, y, 3, 3, '#ef5a6f'); r(x, y, 1, 1, '#ffb0bb');                            // яблоки
+    }
+  }],
+
   // ------------------------------------------------------------ ковёр 50×11
   rug: [50, 11, (r) => {
     const ell = (k, col) => {
@@ -222,6 +247,8 @@ export const BIG_FURNITURE = [
   { key: 'counter', subject: 'kitchen counter' },
   { key: 'stove', subject: 'kitchen stove', icon: 'kitchen stove' },
   { key: 'shelf', subject: 'wall shelf', icon: 'wall shelf' },
+  { key: 'gardenbed', subject: 'veggie patch' },
+  { key: 'tree', subject: 'apple tree', icon: 'apple tree' },
   { key: 'album', subject: 'discovery album' },
 ];
 

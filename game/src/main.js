@@ -30,9 +30,10 @@ function computeLayout() {
   const wh = Math.min(26, L.FLOOR_TOP - 22);
   L.WINDOW = { x: Math.round(L.W * 0.66), y: Math.max(5, Math.round((L.FLOOR_TOP - 16 - wh) / 2)), w: 30, h: wh };
   // мир — две комнаты по ширине экрана: спальня [0, W) и алхимическая кухня [W, 2W)
-  L.ROOMS = 2;
+  L.ROOMS = 3; // спальня, алхимическая кухня, сад
   L.WORLD = L.W * L.ROOMS;
   L.WINDOWS = [L.WINDOW, { ...L.WINDOW, x: L.W + L.WINDOW.x }];
+  L.SUN = { x: 2 * L.W + L.W - 26, y: 5, w: 14, h: 14 }; // солнце/луна в саду: тап меняет день и ночь
 }
 computeLayout();
 
@@ -89,6 +90,13 @@ const COOK = {
   'sweet potato': 'potato wedges', 'hamburger patty': 'hamburger', 'broccoli': 'steamed broccoli',
   'cabbage': 'bowl of vegetable soup', 'carrot': 'bowl of vegetable soup', 'lemon': 'lemon tart',
 };
+// Сад: что можно посадить (вырастет то же самое); пакетик семян — сюрприз из этого списка
+const GROW = ['strawberry', 'apple', 'carrot', 'tomato', 'pumpkin', 'potato', 'banana', 'watermelon', 'pear', 'peach',
+  'pair of cherries', 'ear of corn', 'eggplant', 'onion', 'broccoli', 'lemon', 'orange', 'bunch of grapes', 'blueberry',
+  'cabbage', 'radish', 'pineapple', 'sunflower', 'tulip', 'rose', 'daisy flower', 'button mushroom'];
+const SEEDS = /seed packet|seed pouch|\bseeds?\b/;
+const PLOT_DX = [-13, 0, 13];
+
 // Что снится спящим в тёмной комнате
 const DREAMS = ['unicorn', 'rainbow', 'star', 'cupcake', 'kitten', 'crown', 'shooting star', 'teddy bear', 'butterfly'];
 
@@ -135,6 +143,8 @@ function behaviorOf(rec) {
     furniture: rec.cat === 'furniture',
     wall: RX.wall.test(s),
     flat: /\b(rug|carpet|mat)\b/.test(s),
+    gardenBed: s === 'veggie patch',
+    appleTree: s === 'apple tree' && !!rec.tex,
     shelf: rec.cat === 'furniture' && RX.shelf.test(s),
     cauldron: /cauldron/.test(s),
     album: s === 'discovery album',
@@ -242,6 +252,8 @@ class Room extends Phaser.Scene {
     this.alchemy = new Alchemy((subj) => this.findRec(subj), pool);
     if (!this.loadState()) this.defaultRoom();
     this.ensureKitchen();
+    this.ensureGarden();
+    for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
     this.applyNight(this.night);
@@ -292,6 +304,18 @@ class Room extends Phaser.Scene {
     g.generateTexture('note', 5, 7).clear();
     pixelMap(g, ['XXXXX', '...X.', '..X..', '.X...', 'XXXXX'], 0, 0, 0xffffff);
     g.generateTexture('zzz', 5, 5).clear();
+    // стадии растения и капля «полей меня»
+    pixelMap(g, ['..XXX..', '.XXXXX.', 'XXXXXXX'], 0, 0, 0x4f3524);
+    pixelMap(g, ['...X...'], 0, 0, 0x8fd16a);
+    g.generateTexture('plant_seed', 7, 3).clear();
+    pixelMap(g, ['X.....X', 'XX...XX', '.XX.XX.', '..XXX..', '...X...', '...X...', '...X...'], 0, 0, 0x5fbf4a);
+    g.generateTexture('plant_sprout', 7, 7).clear();
+    pixelMap(g, ['...XXXXX...', '.XXXXXXXXX.', 'XXXXXXXXXXX', 'XXXXXXXXXXX', '.XXXXXXXXX.', '..XXXXXXX..', '....XXX....', '.....X.....', '.....X.....', '.....X.....'], 0, 0, 0x4fa83d);
+    pixelMap(g, ['...XX......', '.XX........', 'X..........'], 1, 1, 0x8fe07a);
+    g.generateTexture('plant_bush', 11, 10).clear();
+    pixelMap(g, ['..X..', '..X..', '.XXX.', 'XXXXX', 'XXXXX', 'XXXXX', '.XXX.'], 0, 0, 0x5ac4f2);
+    pixelMap(g, ['.....', '.....', '.....', '.X...'], 0, 0, 0xffffff);
+    g.generateTexture('water_drop', 5, 7).clear();
     // иконки желаний «музыка» и «спать» (12×12)
     pixelMap(g, ['....XXXXXXX', '....XXXXXXX', '....X.....X', '....X.....X', '....X.....X', '....X.....X',
       '..XXX...XXX', '.XXXX..XXXX', '.XXXX..XXXX', '..XX....XX.'], 0, 1, 0x8a52cc);
@@ -364,6 +388,28 @@ class Room extends Phaser.Scene {
     // проём между комнатами
     g.fillStyle(0xc9a3b9).fillRect(W - 2, 0, 4, FLOOR_TOP - 2);
     g.fillStyle(0xa77f97).fillRect(W + 1, 0, 1, FLOOR_TOP - 2);
+    // ===== сад [2W, 3W): трава (небо, холмы и забор — на своих слоях)
+    const gx = 2 * W;
+    g.fillStyle(0x8fd16a).fillRect(gx, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
+    for (let y = FLOOR_TOP + 2, r = 0; y < ROOM_H; y += 5, r++) {
+      g.fillStyle(0x7cc25a);
+      for (let x = gx + (r % 2) * 5; x < gx + W; x += 10) { g.fillRect(x, y, 1, 2); g.fillRect(x + 2, y + 1, 1, 1); }
+    }
+    g.fillStyle(0xb5e38f).fillRect(gx, FLOOR_TOP, W, 1);
+    // дверной косяк между кухней и садом
+    g.fillStyle(0x8d5a3b).fillRect(gx - 2, 0, 4, FLOOR_TOP);
+    g.fillStyle(0xa8714d).fillRect(gx - 2, 0, 1, FLOOR_TOP);
+    // холмы и белый заборчик — поверх неба
+    const hz = this.add.graphics().setDepth(-8);
+    for (let x = gx; x < gx + W; x++) {
+      const hgt = Math.round(7 + 4 * Math.sin((x - gx) / 23) + 2 * Math.sin((x - gx) / 9));
+      hz.fillStyle(0x7cc25a).fillRect(x, FLOOR_TOP - hgt, 1, hgt);
+    }
+    hz.fillStyle(0xfff8f0);
+    for (let x = gx + 3; x < gx + W; x += 8) { hz.fillRect(x, FLOOR_TOP - 13, 3, 13); hz.fillRect(x + 1, FLOOR_TOP - 14, 1, 1); }
+    hz.fillRect(gx, FLOOR_TOP - 10, W, 2).fillRect(gx, FLOOR_TOP - 5, W, 2);
+    hz.fillStyle(0xe0d6cc);
+    for (let x = gx + 5; x < gx + W; x += 8) hz.fillRect(x, FLOOR_TOP - 13, 1, 13);
     // окна: небо — отдельный слой (перерисовывается днём/ночью), рамы — поверх
     this.sky = this.add.graphics().setDepth(-9);
     const f = this.add.graphics().setDepth(-8);
@@ -392,6 +438,25 @@ class Room extends Phaser.Scene {
   drawSky() {
     const s = this.sky.clear();
     for (const win of L.WINDOWS) this.drawSkyIn(s, win);
+    // небо сада: днём — голубое с солнцем и облаками, ночью — тёмное с луной и звёздами
+    const gx = 2 * L.W;
+    const { x: sx, y: sy } = L.SUN;
+    if (!this.night) {
+      s.fillStyle(0x9fdcff).fillRect(gx, 0, L.W, L.FLOOR_TOP);
+      s.fillStyle(0xc8ecff).fillRect(gx, L.FLOOR_TOP - 22, L.W, 22);
+      s.fillStyle(0xffe066).fillRect(sx + 2, sy, 10, 14).fillRect(sx, sy + 2, 14, 10);
+      s.fillStyle(0xfff4a8).fillRect(sx + 3, sy + 3, 4, 4);
+      s.fillStyle(0xffffff);
+      for (const [cx, cy] of [[30, 10], [110, 18], [190, 8]]) {
+        s.fillRect(gx + cx, cy, 16, 4).fillRect(gx + cx + 3, cy - 3, 8, 3).fillRect(gx + cx + 9, cy - 2, 5, 2);
+      }
+    } else {
+      s.fillStyle(0x24205a).fillRect(gx, 0, L.W, L.FLOOR_TOP);
+      s.fillStyle(0xfff6c2).fillRect(sx + 2, sy, 10, 14).fillRect(sx, sy + 2, 14, 10);
+      s.fillStyle(0x24205a).fillRect(sx + 6, sy - 1, 9, 12);
+      s.fillStyle(0xffffff);
+      for (let i = 0; i < 40; i++) s.fillRect(gx + ((i * 73 + i * i * 29) % L.W), (i * 37 + i * i * 13) % (L.FLOOR_TOP - 16), 1, 1); // разбросанные звёзды
+    }
   }
 
   drawSkyIn(s, { x, y, w, h }) {
@@ -444,6 +509,7 @@ class Room extends Phaser.Scene {
     Object.assign(o, {
       kind: 'item', uid: extra.uid || this.uidSeq++, rec, beh,
       contents: extra.contents || [], lit: extra.lit ?? true, owner: null, slot: null, restOn: null,
+      plots: beh.gardenBed ? (extra.plots || [null, null, null]) : null,
     });
     this.uidSeq = Math.max(this.uidSeq, o.uid + 1);
     if (beh.light) {
@@ -475,6 +541,8 @@ class Room extends Phaser.Scene {
     for (const x of this.objs) if (x.restOn === o) x.restOn = null;
     if (o.owner) o.owner.slots[o.slot] = null;
     o.glow?.destroy();
+    o.plantImgs?.forEach((x) => x?.destroy());
+    o.dropImgs?.forEach((x) => x?.destroy());
     o.destroy();
   }
 
@@ -557,6 +625,147 @@ class Room extends Phaser.Scene {
     if (pot) { pot.x = px; pot.y = FLOOR_TOP + 22; pot.restOn = null; } else big('cauldron', 0.53, FLOOR_TOP + 22);
     big('fridge', (W - 28) / W, FLOOR_TOP + 5);
     this.save();
+  }
+
+  /** Сад: появляется и в старых сохранениях (если третья комната пуста). */
+  ensureGarden() {
+    if (this.objs.some((o) => o.x >= 2 * L.W)) return;
+    const { W, FLOOR_TOP, ROOM_H } = L;
+    const x0 = 2 * W;
+    const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
+    const put = (subj, fx, y) => { const r = this.findRec(subj); return r ? this.spawnItem(r, Math.round(x0 + W * fx), Math.round(y)) : null; };
+    big('tree', 0.14, FLOOR_TOP + 10);
+    const bed1 = big('gardenbed', 0.45, FLOOR_TOP + 14);
+    big('gardenbed', 0.72, FLOOR_TOP + 26);
+    // подсолнух уже пророс и ждёт полива — механика понятна сразу
+    const sun = this.findRec('sunflower');
+    if (sun) bed1.plots[1] = { id: sun.id, stage: 1, watered: false };
+    put('watering can', 0.3, ROOM_H - 6);
+    put('seed packet', 0.58, ROOM_H - 3);
+    put('strawberry', 0.88, ROOM_H - 8);
+    put('rabbit', 0.6, FLOOR_TOP + 36);
+    this.save();
+  }
+
+  growRec(rec) {
+    if (SEEDS.test(rec.subject)) return true;
+    return GROW.includes(rec.subject);
+  }
+
+  plotAt(bed, x) {
+    let best = 0;
+    PLOT_DX.forEach((dx, i) => { if (Math.abs(bed.x + dx - x) < Math.abs(bed.x + PLOT_DX[best] - x)) best = i; });
+    return best;
+  }
+
+  /** Посадить: в лунку под пальцем (или любую свободную). Из клубники вырастет клубника, из семян — сюрприз. */
+  plant(bed, o, x) {
+    let i = this.plotAt(bed, x);
+    if (bed.plots[i]) i = bed.plots.findIndex((p) => !p);
+    if (i < 0) return false;
+    let rec = o.rec;
+    if (SEEDS.test(rec.subject)) rec = this.findRec(pick(GROW.filter((g) => this.findRec(g)))) || rec;
+    bed.plots[i] = { id: rec.id, stage: 0, watered: false };
+    this.objs = this.objs.filter((x2) => x2 !== o);
+    const px = bed.x + PLOT_DX[i];
+    this.tweens.add({
+      targets: o, x: px, y: bed.y - bed.displayHeight + 4, alpha: 0, duration: 260,
+      onComplete: () => { o.destroy(); this.renderPlots(bed); },
+    });
+    sfx.drop();
+    this.fxCrumbs.setParticleTint(0x6b4a32);
+    this.fxCrumbs.explode(5, px, bed.y - bed.displayHeight + 4);
+    return true;
+  }
+
+  waterPlot(bed, i) {
+    const p = bed.plots[i];
+    if (!p || p.stage >= 3 || p.watered) return;
+    p.watered = true;
+    sfx.splash();
+    this.renderPlots(bed);
+    this.growLater(bed, i);
+    this.save();
+  }
+
+  /** Политое растение подрастает через пару секунд: семечко → росток → кустик → урожай. */
+  growLater(bed, i) {
+    const p = bed.plots[i];
+    this.time.delayedCall(2500, () => {
+      if (!bed.active || bed.plots[i] !== p || !p.watered) return;
+      p.stage += 1;
+      p.watered = false;
+      const px = bed.x + PLOT_DX[i];
+      this.fxSparks.explode(p.stage === 3 ? 16 : 6, px, bed.y - bed.displayHeight - 4);
+      if (p.stage === 3) sfx.sparkle(); else sfx.squeak();
+      this.renderPlots(bed);
+      const img = bed.plantImgs[i];
+      if (img) this.tweens.add({ targets: img, y: img.y - 3, duration: 120, yoyo: true });
+      this.save();
+    });
+  }
+
+  /** Тап по грядке: созрело — собрать урожай (вдвойне); нужно полить — капля подпрыгивает. */
+  plotTap(bed, x) {
+    const i = this.plotAt(bed, x);
+    const p = bed.plots[i];
+    if (!p) { sfx.boing(); return; }
+    if (p.stage < 3) {
+      const drop = bed.dropImgs[i];
+      if (drop) { sfx.blub(); this.tweens.add({ targets: drop, scale: 1.0, y: drop.y - 4, duration: 120, yoyo: true }); }
+      return;
+    }
+    const rec = this.recOf(p.id);
+    bed.plots[i] = null;
+    this.renderPlots(bed);
+    if (!rec) return;
+    sfx.chestOut();
+    const px = bed.x + PLOT_DX[i];
+    for (let k = 0; k < 2; k++) {
+      const o = this.spawnItem(rec, Math.round(px), Math.round(bed.y - bed.displayHeight));
+      const tx = Math.round(Phaser.Math.Clamp(px + (k ? 1 : -1) * rnd(10, 22), 2 * L.W + 8, L.WORLD - 8));
+      const ty = Math.round(rnd(L.FLOOR_TOP + 6, L.ROOM_H - 2));
+      this.tweens.add({ targets: o, x: tx, duration: 500, delay: k * 120 });
+      this.tweens.add({
+        targets: o, y: o.y - 18, duration: 220, delay: k * 120, ease: 'Quad.easeOut',
+        onComplete: () => this.tweens.add({ targets: o, y: ty, duration: 360, ease: 'Bounce.easeOut' }),
+      });
+    }
+    this.fxHearts.explode(3, px, bed.y - 14);
+    this.time.delayedCall(900, () => this.save());
+  }
+
+  /** Картинки растений и капель на грядке по её состоянию. */
+  renderPlots(bed) {
+    bed.plantImgs ||= [null, null, null];
+    bed.dropImgs ||= [null, null, null];
+    bed.plots.forEach((p, i) => {
+      bed.plantImgs[i]?.destroy();
+      bed.dropImgs[i]?.destroy();
+      bed.plantImgs[i] = null;
+      bed.dropImgs[i] = null;
+      if (!p) return;
+      const rec = this.recOf(p.id);
+      let img;
+      if (p.stage === 0) img = this.add.image(0, 0, 'plant_seed');
+      else if (p.stage === 1) img = this.add.image(0, 0, 'plant_sprout');
+      else if (p.stage === 2) img = this.add.image(0, 0, 'plant_bush');
+      else img = rec ? this.recImage(rec, 0, 0) : this.add.image(0, 0, 'plant_bush');
+      bed.plantImgs[i] = img.setOrigin(0.5, 1);
+      if (p.stage < 3 && !p.watered) bed.dropImgs[i] = this.add.image(0, 0, 'water_drop').setOrigin(0.5, 1);
+    });
+  }
+
+  /** Тап по яблоне: дерево качается, падает яблоко. */
+  shakeTree(tree) {
+    const x0 = tree.x;
+    this.tweens.add({ targets: tree, x: x0 + 1, duration: 60, yoyo: true, repeat: 3, onComplete: () => { tree.x = x0; } });
+    const rec = this.findRec('apple');
+    if (!rec) return;
+    const o = this.spawnItem(rec, Math.round(tree.x + rnd(-10, 10)), Math.round(tree.y - tree.displayHeight * 0.55));
+    const ty = Math.round(Phaser.Math.Clamp(tree.y + rnd(2, 14), L.FLOOR_TOP + 4, L.ROOM_H - 2));
+    sfx.pick();
+    this.tweens.add({ targets: o, y: ty, duration: 520, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } });
   }
 
   // ---------------------------------------------------------------- навигация между комнатами
@@ -795,6 +1004,16 @@ class Room extends Phaser.Scene {
     const o = pr.obj;
     o.x = Phaser.Math.Clamp(q.x + pr.offX, 4, L.WORLD - 4);
     o.y = Phaser.Math.Clamp(q.y + pr.offY, o.displayHeight * 0.6, L.H + 10);
+    // лейка над грядкой — поливает лунку под носиком
+    if (o.kind === 'item' && /watering can/.test(o.rec.subject)) {
+      const bed = this.objs.find((x) => x.beh?.gardenBed && Math.abs(x.x - o.x) < 24 && o.y < x.y && o.y > x.y - 26);
+      if (bed) {
+        const i = this.plotAt(bed, o.x);
+        this.fxCrumbs.setParticleTint(0x5ac4f2);
+        if (Math.random() < 0.5) this.fxCrumbs.explode(2, o.x, o.y - 4);
+        this.waterPlot(bed, i);
+      }
+    }
     // котёл «ждёт» ингредиент: подпрыгивает, когда к нему подносят предмет
     if (o.kind === 'item' && !o.beh.furniture) {
       const pot = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.cauldron);
@@ -846,8 +1065,8 @@ class Room extends Phaser.Scene {
       return;
     }
     if (pr.rec) { this.tossIn(pr.rec); return; }
-    if (pr.obj) { this.tap(pr.obj); return; }
-    if (L.WINDOWS.some(({ x, y, w, h }) => q.x >= x && q.x <= x + w && q.y >= y && q.y <= y + h)) this.applyNight(!this.night, true);
+    if (pr.obj) { this.tapPoint = q; this.tap(pr.obj); return; }
+    if ([...L.WINDOWS, L.SUN].some(({ x, y, w, h }) => q.x >= x - 2 && q.x <= x + w + 2 && q.y >= y - 2 && q.y <= y + h + 2)) this.applyNight(!this.night, true);
   }
 
   startDrag(o) {
@@ -914,6 +1133,11 @@ class Room extends Phaser.Scene {
       if (!o.beh.furniture) {
         const pot = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.cauldron);
         if (pot) { this.addToCauldron(pot, o); this.save(); return; }
+      }
+      if (this.growRec(o.rec)) {
+        const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.gardenBed)
+          || this.objs.find((x) => x.beh?.gardenBed && Math.abs(x.x - q.x) < 24 && q.y < x.y && q.y > x.y - 22);
+        if (bed && this.plant(bed, o, q.x)) { this.save(); return; }
       }
       if (o.beh.edible) {
         const stove = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.furniture && RX.cooker.test(x.rec.subject));
@@ -998,6 +1222,8 @@ class Room extends Phaser.Scene {
     }
     if (b.container && o.contents.length) { this.spill(o); return; }
     if (b.album) { this.openAlbum(); return; }
+    if (b.gardenBed) { this.plotTap(o, this.tapPoint?.x ?? o.x); return; }
+    if (b.appleTree) { this.shakeTree(o); return; }
     if (b.cauldron) {
       sfx.blub();
       this.fxSparks.explode(4, o.x, o.y - o.displayHeight);
@@ -1857,6 +2083,17 @@ class Room extends Phaser.Scene {
       icon.x = Math.round(bubble.x - 6 + 15);
       icon.y = Math.round(bubble.y - 14); // центр облачка (у иконки центр по середине)
     }
+    for (const bed of this.objs) {
+      if (!bed.plots || !bed.plantImgs) continue;
+      bed.plots.forEach((p, i) => {
+        const img = bed.plantImgs[i];
+        const drop = bed.dropImgs[i];
+        const px = Math.round(bed.x + PLOT_DX[i]);
+        const py = Math.round(bed.y - bed.displayHeight + 5);
+        if (img) { img.x = px; img.y = py; img.setDepth(bed.depth + 0.4); }
+        if (drop) { drop.x = px; drop.y = Math.round(py - (img ? img.displayHeight : 3) - 4 + Math.sin(time / 250) * 1.5); drop.setDepth(bed.depth + 0.45); }
+      });
+    }
     for (const c of this.objs) {
       if (c.kind !== 'char' || !c.dreamBubble) continue;
       c.dreamBubble.x = Math.round(c.x + 3 * c.scaleY);
@@ -1952,7 +2189,7 @@ class Room extends Phaser.Scene {
       v: 2, night: this.night, W: L.W, ROOM_H: L.ROOM_H, FLOOR_TOP: L.FLOOR_TOP,
       room: this.targetRoom ?? Math.round(this.cameras.main.scrollX / L.W),
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
-        uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit,
+        uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
@@ -1983,7 +2220,7 @@ class Room extends Phaser.Scene {
       const rec = this.recOf(s.id);
       if (!rec) continue;
       const contents = (s.contents || []).map((id) => this.recOf(id)?.id).filter(Boolean);
-      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents });
+      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots });
       if (s.bites && it.beh.edible) { it.bites = s.bites; this.applyBites(it); }
       byUid.set(s.uid, it);
     }

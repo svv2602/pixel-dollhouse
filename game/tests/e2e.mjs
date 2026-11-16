@@ -69,11 +69,13 @@ test('комната загружается: персонажи, кухня, к�
   const st = await room((s) => ({
     chars: s.objs.filter((o) => o.kind === 'char').length,
     kitchen: s.objs.some((o) => o.x >= 293 && o.beh?.cauldron),
+    garden: s.objs.some((o) => o.beh?.gardenBed) && s.objs.some((o) => o.beh?.appleTree),
     album: s.objs.some((o) => o.beh?.album),
   }));
   assert.equal(st.chars, 2);
   assert.ok(st.kitchen, 'котёл на кухне');
   assert.ok(st.album, 'альбом в комнате');
+  assert.ok(st.garden, 'сад с грядками и яблоней');
 });
 
 test('еда по кусочку: укус, остаток в руке', async () => {
@@ -202,6 +204,22 @@ test('волшебное желание: подсказка рецепта ис�
     s.brew(pot);
   });
   await waitFor((s) => s.wish === null && s.alchemy.found['egg + star']?.result === 'golden egg');
+});
+
+test('сад: посадить клубнику → полить ×3 → собрать двойной урожай', async () => {
+  const before = await room((s) => {
+    const bed = s.objs.find((o) => o.beh?.gardenBed && o.plots[0] === null);
+    const berry = s.spawnItem(s.findRec('strawberry'), bed.x, 40);
+    s.drop(berry, { x: bed.x + -13, y: bed.y - 6 });
+    s.testBed = bed;
+    return s.objs.filter((o) => o.rec?.subject === 'strawberry').length;
+  });
+  for (let stage = 1; stage <= 3; stage++) {
+    await room((s) => s.waterPlot(s.testBed, 0));
+    await waitFor((s, st) => s.testBed.plots[0]?.stage === st, stage);
+  }
+  await room((s) => s.plotTap(s.testBed, s.testBed.x - 13));
+  await waitFor((s, n) => s.objs.filter((o) => o.rec?.subject === 'strawberry').length === n + 2 && s.testBed.plots[0] === null, before);
 });
 
 test('нет ошибок в консоли', () => {
