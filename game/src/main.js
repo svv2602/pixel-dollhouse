@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { sfx, unlockAudio, setMusic, musicPlaying, setJamLayer, stopJam, jamActive, onJamStep } from './sfx.js';
+import { sfx, unlockAudio, setMusic, musicPlaying, setJamLayer, stopJam, jamActive, onJamStep, setMusicTheme, musicTheme, setVoice, say, getVolume } from './sfx.js';
 import { makeCharTextures, ANCHOR, HAIR, DRESS, SKIN, HAIR_STYLE_KEYS, OUTFIT_KEYS } from './character.js';
 import { BIG_FURNITURE, makeFurnitureTextures, outline } from './furniture.js';
 import { Alchemy, recipeKey } from './alchemy.js';
@@ -8,6 +8,12 @@ import { makeBath } from './bath.js';
 import { makeParty, BIRTHDAY_TUNE } from './party.js';
 import { makeSalon, blenderTex, smoothieTex } from './salon.js';
 import { makePlay, rainbowTex, makePhoto } from './play.js';
+import { installCast } from './cast.js';
+import { installLife } from './life.js';
+import { installNav } from './nav.js';
+import { makeSeason, installSeason, today, isWinter } from './season.js';
+import { Stickers, installStickers } from './stickers.js';
+import { openParent, statHit, statTime, flushStats, getStats, exportData } from './parent.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -231,6 +237,7 @@ function behaviorOf(rec) {
     photo: !!rec.photo,
     shovel: s === 'shovel',
     lamp: RX.light.test(s) && /lamp/.test(s),
+    nyTree: !!rec.nyTree,
   };
 }
 
@@ -296,8 +303,11 @@ class Room extends Phaser.Scene {
     for (const r of salon) this.byId.set(r.id, r);
     const play = makePlay(this); // фотоаппарат — в игрушках; фото на стене — только из фотоаппарата
     for (const r of play) this.byId.set(r.id, r);
+    this.winter = isWinter(today());
+    const season = makeSeason(this); // ёлка — во вкладке мебели, только зимой
+    for (const r of season) this.byId.set(r.id, r);
     this.byCat = {
-      furniture: Object.values(this.big), magic: potions.slice(),
+      furniture: [...Object.values(this.big), ...(this.winter ? season : [])], magic: potions.slice(),
       kitchen: salon.filter((r) => r.cat === 'kitchen'),
       food: party.filter((r) => r.cat === 'food'),
       toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden)],
@@ -340,6 +350,10 @@ class Room extends Phaser.Scene {
     this.butterflies = []; this.digSpot = null; this.nightStars = null; this.raining = false; this.snapping = false;
     this.night = false;
     this.press = null;
+    // состояние прошлой сцены (объекты уже уничтожены): открытые экраны, желание, вкладка ящика
+    this.dress = null; this.albumUi = null; this.mapUi = null; this.wish = null; this.cat = null;
+    this.snow = null; this.buddy = null; this.albumDefs = null; this.castList = null;
+    this.stickers = new Stickers();
 
     this.makeTextures();
     makeFurnitureTextures(this);
@@ -348,8 +362,10 @@ class Room extends Phaser.Scene {
 
     this.overlay = this.add.rectangle(0, 0, L.WORLD, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
 
+    this.refreshCastIcons(); // портреты нужны вкладке «люди» ещё до загрузки дома
     this.buildDrawer();
     this.buildNav();
+    this.buildMapBtn();
     // котёл: пул результатов для пар без рецепта — волшебное, игрушки и любимая еда
     const favFood = new Set(FAVORITES.food);
     const pool = [...(this.byCat.magic || []), ...(this.byCat.toy || []), ...(this.byCat.food || []).filter((r) => favFood.has(r.subject))];
@@ -366,19 +382,23 @@ class Room extends Phaser.Scene {
     this.ensureHall2();
     this.ensureBedroom2();
     this.ensureGarden2();
+    this.ensureCast();
+    this.dailyVisit();
+    this.ensureWinter();
     this.buildCurtain();
     this.buildCloud();
     this.swingG = this.add.graphics();
     for (const o of this.objs) if (o.plots) { this.renderPlots(o); o.plots.forEach((p, i) => { if (p?.watered) this.growLater(o, i); }); }
     this.ensureMagic();
     this.cameras.main.scrollX = (this.roomIdx || 0) * L.W;
+    this.curRoom = this.targetRoom = this.roomIdx || 0;
     this.applyNight(this.night);
 
     this.input.on('pointerdown', (p, over) => this.onDown(p, over));
     this.input.on('pointermove', (p) => this.onMove(p));
     this.input.on('pointerup', (p) => this.onUp(p));
     this.input.on('gameout', () => {
-      if (this.press?.moved && this.press.obj) this.drop(this.press.obj, this.pt(this.input.activePointer));
+      if (this.press?.moved && this.press.obj) this.drop(this.press.obj, this.pt(this.press.p));
       this.press = null;
     });
 
@@ -391,6 +411,8 @@ class Room extends Phaser.Scene {
     this.time.addEvent({ delay: 1500, loop: true, callback: () => this.sleepTick() });
     this.time.addEvent({ delay: 6000, loop: true, callback: () => this.danceTick() });
     this.time.addEvent({ delay: 2600, loop: true, callback: () => this.potIdle() });
+    this.time.addEvent({ delay: 4200, loop: true, callback: () => this.idleTick() });
+    if (this.winter) this.time.addEvent({ delay: 800, loop: true, callback: () => this.seasonTick() });
     this.time.addEvent({ delay: 600, loop: true, callback: () => this.bathTick() });
     this.time.addEvent({ delay: 1500, loop: true, callback: () => this.gardenTick() });
 
@@ -549,12 +571,13 @@ class Room extends Phaser.Scene {
     g.fillStyle(0x6e3a8a).fillRect(hx - 2, 0, 4, FLOOR_TOP);
     // ===== сад [2W, 3W): трава (небо, холмы и забор — на своих слоях)
     const gx = 2 * W;
-    g.fillStyle(0x8fd16a).fillRect(gx, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
+    const snowy = this.winter; // зимой сад в снегу
+    g.fillStyle(snowy ? 0xf4f9ff : 0x8fd16a).fillRect(gx, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
     for (let y = FLOOR_TOP + 2, r = 0; y < ROOM_H; y += 5, r++) {
-      g.fillStyle(0x7cc25a);
+      g.fillStyle(snowy ? 0xd9e8f5 : 0x7cc25a);
       for (let x = gx + (r % 2) * 5; x < gx + W; x += 10) { g.fillRect(x, y, 1, 2); g.fillRect(x + 2, y + 1, 1, 1); }
     }
-    g.fillStyle(0xb5e38f).fillRect(gx, FLOOR_TOP, W, 1);
+    g.fillStyle(snowy ? 0xffffff : 0xb5e38f).fillRect(gx, FLOOR_TOP, W, 1);
     // дверной косяк между кухней и садом
     g.fillStyle(0x8d5a3b).fillRect(gx - 2, 0, 4, FLOOR_TOP);
     g.fillStyle(0xa8714d).fillRect(gx - 2, 0, 1, FLOOR_TOP);
@@ -562,7 +585,7 @@ class Room extends Phaser.Scene {
     const hz = this.add.graphics().setDepth(-8);
     for (let x = gx; x < gx + W; x++) {
       const hgt = Math.round(7 + 4 * Math.sin((x - gx) / 23) + 2 * Math.sin((x - gx) / 9));
-      hz.fillStyle(0x7cc25a).fillRect(x, FLOOR_TOP - hgt, 1, hgt);
+      hz.fillStyle(snowy ? 0xd3e3f2 : 0x7cc25a).fillRect(x, FLOOR_TOP - hgt, 1, hgt);
     }
     hz.fillStyle(0xfff8f0);
     for (let x = gx + 3; x < gx + W; x += 8) { hz.fillRect(x, FLOOR_TOP - 13, 3, 13); hz.fillRect(x + 1, FLOOR_TOP - 14, 1, 1); }
@@ -624,14 +647,14 @@ class Room extends Phaser.Scene {
       s.fillStyle(0xffe066).fillRect(x + w - 9, y + 3, 5, 5);
       s.fillStyle(0xffffff).fillRect(x + 3, y + 8, 8, 2).fillRect(x + 5, y + 6, 4, 2)
         .fillRect(x + 17, y + 14, 9, 2).fillRect(x + 19, y + 12, 4, 2);
-      s.fillStyle(0x7ccf6a).fillRect(x, y + h - 4, w, 4);
+      s.fillStyle(this.winter ? 0xf4f9ff : 0x7ccf6a).fillRect(x, y + h - 4, w, 4);
     } else {
       s.fillStyle(0x24205a).fillRect(x, y, w, h);
       s.fillStyle(0xfff6c2).fillRect(x + w - 10, y + 3, 6, 6);
       s.fillStyle(0x24205a).fillRect(x + w - 8, y + 2, 5, 5);
       s.fillStyle(0xffffff);
       [[3, 4], [9, 12], [13, 3], [5, 17], [20, 19], [24, 14], [11, 20]].forEach(([dx, dy]) => s.fillRect(x + dx, y + dy, 1, 1));
-      s.fillStyle(0x2f5a4a).fillRect(x, y + h - 4, w, 4);
+      s.fillStyle(this.winter ? 0x9aa8c8 : 0x2f5a4a).fillRect(x, y + h - 4, w, 4);
     }
   }
 
@@ -696,7 +719,7 @@ class Room extends Phaser.Scene {
     makeCharTextures(this, key, look);
     const o = this.add.image(x, y, key).setOrigin(0.5, 1).setInteractive();
     Object.assign(o, {
-      kind: 'char', uid, key, look, mul: extra.mul || 1, slots: { head: null, face: null, hand: null },
+      kind: 'char', uid, key, look, mul: extra.mul || 1, slots: { head: null, face: null, hand: null }, cast: extra.cast || null,
       busy: false, rainbow: 0,
     });
     o.setScale(o.mul);
@@ -838,6 +861,7 @@ class Room extends Phaser.Scene {
     let rec = o.rec;
     if (SEEDS.test(rec.subject)) rec = this.findRec(pick(GROW.filter((g) => this.findRec(g)))) || rec;
     bed.plots[i] = { id: rec.id, stage: 0, watered: false };
+    this.stat('plant');
     this.objs = this.objs.filter((x2) => x2 !== o);
     const px = bed.x + PLOT_DX[i];
     this.tweens.add({
@@ -892,6 +916,8 @@ class Room extends Phaser.Scene {
     this.renderPlots(bed);
     if (!rec) return;
     sfx.chestOut();
+    this.stat('harvest');
+    this.sticker('plant', rec, bed.x + PLOT_DX[i], bed.y - bed.displayHeight);
     const px = bed.x + PLOT_DX[i];
     for (let k = 0; k < 2; k++) {
       const o = this.spawnItem(rec, Math.round(px), Math.round(bed.y - bed.displayHeight));
@@ -1014,6 +1040,7 @@ class Room extends Phaser.Scene {
 
   /** Подарок персонажу: коробка открывается, внутри — игрушка прямо в руки. */
   openGift(ch, gift) {
+    this.stat('gift');
     const x = gift.x;
     const y = gift.y;
     this.removeObj(gift);
@@ -1073,6 +1100,7 @@ class Room extends Phaser.Scene {
   // ---------------------------------------------------------------- сцена и джем
   /** Тап по инструменту: включить/выключить его партию в общем такте. */
   toggleJam(o) {
+    this.stat('jam');
     this.jam ||= new Set();
     const kind = this.instrumentKind(o);
     if (this.jam.has(o)) {
@@ -1256,6 +1284,7 @@ class Room extends Phaser.Scene {
 
   /** Опустить в ванну: персонаж/питомец по пояс в воде, игрушки плавают. Через секунду — чистые. */
   bathe(o, tub, x) {
+    if (o.kind === 'char') this.stat('bathe');
     o.inTub = tub;
     o.tubDx = Math.round(Phaser.Math.Clamp(x - tub.x, -tub.displayWidth / 2 + 9, tub.displayWidth / 2 - 9));
     o.restOn = null;
@@ -1788,9 +1817,19 @@ class Room extends Phaser.Scene {
     const pos = closed ? [x0 + W / 2 - hw, x0 + W / 2] : [x0 + this.curtainCw - hw, x0 + W - this.curtainCw];
     this.curtain.forEach((c, i) => {
       this.tweens.killTweensOf(c);
-      if (animate) this.tweens.add({ targets: c, x: Math.round(pos[i]), duration: 750, ease: 'Sine.easeInOut' });
+      if (animate) this.tweens.add({ targets: c, x: Math.round(pos[i]), duration: 750, ease: 'Sine.easeInOut', onUpdate: () => this.clipCurtain() });
       else c.x = Math.round(pos[i]);
     });
+    this.clipCurtain();
+  }
+
+  /** Левая половина открытого занавеса шире кулисы: всё, что левее зала, не рисуется и не ловит касания. */
+  clipCurtain() {
+    const c = this.curtain?.[0];
+    if (!c) return;
+    const cut = Phaser.Math.Clamp(Math.ceil(4 * L.W - c.x), 0, c.width);
+    c.setCrop(cut, 0, c.width - cut, c.height);
+    c.input?.hitArea.setTo(cut, 0, c.width - cut, c.height);
   }
 
   toggleCurtain() {
@@ -2213,6 +2252,7 @@ class Room extends Phaser.Scene {
       if (!rec) return;
       const o = this.spawnItem(rec, x, y - 2);
       this.lastTreasure = rec.subject;
+      this.sticker('treasure', rec, x, y - 6);
       const tx = Math.round(Phaser.Math.Clamp(x + rnd(-20, 20), 2 * L.W + 8, 3 * L.W - 8));
       const ty = Math.round(Phaser.Math.Clamp(y + rnd(-4, 6), L.FLOOR_TOP + 6, L.ROOM_H - 2));
       sfx.fanfare();
@@ -2252,7 +2292,16 @@ class Room extends Phaser.Scene {
     this.targetRoom = Phaser.Math.Clamp(idx, 0, L.ROOMS - 1);
     const target = this.targetRoom * L.W;
     if (Math.abs(cam.scrollX - target) > 1) sfx.pick();
-    this.tweens.add({ targets: cam, scrollX: target, duration: 350, ease: 'Sine.easeInOut', onComplete: () => { this.save(); this.potHello(); } });
+    this.tweens.add({ targets: cam, scrollX: target, duration: 350, ease: 'Sine.easeInOut', onComplete: () => { this.save(); this.potHello(); this.arrived(); } });
+  }
+
+  /** Камера встала в комнате: своя мелодия, местные здороваются, любимая кукла идёт следом. */
+  arrived() {
+    const prev = this.curRoom ?? 0;
+    if (this.targetRoom === prev) return;
+    this.curRoom = this.targetRoom;
+    setMusicTheme(this.night ? 0 : this.curRoom);
+    this.onRoomEnter(this.curRoom, prev);
   }
 
   /** Котёл тихо булькает, пока его видно. */
@@ -2274,7 +2323,7 @@ class Room extends Phaser.Scene {
       return;
     }
     if (!tried.curtain && this.curtain && Math.round(this.cameras.main.scrollX / L.W) === 4 && Math.random() < 0.4) {
-      for (const [i, c] of this.curtain.entries()) this.tweens.add({ targets: c, x: c.x + (i ? -2 : 2), duration: 140, yoyo: true, repeat: 1 });
+      for (const [i, c] of this.curtain.entries()) this.tweens.add({ targets: c, x: c.x + (i ? -2 : 2), duration: 140, yoyo: true, repeat: 1, onUpdate: () => this.clipCurtain() });
       return;
     }
     const lure = LURES.filter(([k]) => !tried[k])
@@ -2315,7 +2364,7 @@ class Room extends Phaser.Scene {
     this.cat = this.cats[0];
     this.page = 0;
     this.mode = 'curated';
-    const tabsAll = ['recent', ...this.cats];
+    const tabsAll = ['recent', 'people', ...this.cats];
     const n = tabsAll.length + 2; // + кнопки сброса и музыки
     const step = Math.min(22, Math.floor((W - 2) / n));
     const x0 = Math.floor((W - step * n) / 2) + Math.floor(step / 2);
@@ -2327,18 +2376,23 @@ class Room extends Phaser.Scene {
         // часы — «недавние»
         const g = this.add.graphics().setDepth(D + 1);
         pixelMap(g, ['...XXXXX...', '..X.....X..', '.X...X...X.', 'X....X....X', 'X....X....X', 'X....XXX..X', 'X.........X', '.X.......X.', '..X.....X..', '...XXXXX...'], x - 5, TAB_Y - 5, 0xffffff);
+      } else if (c === 'people') {
+        this.add.image(x, TAB_Y + 8, 'cast_mia_icon').setOrigin(0.5, 1).setDepth(D + 1); // семья: позвать куклу в комнату
       } else {
         const rec = this.findRec(CAT_ICON[c]) || this.byCat[c][0];
         this.add.image(x, TAB_Y + 8, rec.cat, rec.frame).setOrigin(0.5, 1).setDepth(D + 1);
       }
       return bg;
     });
-    // кнопка сброса (держать 2 секунды) — для взрослых
+    // родительская зона — для взрослых: удерживать 2 секунды (полоска показывает, сколько осталось)
     const rx = x0 + tabsAll.length * step;
     const rb = this.add.rectangle(rx, TAB_Y, step - 2, 18, 0x3a2546).setDepth(D).setInteractive();
-    rb.ui = { reset: true };
-    const ig = this.add.graphics().setDepth(D + 1);
-    pixelMap(ig, ['.XXXX.X', 'X....XX', 'X...XXX', 'X......', 'X.....X', '.XXXXX.'], rx - 3, TAB_Y - 3, 0x8f6fa3);
+    rb.ui = { gear: true };
+    this.gearIcon = this.add.graphics().setDepth(D + 1);
+    this.gearIcon.x = rx;
+    this.gearIcon.y = TAB_Y - 1;
+    pixelMap(this.gearIcon, ['..X.X..', '.XXXXX.', 'XX...XX', '.X...X.', 'XX...XX', '.XXXXX.', '..X.X..'], -3, -3, 0x8f6fa3);
+    this.gearBar = this.add.rectangle(rx - 7, TAB_Y + 7, 14, 2, 0xfff07a).setOrigin(0, 0.5).setDepth(D + 1).setVisible(false);
     // музыка вкл/выкл
     const mx = rx + step;
     this.musicBtn = this.add.rectangle(mx, TAB_Y, step - 2, 18, 0x6b4a7e).setDepth(D).setInteractive();
@@ -2377,6 +2431,7 @@ class Room extends Phaser.Scene {
     pixelMap(this.dice, ['..X.....X..', '...........', '.....X.....', '...........', '..X.....X..'], -5, -2, 0x4a3157);
     // точки страниц — на линии между рядами
     this.pageDots = this.add.graphics().setDepth(D + 1);
+    this.buildGlow();
     this.buildView();
   }
 
@@ -2384,6 +2439,8 @@ class Room extends Phaser.Scene {
   buildView() {
     if (this.cat === 'recent') {
       this.view = this.recent.map((id) => this.recOf(id)).filter(Boolean).slice(0, VIEW_SIZE);
+    } else if (this.cat === 'people') {
+      this.view = this.castRecs();
     } else {
       const list = this.byCat[this.cat];
       const fav = new Set(FAVORITES[this.cat] || []);
@@ -2394,6 +2451,13 @@ class Room extends Phaser.Scene {
         : top.concat(seededShuffle(rest, this.cat)).slice(0, VIEW_SIZE);
     }
     this.page = 0;
+    // то, о чём просит кукла, всегда есть в подборке своей вкладки, и ящик открывается на нужной странице
+    const want = this.wishTarget();
+    if (want && want.cat === this.cat) {
+      let i = this.view.findIndex((r) => r.id === want.id);
+      if (i < 0) { this.view = [want, ...this.view].slice(0, VIEW_SIZE); i = 0; }
+      this.page = Math.floor(i / this.perPage);
+    }
     this.refreshDrawer();
   }
 
@@ -2419,7 +2483,7 @@ class Room extends Phaser.Scene {
       img.drawerRec = rec || null;
       if (rec) { if (rec.tex) img.setTexture(`${rec.tex}_icon`); else img.setTexture(rec.cat, rec.frame); }
     });
-    const showDice = this.cat !== 'recent';
+    const showDice = this.cat !== 'recent' && this.cat !== 'people';
     this.diceBg.setVisible(showDice);
     this.dice.setVisible(showDice);
     this.diceBg.setFillStyle(this.mode === 'shuffle' ? 0xc48ff2 : 0x8a52cc);
@@ -2431,11 +2495,13 @@ class Room extends Phaser.Scene {
       const x0 = Math.floor((L.W - w) / 2);
       for (let i = 0; i < pages; i++) g.fillStyle(i === this.page ? 0xffffff : 0x8f6fa3).fillRect(x0 + i * 6, L.ROOM_H + 18, 4, 2);
     }
+    this.updateWishGlow();
   }
 
   // ---------------------------------------------------------------- input
   onDown(p, over) {
     unlockAudio();
+    this.lastInput = performance.now();
     if (!this.musicChecked) {
       this.musicChecked = true;
       let pref = null;
@@ -2445,12 +2511,16 @@ class Room extends Phaser.Scene {
     goFullscreen();
     const q = this.pt(p);
     const top = over[0];
-    this.press = { sx: q.x, sy: q.y, t: p.downTime, moved: false };
+    // второй палец (ладонь, палец держащей руки): начатое перетаскивание/свайп не трогаем;
+    // а «лежащий» без дела первый палец уступает новому касанию
+    if (this.press && this.press.id !== p.id && (this.press.moved || this.press.scrolling)) return;
+    this.press = { id: p.id, p, sx: q.x, sy: q.y, t: p.downTime, moved: false };
     if (top?.bubble) { this.popBubble(top); this.press = null; return; }
     if (top?.curtain) { this.toggleCurtain(); this.press = null; return; }
     if (top?.raincloud) { this.rain(); this.press = null; return; }
     if (top?.butterfly) { this.catchButterfly(top); this.press = null; return; }
-    if (top?.ui) { this.press.ui = top.ui; return; }
+    if (top?.ui) { this.press.ui = top.ui; this.press.t0 = performance.now(); return; }
+    if (top?.drawerRec?.cast) { this.press.ui = { cast: top.drawerRec.cast }; return; } // портрет: позвать куклу
     if (top?.drawerRec) { this.press.rec = top.drawerRec; return; }
     if (top && 'drawerRec' in top) return; // пустая ячейка
     if (top?.kind) { this.press.obj = top; this.press.offX = top.x - q.x; this.press.offY = top.y - q.y; return; }
@@ -2460,7 +2530,7 @@ class Room extends Phaser.Scene {
 
   onMove(p) {
     const pr = this.press;
-    if (!pr || !p.isDown) return;
+    if (!pr || pr.id !== p.id || !p.isDown) return;
     if (pr.swipe) {
       const dx = (p.x - pr.swipe.sx) / L.P;
       if (!pr.scrolling && Math.abs(dx) < 4) return;
@@ -2507,18 +2577,14 @@ class Room extends Phaser.Scene {
       if (pot && this.hoverPot !== pot && !pot.brewing) { sfx.blub(); this.tweens.add({ targets: pot, y: pot.y - 2, duration: 90, yoyo: true }); }
       this.hoverPot = pot;
     }
-    // «предвкушение»: персонаж открывает рот, когда к нему несут еду
-    for (const c of this.objs) {
-      if (c.kind !== 'char' || c.busy || c.dragging) continue;
-      const want = o.kind === 'item' && (o.beh.edible || o.beh.potion) && c.getBounds().contains(q.x, q.y);
-      c.setTexture(want ? c.key + '_open' : c.key);
-    }
+    // «предвкушение» и взгляд: к еде открывают рот, за остальным следят глазами
+    this.gaze(o, q);
   }
 
   onUp(p) {
     const pr = this.press;
+    if (!pr || pr.id !== p.id) return; // отпустили другой палец
     this.press = null;
-    if (!pr) return;
     const q = this.pt(p);
     if (pr.scrolling) {
       // свайп на 15% экрана — перелистнуть комнату
@@ -2529,7 +2595,8 @@ class Room extends Phaser.Scene {
     }
     if (pr.moved && pr.obj) { this.drop(pr.obj, q); if (this.edgeScrolled) { this.edgeScrolled = false; this.snapCamera(); } return; }
     if (pr.ui?.nav) { this.goRoom(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav); return; }
-    if (pr.ui && ('albumSel' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
+    if (pr.ui && (pr.ui.map || pr.ui.mapClose || 'mapRoom' in pr.ui)) { this.onMapUi(pr.ui); return; }
+    if (pr.ui && ('albumSel' in pr.ui || 'albumTab' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
     if (pr.ui?.dress || pr.ui?.dressDone || pr.ui?.block) { this.onDressUi(pr.ui); return; }
     if (pr.ui) {
       sfx.click();
@@ -2542,7 +2609,9 @@ class Room extends Phaser.Scene {
         this.tweens.add({ targets: this.dice, angle: 360, duration: 300, onComplete: () => { this.dice.angle = 0; } });
       }
       if (pr.ui.page) { this.page += pr.ui.page; this.refreshDrawer(); }
-      if (pr.ui.reset && p.upTime - pr.t > 2000) this.resetRoom();
+      if (pr.ui.cast) this.callCast(pr.ui.cast);
+      // шестерёнка открывается только удержанием (см. update) — короткий тап лишь покачивает её
+      if (pr.ui.gear) this.tweens.add({ targets: this.gearIcon, angle: 25, duration: 90, yoyo: true, repeat: 1, onComplete: () => { this.gearIcon.angle = 0; } });
       if (pr.ui.music) {
         const on = !musicPlaying();
         setMusic(on);
@@ -2575,13 +2644,13 @@ class Room extends Phaser.Scene {
     if (o.walkTween) { o.walkTween.stop(); o.walkTween = null; o.walking = false; }
     this.tweens.killTweensOf(o);
     o.setScale(o.kind === 'char' ? o.mul : 1); // масштаб только целый — без «поднятия» ×1.15
-    if (o.kind === 'char') { o.sleeping = false; o.setTexture(o.key + '_open'); }
+    if (o.kind === 'char') { o.sleeping = false; o.setFlipX(false); o.setTexture(o.key + '_open'); this.buddy = o.uid; }
   }
 
   drop(o, q) {
     o.dragging = false;
     if (o.kind === 'char') o.setTexture(o.key);
-    for (const c of this.objs) if (c.kind === 'char' && !c.busy) c.setTexture(c.key);
+    for (const c of this.objs) if (c.kind === 'char' && !c.busy && !c.sleeping) c.setTexture(c.key);
 
     if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
       const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && (x.beh.seat || x.beh.swing) && x !== o);
@@ -2787,6 +2856,7 @@ class Room extends Phaser.Scene {
 
   tap(o) {
     if (o.kind === 'char') {
+      this.buddy = o.uid; // с кем играли последней — та и пойдёт следом в другую комнату
       const held = o.slots.hand;
       if (held && !o.busy && held.beh.potion) { this.drinkPotion(o, held); return; }
       if (held && !o.busy && held.beh.edible) { this.feed(o, held); return; }
@@ -2828,6 +2898,7 @@ class Room extends Phaser.Scene {
     if (b.chest) { this.openChest(o); return; }
     if (b.camera) { this.takePhoto(o); return; }
     if (b.swing) { this.pushSwing(o); return; }
+    if (b.nyTree) { this.tapTree(o); return; }
     if (b.furniture && RX.bedLike.test(o.rec.subject) && this.bounce(o)) return;
     if (b.container && o.contents.length) { this.spill(o); return; }
     if (b.album) { this.openAlbum(); return; }
@@ -2948,6 +3019,7 @@ class Room extends Phaser.Scene {
   /** Укус (или съесть целиком, если укус последний). Недоеденное персонаж держит в руке. */
   feed(ch, o) {
     if (this.dislikes(ch, o.rec.subject)) { this.refuse(ch, o); return; }
+    this.stat('feed');
     this.checkWish(ch, 'food', o.rec);
     ch.sleeping = false;
     ch.busy = true;
@@ -2984,8 +3056,10 @@ class Room extends Phaser.Scene {
               }
               ch.setTexture(ch.key + (taste ? `_${taste}` : '_blink'));
               if (taste) this.tasteReact(ch, taste);
-              if (last) this.afterMeal(ch, o.rec);
-              else if (last) { sfx.yum(); this.fxHearts.explode(3, m.x, m.y - 10); } else this.fxHearts.explode(1, m.x, m.y - 10);
+              if (last) {
+                this.afterMeal(ch, o.rec);
+                if (!taste) { sfx.yum(); this.fxHearts.explode(3, m.x, m.y - 10); }
+              } else this.fxHearts.explode(1, m.x, m.y - 10);
               if (o.rec.subject === this.favFood(ch)) {
                 // любимая еда: больше сердечек и радостный прыжок
                 sfx.yum();
@@ -3073,7 +3147,11 @@ class Room extends Phaser.Scene {
   addNeed(ch, name, delay = 2000) {
     (ch.needs ||= new Set()).add(name);
     this.time.delayedCall(delay, () => {
-      if (ch.active && ch.needs?.has(name) && !this.wish && !ch.sleeping && !this.dress && !this.albumUi) this.showHint(ch, name);
+      // потребность важнее чужого случайного желания (кукол в доме много): она его вытесняет
+      if (!ch.active || !ch.needs?.has(name) || ch.sleeping || this.dress || this.albumUi) return;
+      if (this.wish?.need) return;
+      this.showHint(ch, name);
+      if (this.wish) this.wish.need = true;
     });
   }
 
@@ -3096,7 +3174,11 @@ class Room extends Phaser.Scene {
   }
 
   /** Фичу попробовали: запоминаем; если именно о ней просили — желание исполнено. */
+  /** Локальная статистика «чем пользуется» (видна только в родительской зоне). */
+  stat(name) { statHit(name); }
+
   hintDone(name, ch = null) {
+    this.stat(name);
     ch?.needs?.delete(name);
     const tried = (this.flags.tried ||= {});
     if (!tried[name]) { tried[name] = true; this.save(); }
@@ -3132,6 +3214,7 @@ class Room extends Phaser.Scene {
     sfx.squeak();
     this.tweens.add({ targets: bubble, scale: 1, duration: 220, ease: 'Back.easeOut', onComplete: () => bubble.setScale(1) });
     this.tweens.add({ targets: icon, alpha: 1, duration: 200, delay: 150 });
+    this.updateWishGlow();
   }
 
   clearWish(happy) {
@@ -3139,6 +3222,7 @@ class Room extends Phaser.Scene {
     if (!w) return;
     this.wish = null;
     w.timer?.remove();
+    this.updateWishGlow();
     if (happy) {
       this.fxSparks.explode(12, w.bubble.x + 8, w.bubble.y - 12);
       w.bubble.destroy();
@@ -3156,6 +3240,7 @@ class Room extends Phaser.Scene {
     if (type === 'pet' && !(rec && behaviorOf(rec).pet)) return false;
     if (type === 'magic' && rec !== w.key) return false; // для «магии» rec — ключ сваренного рецепта
     this.clearWish(true);
+    this.stat('wish');
     sfx.fanfare();
     this.fxHearts.explode(6, ch.x, ch.y - ch.displayHeight);
     this.celebrate(ch);
@@ -3258,6 +3343,7 @@ class Room extends Phaser.Scene {
       this.removeObj(o);
       const n = this.spawnItem(to, x, y);
       n.restOn = stove;
+      this.sticker('dish', to, x, y - 8);
       this.hintDone('cook');
       this.fxSparks.explode(14, x, y - 8);
       this.tweens.add({ targets: n, y: y - 4, duration: 120, yoyo: true });
@@ -3377,6 +3463,7 @@ class Room extends Phaser.Scene {
   }
 
   drinkPotion(ch, o) {
+    this.stat('potion');
     ch.busy = true;
     if (o.owner) { o.owner.slots[o.slot] = null; o.owner = null; o.slot = null; }
     this.objs = this.objs.filter((x) => x !== o);
@@ -3429,6 +3516,7 @@ class Room extends Phaser.Scene {
   }
 
   wear(ch, slot, o, quiet = false) {
+    if (!quiet) this.stat('wear');
     const old = ch.slots[slot];
     if (old) {
       old.owner = null; old.slot = null;
@@ -3526,6 +3614,7 @@ class Room extends Phaser.Scene {
   }
 
   brew(pot) {
+    this.stat('brew');
     if (pot.brewing || !pot.active) return;
     const [a, b] = pot.contents.map((id) => this.recOf(id));
     if (!a || !b) { pot.contents = []; return; }
@@ -3561,6 +3650,7 @@ class Room extends Phaser.Scene {
         this.time.delayedCall(250, () => sfx.fanfare());
         this.fxHearts.explode(6, top.x, top.y - 16);
         this.flyToAlbum(result, top.x, top.y - 10);
+        this.lastStickerTab = 'recipe';
       }
       this.save();
     });
@@ -3601,13 +3691,16 @@ class Room extends Phaser.Scene {
   }
 
   openAlbum() {
-    if (this.dress || this.albumUi) return;
+    if (this.dress || this.albumUi || this.mapUi) return;
     sfx.page();
+    this.stat('album');
     const bg = this.add.rectangle(0, 0, L.W, L.H, 0x2b1d2e, 0.95).setOrigin(0).setDepth(30000).setInteractive();
     bg.ui = { block: true };
-    const entries = this.alchemy.entries();
-    const firstFound = entries.findIndex((e) => e.found);
-    this.albumUi = { parts: [bg], rows: [], page: 0, sel: Math.max(0, firstFound) };
+    // открываем на странице, где появилась последняя наклейка
+    const tabs = this.albumTabs();
+    const tab = Math.max(0, tabs.findIndex((t) => t.key === this.lastStickerTab));
+    this.lastStickerTab = null;
+    this.albumUi = { parts: [bg], rows: [], page: 0, tab, sel: Math.max(0, tabs[tab].entries.findIndex((e) => e.found)) };
     this.buildAlbum();
   }
 
@@ -3619,15 +3712,32 @@ class Room extends Phaser.Scene {
     const { W, H } = L;
     const add = (o) => { u.rows.push(o.setDepth(D)); return o; };
     const hit = (x, y, w, h, ui) => { const r = add(this.add.rectangle(x, y, w, h, 0xffffff, 0.001).setOrigin(0).setInteractive()); r.ui = ui; r.setDepth(D + 5); };
-    const entries = this.alchemy.entries();
+    // картинка записи: предмет каталога или ключ текстуры-подсказки (плита, грядка, сон…)
+    const icon = (e, x, y) => add(typeof e === 'string' ? this.add.image(x, y, e).setOrigin(0.5, 1) : this.recImage(e, x, y));
+    const tabs = this.albumTabs();
+    u.tab = Phaser.Math.Clamp(u.tab || 0, 0, tabs.length - 1);
+    const entries = tabs[u.tab].entries;
+    // страницы альбома: котёл, плита, грядка, клад, сны — под иконкой полоска «сколько собрано»
+    const tw = 24;
+    const tx0 = Math.floor((W - tabs.length * tw) / 2);
+    tabs.forEach((t, i) => {
+      const x = tx0 + i * tw;
+      const total = t.entries.length;
+      const n = t.entries.filter((e) => e.found).length;
+      add(this.add.rectangle(x, 1, 22, 21, i === u.tab ? 0xc48ff2 : 0x6b4a7e).setOrigin(0));
+      icon(t.icon, x + 11, 18);
+      add(this.add.rectangle(x + 2, 19, 18, 2, 0x2b1d2e).setOrigin(0));
+      if (n) add(this.add.rectangle(x + 2, 19, Math.max(1, Math.round(18 * n / total)), 2, n === total ? 0xffd84a : 0x7ad9b5).setOrigin(0));
+      hit(x, 1, 22, 21, { albumTab: i });
+    });
     const cell = 20;
     const cols = Math.max(1, Math.floor((W - 36) / cell));
-    const rowsN = Math.max(1, Math.floor((H - 40) / cell));
+    const y0 = 25;
+    const rowsN = Math.max(1, Math.floor((H - y0 - 30) / cell));
     const per = cols * rowsN;
     const pages = Math.max(1, Math.ceil(entries.length / per));
     u.page = (u.page + pages) % pages;
     const x0 = Math.floor((W - cols * cell) / 2);
-    const y0 = 5;
     entries.slice(u.page * per, (u.page + 1) * per).forEach((e, i) => {
       const idx = u.page * per + i;
       const cx = x0 + (i % cols) * cell;
@@ -3647,16 +3757,17 @@ class Room extends Phaser.Scene {
         hit(ax - 6, y0 + (rowsN * cell) / 2 - 10, 12, 20, { albumPage: dir });
       }
     }
-    // нижняя строка — рецепт выбранной клетки: A + B = результат (B и результат скрыты, пока не открыто)
+    // нижняя строка — как получить выбранную наклейку: A + B = результат.
+    // У котла B и результат скрыты, пока не открыто; на остальных страницах путь виден сразу, скрыт только результат
     const e = entries[u.sel];
     if (e) {
       const by = H - 6;
       const bx = Math.floor(W / 2) - 44;
       add(this.add.rectangle(bx - 6, by - 21, 100, 24, 0x4a3157).setOrigin(0));
       const g = add(this.add.graphics());
-      add(this.recImage(e.a, bx + 8, by));
+      icon(e.a, bx + 8, by);
       pixelMap(g, ['..X..', '..X..', 'XXXXX', '..X..', '..X..'], bx + 19, by - 10, 0xffffff);
-      if (e.found) add(this.recImage(e.b, bx + 34, by));
+      if (e.found || e.plain) icon(e.b, bx + 34, by);
       else pixelMap(g, ['.XXX.', 'X...X', '....X', '...X.', '..X..', '.....', '..X..'], bx + 32, by - 11, 0xfff07a);
       pixelMap(g, ['XXXXX', '.....', 'XXXXX'], bx + 45, by - 9, 0xffffff);
       const r = add(this.recImage(e.result, bx + 60, by));
@@ -3685,6 +3796,12 @@ class Room extends Phaser.Scene {
     }
     if (ui.albumPage) { u.page += ui.albumPage; sfx.page(); }
     if ('albumSel' in ui) { u.sel = ui.albumSel; sfx.click(); }
+    if ('albumTab' in ui) {
+      u.tab = ui.albumTab;
+      u.page = 0;
+      u.sel = Math.max(0, this.albumTabs()[u.tab]?.entries.findIndex((e) => e.found) ?? 0);
+      sfx.page();
+    }
     this.buildAlbum();
   }
 
@@ -3724,15 +3841,19 @@ class Room extends Phaser.Scene {
       });
     };
     const iconRow = (y, keys, field, cropY, cropH) => {
+      // много вариантов — клетки плотнее (картинка обрезается по краям на пиксель-другой)
+      const step = Math.min(26, Math.floor((W - d.x0 - 1) / keys.length));
+      const w = Math.min(22, step - 3);
+      const cx = Math.floor((22 - w) / 2);
       keys.forEach((k, i) => {
-        const x = d.x0 + i * 26;
+        const x = d.x0 + i * step;
         const tex = `dress_${field}_${k}`;
-        makeCharTextures(this, tex, { ...look, [field]: k });
+        makeCharTextures(this, tex, { ...look, [field]: k }, true);
         const sel = (look[field] || keys[0]) === k;
-        add(this.add.rectangle(x - 1, y - 1, 24, cropH + 2, sel ? 0xffffff : 0x4a3157).setOrigin(0));
-        add(this.add.rectangle(x, y, 22, cropH, 0x6b4a7e).setOrigin(0));
-        add(this.add.image(x, y - cropY, tex).setOrigin(0).setCrop(0, cropY, 22, cropH)).setDepth(D + 1);
-        hit(x - 1, y - 1, 24, cropH + 2, { dress: { field, value: k } });
+        add(this.add.rectangle(x - 1, y - 1, w + 2, cropH + 2, sel ? 0xffffff : 0x4a3157).setOrigin(0));
+        add(this.add.rectangle(x, y, w, cropH, 0x6b4a7e).setOrigin(0));
+        add(this.add.image(x - cx, y - cropY, tex).setOrigin(0).setCrop(cx, cropY, w, cropH)).setDepth(D + 1);
+        hit(x - 1, y - 1, w + 2, cropH + 2, { dress: { field, value: k } });
       });
     };
     let y = 5;
@@ -3774,6 +3895,8 @@ class Room extends Phaser.Scene {
     this.dress = null;
     d.ch.busy = false;
     d.ch.setTexture(d.ch.key);
+    this.stat('dressup');
+    this.refreshCastIcons(); // портрет в ящике и на карте — по новому виду
     sfx.yum();
     this.fxHearts.explode(3, d.ch.x, d.ch.y - d.ch.displayHeight);
     this.save();
@@ -3798,6 +3921,7 @@ class Room extends Phaser.Scene {
             if (rec) {
               const it = this.spawnItem(rec, c.x, c.y - 20);
               this.wear(c, 'hand', it);
+              this.sticker('dream', rec, c.x, c.y - 20);
               this.fxSparks.explode(16, c.x, c.y - c.displayHeight / 2);
               sfx.sparkle();
             }
@@ -3808,6 +3932,7 @@ class Room extends Phaser.Scene {
       }
     }
     this.night = night;
+    setMusicTheme(night ? 0 : (this.curRoom || 0)); // ночью везде колыбельная
     this.drawSky();
     this.nightLight?.();
     this.cloud?.setVisible(!night);
@@ -3885,14 +4010,29 @@ class Room extends Phaser.Scene {
       c.dreamIcon.x = c.dreamBubble.x + 9;
       c.dreamIcon.y = c.dreamBubble.y - 14;
     }
+    const plain = !this.dress && !this.albumUi && !this.mapUi; // нет открытых экранов поверх комнаты
     if (this.nav) {
-      this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && !this.dress && !this.albumUi));
-      this.nav[1].forEach((o) => o.setVisible(cam.scrollX < L.WORLD - L.W - 2 && !this.dress && !this.albumUi));
+      this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && plain));
+      this.nav[1].forEach((o) => o.setVisible(cam.scrollX < L.WORLD - L.W - 2 && plain));
     }
+    this.mapBtn?.forEach((o) => o.setVisible(plain));
+    // статистика для родителей: секунды активной игры по комнатам (экран трогали в последние 20 с)
+    this.statAcc = (this.statAcc || 0) + delta;
+    if (this.statAcc >= 1000) {
+      const sec = Math.floor(this.statAcc / 1000);
+      this.statAcc -= sec * 1000;
+      if (!document.hidden && performance.now() - (this.lastInput || -1e9) < 20000) statTime(Math.round(cam.scrollX / L.W), sec, today());
+    }
+    // шестерёнка: удержание 2 секунды открывает родительскую зону
+    if (this.press?.ui?.gear) {
+      const k = (performance.now() - this.press.t0) / 2000;
+      this.gearBar.setVisible(true).setScale(Math.min(1, k), 1);
+      if (k >= 1) { this.press = null; this.gearBar.setVisible(false); openParent(this); }
+    } else if (this.gearBar?.visible) this.gearBar.setVisible(false);
     // перенос предмета к краю экрана: камера едет в соседнюю комнату
     const pr = this.press;
     if (pr?.moved && pr.obj) {
-      const p = this.input.activePointer;
+      const p = pr.p;
       const sx = p.x / L.P;
       const sy = p.y / L.P;
       const v = sy > L.ROOM_H ? 0 : sx < 12 ? -3 : sx > L.W - 12 ? 3 : 0;
@@ -3968,11 +4108,11 @@ class Room extends Phaser.Scene {
 
   saveNow() {
     clearTimeout(this.saveT);
-    if (!this.objs) return;
+    if (!this.objs || this.noSave) return;
     const state = {
       v: 2, night: this.night, W: L.W, ROOM_H: L.ROOM_H, FLOOR_TOP: L.FLOOR_TOP,
       room: this.targetRoom ?? Math.round(this.cameras.main.scrollX / L.W),
-      flags: this.flags,
+      flags: this.flags, buddy: this.buddy || undefined,
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
@@ -3980,7 +4120,7 @@ class Room extends Phaser.Scene {
         color: o.color, photoId: o.photoId,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
-        uid: o.uid, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
+        uid: o.uid, cast: o.cast || undefined, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
         stain: o.stain || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx,
       })),
     };
@@ -3995,6 +4135,7 @@ class Room extends Phaser.Scene {
     const fx = (x) => Math.round(Phaser.Math.Clamp(x * L.W / (st.W || L.W), 6, L.WORLD - 6));
     this.roomIdx = Phaser.Math.Clamp(st.room || 0, 0, L.ROOMS - 1);
     this.flags = st.flags || {};
+    this.buddy = st.buddy || null;
     const fy = (y) => {
       const oldFloor = st.FLOOR_TOP || L.FLOOR_TOP;
       const oldRoom = st.ROOM_H || L.ROOM_H;
@@ -4004,7 +4145,7 @@ class Room extends Phaser.Scene {
       return Math.round(Phaser.Math.Clamp(ny, 4, L.ROOM_H - 1));
     };
     const byUid = new Map();
-    for (const c of st.chars) byUid.set(c.uid, this.spawnChar(fx(c.x), fy(c.y), c.look, { uid: c.uid, mul: c.mul }));
+    for (const c of st.chars) byUid.set(c.uid, this.spawnChar(fx(c.x), fy(c.y), c.look, { uid: c.uid, mul: c.mul, cast: c.cast }));
     for (const s of st.objs) {
       const rec = this.recOf(s.id);
       if (!rec) continue;
@@ -4036,6 +4177,14 @@ class Room extends Phaser.Scene {
     this.scene.restart();
   }
 }
+
+// Крупные блоки вынесены в отдельные файлы и подключаются как методы сцены
+const ENV = { L, rnd, pick, pixelMap, sfx, statHit, COOK, GROW, TREASURE, DREAMS, DREAM_THEMES };
+installCast(Room, ENV);
+installLife(Room, ENV);
+installNav(Room, ENV);
+installSeason(Room, ENV);
+installStickers(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)
@@ -4078,6 +4227,11 @@ window.addEventListener('resize', () => {
   }, 200);
 });
 
+// Приложение свернули или закрыли: дописать сохранение и статистику сразу, не дожидаясь задержки
+const flushAll = () => { game.scene.getScene('room')?.saveNow?.(); flushStats(); };
+window.addEventListener('pagehide', flushAll);
+document.addEventListener('visibilitychange', () => { if (document.hidden) flushAll(); });
+
 // Офлайн-режим: service worker есть только в собранной версии (npm run build)
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   // пришла новая версия игры (новый service worker взял управление) -> один раз перезагрузиться,
@@ -4099,4 +4253,4 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 
 // Отладка в dev-режиме: состояние игры доступно из консоли браузера
-if (import.meta.env.DEV) window.__game = game;
+if (import.meta.env.DEV) { window.__game = game; window.__dev = { musicTheme, setVoice, say, getVolume, getStats, exportData }; }
