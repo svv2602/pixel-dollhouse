@@ -25,6 +25,8 @@ import { installScenery } from './scenery.js';
 import { installTravel } from './travel.js';
 import { makeVillage, installVillage, VILLAGE_HINTS, VILLAGE_LURES } from './village.js';
 import { makeCity, installCity, CITY_HINTS, CITY_LURES } from './city.js';
+import { makeSea, installSea, SEA_HINTS, SEA_LURES } from './sea.js';
+import { makePots, installPots, RECIPE_GROUPS } from './pots.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -165,7 +167,7 @@ const HINTS = {
   potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
   dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
 };
-Object.assign(HINTS, VILLAGE_HINTS, CITY_HINTS); // подсказки села и города — рядом с их механиками, в village.js и city.js
+Object.assign(HINTS, VILLAGE_HINTS, CITY_HINTS, SEA_HINTS); // подсказки села, города и моря — рядом с их механиками
 // Облачка с кроватью («хочу спать», сон, прыжки на кровати) — после показа берут паузу, см. noteBed()
 const BED_HINTS = new Set(['dream', 'bounce']);
 const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
@@ -173,7 +175,7 @@ const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|maca
 const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
   ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco],
   ['robot', (b) => b.robot], ['wash', (b) => b.washer], ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
-LURES.push(...VILLAGE_LURES, ...CITY_LURES);
+LURES.push(...VILLAGE_LURES, ...CITY_LURES, ...SEA_LURES);
 // Сундук с сюрпризами: что выскакивает по тапу
 const TOYBOX = ['teddy bear', 'beach ball', 'rubber duck', 'kite', 'yo-yo', 'spinning top', 'toy robot', 'rag doll', 'nesting doll',
   'jack-in-the-box', 'toy castle', 'soccer ball', 'pinwheel', 'toy car', 'balloon', 'toy train engine', 'toy sailboat'];
@@ -346,11 +348,13 @@ class Room extends Phaser.Scene {
     for (const r of village) this.byId.set(r.id, r);
     const city = makeCity(this); // прилавки, касса, автоматы города — в мебели
     for (const r of city) this.byId.set(r.id, r);
+    const sea = [...makeSea(this), ...makePots(this)]; // пальма, лодка, сундук моря и котлы локаций — в мебели
+    for (const r of sea) this.byId.set(r.id, r);
     this.winter = isWinter(today());
     const season = makeSeason(this); // ёлка — во вкладке мебели, только зимой
     for (const r of season) this.byId.set(r.id, r);
     this.byCat = {
-      furniture: [...Object.values(this.big), ...clean.filter((r) => r.cat === 'furniture'), ...village.filter((r) => r.cat === 'furniture'), ...city.filter((r) => r.cat === 'furniture'), ...(this.winter ? season : [])], magic: potions.slice(),
+      furniture: [...Object.values(this.big), ...clean.filter((r) => r.cat === 'furniture'), ...village.filter((r) => r.cat === 'furniture'), ...city.filter((r) => r.cat === 'furniture'), ...sea.filter((r) => r.cat === 'furniture'), ...(this.winter ? season : [])], magic: potions.slice(),
       garden: clean.filter((r) => r.cat === 'garden' && !r.hidden),
       kitchen: salon.filter((r) => r.cat === 'kitchen'),
       food: party.filter((r) => r.cat === 'food'),
@@ -436,6 +440,10 @@ class Room extends Phaser.Scene {
     this.initVillage();
     this.ensureCity();
     this.initCity();
+    this.ensureSea();
+    this.initSea();
+    this.ensurePots();
+    this.initPots();
     this.initTravel();
     this.ensureCast();
     this.dailyVisit();
@@ -581,6 +589,7 @@ class Room extends Phaser.Scene {
       contents: extra.contents || [], lit: extra.lit ?? true, owner: null, slot: null, restOn: null,
       plots: beh.gardenBed ? (extra.plots || [null, null, null]) : null,
       deco: beh.cake ? (extra.deco || {}) : null,
+      stage: beh.sand ? (extra.stage || 0) : undefined, // замок из песка: сколько уже построено
       slots: beh.pet || beh.scarecrow || beh.mannequin ? { pethat: null } : undefined, // шапка на питомце, пугале или манекене
     });
     this.uidSeq = Math.max(this.uidSeq, o.uid + 1);
@@ -2073,6 +2082,10 @@ class Room extends Phaser.Scene {
     if (top?.portal) { this.portalTap(top); this.press = null; return; }
     if (top?.guest) { this.guestTap(top); this.press = null; return; }
     if (top?.car) { this.carTap(top); this.press = null; return; }
+    if (top?.dolphin) { this.dolphinTap(top); this.press = null; return; }
+    if (top?.fish) { this.fishTap(top); this.press = null; return; }
+    // море у горизонта: тап — волна, а свайп по нему листает комнаты
+    if (top && 'seaWave' in top) { this.press.wave = top.seaWave; this.press.swipe = { sx: p.x, cam: this.cameras.main.scrollX }; return; }
     // магазин на улице: тап — войти, а свайп по нему листает комнаты, как по пустому месту
     if (top && 'shopDoor' in top) { this.press.door = top.shopDoor; this.press.swipe = { sx: p.x, cam: this.cameras.main.scrollX }; return; }
     if (top?.ui) { this.press.ui = top.ui; this.press.t0 = performance.now(); return; }
@@ -2154,6 +2167,7 @@ class Room extends Phaser.Scene {
       return;
     }
     if (pr.door !== undefined) { this.shopEnter(pr.door); return; }
+    if (pr.wave !== undefined) { this.waveTap(pr.wave, q.x); return; }
     if (pr.moved && pr.obj) { this.drop(pr.obj, q); if (this.edgeScrolled) { this.edgeScrolled = false; this.snapCamera(); } return; }
     if (pr.ui?.nav) { this.goRoom(this.inPlace(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav)); return; }
     if (pr.ui && (pr.ui.map || pr.ui.mapClose || 'mapRoom' in pr.ui || 'mapPlace' in pr.ui)) { this.onMapUi(pr.ui); return; }
@@ -2226,6 +2240,8 @@ class Room extends Phaser.Scene {
     if (this.cleanDrop(o, q)) { this.save(); return; }
     // город: покупатель, касса, примерочная, манекен, фонтан, автомат с капсулами, стол упаковки
     if (this.cityDrop(o, q)) { this.save(); return; }
+    // море: карта сокровищ или лопатка — на крестик
+    if (this.seaDrop(o, q)) { this.save(); return; }
     // село: стог, трактор, повозка, пугало, мельница
     if (this.villageDrop(o, q)) { this.save(); return; }
     if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
@@ -2473,6 +2489,7 @@ class Room extends Phaser.Scene {
     }
     if (this.villageTap(o)) return;
     if (this.cityTap(o)) return;
+    if (this.seaTap(o)) return;
     if (b.disco) { this.toggleDisco(o); return; }
     if (b.bin) { this.binTap(o); return; }
     if (b.robot) { this.robotTap(o); return; }
@@ -2698,9 +2715,9 @@ class Room extends Phaser.Scene {
     if (type === 'sleep') { if (quiet) return; this.noteBed(); }
     if (type === 'magic') {
       // подсказка неоткрытого рецепта: ингредиент → ингредиент → котёл
-      const open = [...this.alchemy.recipes.entries()].filter(([k]) => !this.alchemy.found[k]);
-      if (!open.length) return;
-      const [key, recipe] = pick(open);
+      const hint = this.magicPick();
+      if (!hint) return;
+      const [key, recipe] = hint;
       this.showWish(ch, 'magic', null, { key, recipe });
       return;
     }
@@ -2710,6 +2727,19 @@ class Room extends Phaser.Scene {
     if (type === 'pet') rec = this.findRec(pick(WISH_PET));
     if ((type === 'food' || type === 'wear' || type === 'pet') && !rec) return;
     this.showWish(ch, type, rec);
+  }
+
+  /**
+   * Неоткрытый рецепт для подсказки-облачка: сначала — из того, что лежит в этой локации,
+   * иногда — «привези издалека» (ингредиенты из двух разных мест). Возвращает [ключ, рецепт] или null.
+   */
+  magicPick() {
+    const open = [...this.alchemy.recipes.entries()].filter(([k]) => !this.alchemy.found[k]);
+    if (!open.length) return null;
+    const here = this.placeNow().key;
+    const near = open.filter(([, r]) => r.place === here);
+    const far = open.filter(([, r]) => r.place === 'far');
+    return pick(near.length && Math.random() < 0.8 ? near : far.length && Math.random() < 0.7 ? far : near.length ? near : open);
   }
 
   /** Про кровать недавно напоминали? */
@@ -3168,12 +3198,14 @@ class Room extends Phaser.Scene {
   /** В любой комнате (и в старых сохранениях) должны быть котёл и альбом. */
   ensureMagic() {
     const { W, FLOOR_TOP } = L;
-    let pot = this.objs.find((o) => o.kind === 'item' && o.beh.cauldron);
+    // в доме должен быть свой котёл (котлы других локаций его не заменяют)
+    let pot = this.objs.find((o) => o.kind === 'item' && o.beh.cauldron && placeOf(Math.floor(o.x / W)).key === 'home');
     if (!pot) pot = this.spawnItem(this.big.cauldron, Math.round(W * 0.4), FLOOR_TOP + 12);
     if (!this.objs.some((o) => o.kind === 'item' && o.beh.album)) {
       this.spawnItem(this.big.album, Math.round(Math.min(W - 10, pot.x + 22)), FLOOR_TOP + 14);
     }
-    if (pot.contents.length >= 2) this.time.delayedCall(500, () => this.brew(pot));
+    // игру закрыли, пока котёл варил, — доварить (любой из котлов)
+    for (const p of this.objs) if (p.kind === 'item' && p.beh.cauldron && p.contents.length >= 2) this.time.delayedCall(500, () => this.brew(p));
   }
 
   recColor(rec) {
@@ -3323,18 +3355,29 @@ class Room extends Phaser.Scene {
       if (n) add(this.add.rectangle(x + 2, 19, Math.max(1, Math.round(18 * n / total)), 2, n === total ? 0xffd84a : 0x7ad9b5).setOrigin(0));
       hit(x, 1, 22, 21, { albumTab: i });
     });
+    // клетки страницы; у котла они сгруппированы по местам: перед группой — клетка со значком места (дом, село, город, море,
+    // «привези издалека», свои открытия) — видно, что ещё не открыто и куда за этим ехать
+    let cells = entries.map((e, idx) => ({ e, idx }));
+    if (tabs[u.tab].key === 'recipe') {
+      const all = cells;
+      cells = [];
+      for (const [place, mark] of RECIPE_GROUPS) {
+        const group = all.filter((c) => (c.e.place || 'home') === place);
+        if (group.length) cells.push({ head: mark }, ...group);
+      }
+    }
     const cell = 20;
     const cols = Math.max(1, Math.floor((W - 36) / cell));
     const y0 = 25;
     const rowsN = Math.max(1, Math.floor((H - y0 - 30) / cell));
     const per = cols * rowsN;
-    const pages = Math.max(1, Math.ceil(entries.length / per));
+    const pages = Math.max(1, Math.ceil(cells.length / per));
     u.page = (u.page + pages) % pages;
     const x0 = Math.floor((W - cols * cell) / 2);
-    entries.slice(u.page * per, (u.page + 1) * per).forEach((e, i) => {
-      const idx = u.page * per + i;
+    cells.slice(u.page * per, (u.page + 1) * per).forEach(({ e, idx, head }, i) => {
       const cx = x0 + (i % cols) * cell;
       const cy = y0 + Math.floor(i / cols) * cell;
+      if (head) { add(this.add.rectangle(cx, cy, 18, 18, 0x8a52cc).setOrigin(0)); icon(head, cx + 9, cy + 16); return; }
       add(this.add.rectangle(cx, cy, 18, 18, idx === u.sel ? 0xc48ff2 : e.found ? 0x6b4a7e : 0x3a2546).setOrigin(0));
       const img = add(this.recImage(e.result, cx + 9, cy + 17));
       if (!e.found) img.setTintFill(0x1e1424); // ещё не открыто — силуэт
@@ -3591,6 +3634,7 @@ class Room extends Phaser.Scene {
     this.updateClean(); // седоки робота-пылесоса и следы испачканной куклы
     this.updateVillage(); // повозка с грузом, седоки трактора
     this.updateCity(); // тележка и пакет с покупками, облачко покупателя
+    this.updateSea(); // замок из песка, круг на кукле в воде, хвост под водой
     const plain = !this.dress && !this.albumUi && !this.mapUi && !this.cardUi; // нет открытых экранов поверх комнаты
     const [camLo, camHi] = this.camRange(); // стрелки ведут только по комнатам своей локации
     if (this.nav) {
@@ -3702,7 +3746,7 @@ class Room extends Phaser.Scene {
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         dirty: o.dirty || undefined, took: o.tookBy ? [o.tookBy, o.tookSlot] : undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
         stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
-        color: o.color, photoId: o.photoId, flip: (o.beh.tractor && o.flipX) || undefined,
+        color: o.color, photoId: o.photoId, flip: (o.beh.tractor && o.flipX) || undefined, stage: o.stage || undefined,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
         uid: o.uid, cast: o.cast || undefined, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
@@ -3740,7 +3784,7 @@ class Room extends Phaser.Scene {
       const rec = this.recOf(s.id);
       if (!rec) continue;
       const contents = (s.contents || []).map((id) => this.recOf(id)?.id).filter(Boolean);
-      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots, deco: s.deco, color: s.color, photoId: s.photoId });
+      const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots, deco: s.deco, color: s.color, photoId: s.photoId, stage: s.stage });
       if (s.bites && it.beh.edible) { it.bites = s.bites; this.applyBites(it); }
       if (s.flip) it.setFlipX(true);
       byUid.set(s.uid, it);
@@ -3788,6 +3832,8 @@ installScenery(Room, ENV);
 installTravel(Room, ENV);
 installVillage(Room, ENV);
 installCity(Room, ENV);
+installSea(Room, ENV);
+installPots(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)

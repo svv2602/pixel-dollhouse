@@ -284,7 +284,7 @@ export function installTravel(Room, { L, rnd, sfx }) {
       this.save();
     },
 
-    /** Тап по открытке: во весь экран — картинка места (двор села с бабушкой, улица города с поваром); тап по ней — едем. */
+    /** Тап по открытке: во весь экран — картинка места (двор села с бабушкой, улица города с поваром, пляж с моряком); тап по ней — едем. */
     openCard(o) {
       const p = placeByKey(o.beh.postcard);
       if (!p || this.cardUi || this.dress || this.albumUi || this.mapUi || this.travelling) return;

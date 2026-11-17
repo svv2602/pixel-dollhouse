@@ -1,6 +1,6 @@
 // Город — третья локация: улица и четыре магазина (комнаты — в places.js, фон — в cityscene.js,
 // рисунки и записи каталога — в cityart.js). Денег в игре нет: всё берут с полок просто так. Что там можно делать:
-//  улица:    тап по магазину — входим; светофор — зелёный, и по дороге едут машины (тап по машине — сигналит);
+//  улица:    тап по магазину — входим (а в каждом магазине слева дверь с видом на улицу: тап — выходим); светофор — зелёный, и по дороге едут машины (тап по машине — сигналит);
 //            тележка мороженого — мороженое; фонтан — струи; монетку в фонтан — «желание»: талисман на удачу;
 //  супермаркет: прилавки (фрукты, хлеб, молочное) — тап роняет продукт; тележка покупателя — в неё кладут покупки,
 //            куклу можно прокатить; касса — предмет на ленту: «пик!», и он в бумажном пакете (пакет можно увезти домой на повозке);
@@ -15,7 +15,7 @@
 import Phaser from 'phaser';
 import { R, roomAt } from './places.js';
 import { makeCityArt } from './cityart.js';
-import { streetShops } from './cityscene.js';
+import { streetShops, exitDoor } from './cityscene.js';
 import { OUTFIT_KEYS, DRESS } from './character.js';
 
 /** Что лежит на полках: тап по прилавку роняет случайный предмет из его списка. */
@@ -169,6 +169,12 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
         const z = this.add.zone(R.street * L.W + s.x, s.top, s.w, s.h).setOrigin(0).setDepth(-7.9).setInteractive();
         z.shopDoor = R[s.key];
       }
+      // и обратно: в каждом магазине — дверь на улицу
+      const d = exitDoor(L);
+      for (const s of streetShops(L)) {
+        const z = this.add.zone(R[s.key] * L.W + d.x - 2, d.top - 2, d.w + 4, d.h + 4).setOrigin(0).setDepth(-7.9).setInteractive();
+        z.shopDoor = R.street;
+      }
       this.time.addEvent({ delay: 2500, loop: true, callback: () => this.guestTick() });
       // вывеска автомата-хваталки мигает
       this.time.addEvent({
@@ -206,13 +212,13 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
       return (this.stockLists[kind] ||= (STOCK[kind] || []).map((sub) => this.findRec(sub)).filter(Boolean));
     },
 
-    /** Новое из города: предмет выскакивает, наклейка — в альбом. */
-    cityGift(rec, x, y, dir = 0) {
+    /** Новое из города (или с моря — page): предмет выскакивает, наклейка — в альбом. */
+    cityGift(rec, x, y, dir = 0, page = 'city') {
       if (typeof rec === 'string') rec = this.byId.get(rec) || this.findRec(rec);
       if (!rec) return null;
       sfx.chestOut();
       this.fxSparks.explode(6, x, y);
-      this.sticker('city', rec, x, y - 6);
+      this.sticker(page, rec, x, y - 6);
       return this.popItem(rec, x, y, dir);
     },
 
@@ -310,7 +316,7 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
     },
 
     // ---------------------------------------------------------------- улица
-    /** Тап по магазину на улице: входим в его комнату. */
+    /** Тап по магазину на улице — входим в его комнату; тап по двери в магазине — выходим на улицу. */
     shopEnter(idx) {
       if (this.dress || this.albumUi || this.mapUi || this.cardUi) return;
       this.stat('shopdoor');
@@ -396,20 +402,36 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
     trolleyTap(t) {
       const riders = this.objs.filter((r) => r.restOn === t && !r.dragging);
       if (!riders.length && t.contents.length) return false;
-      if (t.rolling && this.tweens.isTweening(t)) return true; // уже катится (флаг один не годится: тележку могли унести посреди пути)
-      const room = roomOf(t);
-      const lo = room * L.W + 22;
-      const hi = (room + 1) * L.W - 22;
-      const tx = t.x < (lo + hi) / 2 ? hi : lo;
-      t.lastX = t.x;
-      t.rolling = true;
+      if (!this.rollAcross(t)) return true;
       this.hintDone('trolley');
       sfx.rattle();
       if (riders.some((r) => r.kind === 'char')) sfx.whee();
+      return true;
+    },
+
+    /**
+     * Тележка, лодка, подводная лодка: едет (плывёт) к другому краю комнаты вместе с седоками. false — уже в пути.
+     * turn — разворачивается носом по ходу; tick — что делать каждые 200 мс пути (брызги, пузыри).
+     */
+    rollAcross(t, { ms = 9, turn = false, tick = null } = {}) {
+      if (t.rolling && this.tweens.isTweening(t)) return false; // флаг один не годится: её могли унести посреди пути
+      const riders = this.objs.filter((r) => r.restOn === t && !r.dragging);
+      const room = roomOf(t);
+      const lo = room * L.W + 26;
+      const hi = (room + 1) * L.W - 26;
+      const tx = t.x < (lo + hi) / 2 ? hi : lo;
+      if (turn && t.flipX !== tx < t.x) {
+        t.setFlipX(tx < t.x);
+        for (const r of riders) r.x = Math.round(2 * t.x - r.x); // седок пересаживается вместе с сиденьем
+      }
+      t.lastX = t.x;
+      t.rolling = true;
+      const ev = tick && this.time.addEvent({ delay: 200, loop: true, callback: () => { if (t.active && t.rolling && this.tweens.isTweening(t)) tick(t); else ev.remove(); } });
       this.tweens.add({
-        targets: t, x: tx, duration: Math.abs(tx - t.x) * 9, ease: 'Sine.easeInOut',
+        targets: t, x: tx, duration: Math.abs(tx - t.x) * ms, ease: 'Sine.easeInOut',
         onComplete: () => {
           t.rolling = false;
+          ev?.remove();
           this.tractorSync(t);
           for (const r of riders) if (r.kind === 'char' && r.restOn === t) { sfx.giggle(); this.fxHearts.explode(2, r.x, r.y - r.displayHeight); }
           this.save();
@@ -596,7 +618,10 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
     },
 
     // ---------------------------------------------------------------- магазин одежды
-    /** Куклу — в примерочную: шторка задёргивается, и кукла выходит в новом наряде другого цвета. */
+    /**
+     * Куклу — в примерочную: шторка задёргивается, и кукла выходит в новом наряде другого цвета.
+     * Пляжная кабинка (beh.cabin) — то же самое, но наряд известен заранее: купальник, а из купальника — обратно в своё.
+     */
     fittingIn(booth, ch) {
       if (booth.fitBusy || ch.busy) return false;
       booth.fitBusy = true;
@@ -607,20 +632,26 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
       ch.y = Math.round(booth.y - 1);
       const show = (v) => { ch.setVisible(v); for (const it of Object.values(ch.slots)) it?.setVisible(v); ch.stainImg?.setVisible(v); };
       show(false);
-      booth.setTexture('fitting_closed');
+      const tex = booth.rec.tex;
+      booth.setTexture(`${tex}_closed`);
       sfx.swish();
-      this.hintDone('fitting');
+      if (booth.beh.cabin) this.hintDone('cabin'); else this.hintDone('fitting');
       this.time.addEvent({ delay: 220, repeat: 3, callback: () => { if (booth.active) { this.tweens.add({ targets: booth, y: booth.y - 1, duration: 70, yoyo: true }); sfx.wear(); } } });
       this.time.delayedCall(1100, () => {
         const look = ch.look;
-        ch.look = {
-          ...look,
-          outfit: pick(OUTFIT_KEYS.filter((k) => k !== look.outfit)),
-          dress: pick(DRESS.filter((c) => c !== look.dress)),
-        };
+        if (booth.beh.cabin) {
+          // wore — что было надето до купальника
+          ch.look = look.outfit === 'swimsuit' ? { ...look, outfit: look.wore || 'dress', wore: undefined } : { ...look, outfit: 'swimsuit', wore: look.outfit };
+        } else {
+          ch.look = {
+            ...look,
+            outfit: pick(OUTFIT_KEYS.filter((k) => k !== look.outfit)),
+            dress: pick(DRESS.filter((c) => c !== look.dress)),
+          };
+        }
         this.charTex(ch);
         booth.fitBusy = false;
-        if (booth.active) booth.setTexture('fitting');
+        if (booth.active) booth.setTexture(tex);
         if (!ch.active) return;
         ch.busy = false;
         ch.setTexture(ch.key);
@@ -644,8 +675,8 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
       if (booth.fitBusy) return;
       booth.fitBusy = true;
       sfx.swish();
-      booth.setTexture('fitting_closed');
-      this.time.delayedCall(600, () => { booth.fitBusy = false; if (booth.active) booth.setTexture('fitting'); });
+      booth.setTexture(`${booth.rec.tex}_closed`);
+      this.time.delayedCall(600, () => { booth.fitBusy = false; if (booth.active) booth.setTexture(booth.rec.tex); });
     },
 
     /** Манекен поворачивается и блестит. */

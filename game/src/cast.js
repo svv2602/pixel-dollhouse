@@ -18,10 +18,14 @@ export const CAST = [
   { id: 'cook', city: 'cafe', look: { hair: '#2a2433', skin: SKIN[2], dress: '#ffffff', hairStyle: 'bob', outfit: 'overalls' } },
   { id: 'model', city: 'clothes', look: { hair: '#f28fb5', skin: SKIN[1], dress: '#7ad9b5', hairStyle: 'ponytail', outfit: 'dress' } },
   { id: 'toyman', city: 'toyshop', look: { hair: '#4fb3d9', skin: SKIN[4], dress: '#f2c94c', hairStyle: 'curly', outfit: 'overalls', glasses: true } },
+  // у моря: моряк на пляже и русалка на дне
+  { id: 'sailor', sea: 'beach', look: { hair: '#f2f2f2', skin: SKIN[2], dress: '#5a7fd9', hairStyle: 'short', outfit: 'shorts', stache: true } },
+  { id: 'mermaid', sea: 'deep', look: { hair: '#3fc8b0', skin: SKIN[0], dress: '#f28fb5', hairStyle: 'long', outfit: 'swimsuit' } },
 ];
 const HOME_X = { 1: 0.72, 3: 0.5, 4: 0.5 }; // где встаёт жилец комнаты (доля ширины)
 const FARM_X = { yard: 0.2, orchard: 0.37, field: 0.41 }; // жильцы села: бабушка во дворе, малыш в саду, папа в поле
 const CITY_X = { cafe: 0.47, clothes: 0.27, toyshop: 0.66 }; // горожане — в своих магазинах
+const SEA_X = { beach: 0.72, deep: 0.5 }; // моряк — у остановки на пляже, русалка — на дне
 
 export function installCast(Room, { L, rnd, sfx, statHit }) {
   Object.assign(Room.prototype, {
@@ -73,6 +77,15 @@ export function installCast(Room, { L, rnd, sfx, statHit }) {
         for (const c of CAST) {
           if (!c.city || this.castChar(c.id)) continue;
           this.spawnChar(Math.round(R[c.city] * L.W + L.W * CITY_X[c.city]), L.ROOM_H - 5, { ...(this.flags.castLook?.[c.id] || c.look) }, { cast: c.id });
+        }
+        this.save();
+      }
+      // моряк и русалка — и в старых сохранениях
+      if (!this.flags.cast5) {
+        this.flags.cast5 = true;
+        for (const c of CAST) {
+          if (!c.sea || this.castChar(c.id)) continue;
+          this.spawnChar(Math.round(R[c.sea] * L.W + L.W * SEA_X[c.sea]), L.ROOM_H - 5, { ...(this.flags.castLook?.[c.id] || c.look) }, { cast: c.id });
         }
         this.save();
       }

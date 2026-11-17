@@ -19,6 +19,42 @@ export function streetShops(L) {
   });
 }
 
+/**
+ * Дверь на улицу в каждом магазине: где она на стене (в координатах комнаты). Стоит слева, сразу за стрелкой:
+ * улица — левее всех магазинов. По этому же прямоугольнику магазин принимает тап: тап по двери — выходим (см. city.js).
+ */
+export function exitDoor(L) {
+  const h = Math.min(31, L.FLOOR_TOP - 10);
+  return { x: 20, w: 17, h, top: L.FLOOR_TOP - 2 - h };
+}
+
+/** Распахнутая дверь на улицу: в проёме небо с солнцем, дома и тротуар; над дверью — табличка со светофором. */
+function doorOut(g, x0, c, frame) {
+  const d = exitDoor(c.L);
+  const x = x0 + d.x;
+  const { top, w, h } = d;
+  g.fillStyle(0xffffff).fillRect(x - 2, top - 2, w + 4, h + 2);
+  g.fillStyle(0x9fdcff).fillRect(x, top, w, h);
+  g.fillStyle(0xc8ecff).fillRect(x, top + Math.round(h * 0.45), w, Math.round(h * 0.25));
+  g.fillStyle(0xffe066).fillRect(x + w - 6, top + 2, 4, 4);
+  g.fillStyle(0xff9ac8).fillRect(x + 1, top + h - 16, 5, 10);
+  g.fillStyle(0x5a7fd9).fillRect(x + 6, top + h - 20, 5, 14);
+  g.fillStyle(0xffffff).fillRect(x + 2, top + h - 14, 1, 1).fillRect(x + 2, top + h - 11, 1, 1).fillRect(x + 7, top + h - 18, 1, 1).fillRect(x + 9, top + h - 15, 1, 1).fillRect(x + 7, top + h - 12, 1, 1);
+  g.fillStyle(0xd9dce8).fillRect(x, top + h - 6, w, 6);
+  g.fillStyle(0x9aa0b4).fillRect(x, top + h - 6, w, 1);
+  // створка, открытая наружу, и ручка
+  g.fillStyle(frame).fillRect(x + w - 3, top, 3, h);
+  g.fillStyle(0xffd84a).fillRect(x + w - 3, top + Math.round(h * 0.55), 2, 2);
+  // табличка: светофор — «на улицу»
+  const sy = Math.max(1, top - 12);
+  g.fillStyle(0xffffff).fillRect(x + 3, sy, 11, 9);
+  g.fillStyle(frame).fillRect(x + 3, sy + 8, 11, 1);
+  g.fillStyle(0x3a3040).fillRect(x + 7, sy + 1, 3, 7);
+  g.fillStyle(0xff4a4a).fillRect(x + 8, sy + 2, 1, 1);
+  g.fillStyle(0xffd84a).fillRect(x + 8, sy + 4, 1, 1);
+  g.fillStyle(0x5cf27a).fillRect(x + 8, sy + 6, 1, 1);
+}
+
 const SHOP_LOOK = {
   market: { wall: 0xfff3d6, dark: 0xe0c890, awn: 0x52b893, door: 0x52b893 },
   cafe: { wall: 0xffd9c2, dark: 0xe8a888, awn: 0xef5a6f, door: 0xa8683f },
@@ -182,6 +218,7 @@ export const CITY_SCENERY = {
       g.fillStyle(0x52b893).fillRect(x0, FLOOR_TOP - 2, W, 2);
       tiles(g, x0, c, 0xffffff, 0xd8e6f0, 8);
       trim(g, x0, c, 0x52b893);
+      doorOut(g, x0, c, 0x52b893);
     },
   },
 
@@ -218,6 +255,7 @@ export const CITY_SCENERY = {
         for (let x = (r % 2) * 14; x < W; x += 28) g.fillRect(x0 + x, y, 1, 5);
       }
       trim(g, x0, c, 0xa8683f);
+      doorOut(g, x0, c, 0xa8683f);
     },
   },
 
@@ -241,6 +279,7 @@ export const CITY_SCENERY = {
       for (let y = FLOOR_TOP + 2, r = 0; y < ROOM_H; y += 4, r++) for (let x = (r % 2) * 4; x < W; x += 8) g.fillRect(x0 + x, y, 2, 1);
       g.fillStyle(0xfadbe8).fillRect(x0, FLOOR_TOP, W, 1);
       trim(g, x0, c, 0x8a52cc);
+      doorOut(g, x0, c, 0x8a52cc);
     },
   },
 
@@ -266,6 +305,7 @@ export const CITY_SCENERY = {
       g.fillStyle(0x5a7fd9).fillRect(x0, FLOOR_TOP - 2, W, 2);
       tiles(g, x0, c, 0xffe38a, 0xf2c94c, 8);
       trim(g, x0, c, 0x5a7fd9);
+      doorOut(g, x0, c, 0x5a7fd9);
     },
   },
 };

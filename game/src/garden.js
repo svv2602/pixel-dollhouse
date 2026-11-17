@@ -155,10 +155,12 @@ export function installGarden(Room, { L, rnd, pick, sfx }) {
       const x0 = tree.x;
       this.tweens.add({ targets: tree, x: x0 + 1, duration: 60, yoyo: true, repeat: 3, onComplete: () => { tree.x = x0; } });
       if (tree.beh.appleTree) this.itemDream('tree', tree, 'forest');
-      this.leafFall(tree);
+      if (!tree.beh.palm) this.leafFall(tree);
       const rec = this.findRec(tree.beh.fruit || 'apple');
       if (!rec) return;
-      if (tree.beh.fruit) { this.hintDone('fruit'); this.sticker('farm', rec, tree.x, tree.y - tree.displayHeight * 0.55); }
+      // плод — наклейка: с пальмы — на страницу «море», с деревьев села — на страницу «село»
+      if (tree.beh.palm) { this.hintDone('palm'); this.sticker('sea', rec, tree.x, tree.y - tree.displayHeight * 0.55); }
+      else if (tree.beh.fruit) { this.hintDone('fruit'); this.sticker('farm', rec, tree.x, tree.y - tree.displayHeight * 0.55); }
       const o = this.spawnItem(rec, Math.round(tree.x + rnd(-10, 10)), Math.round(tree.y - tree.displayHeight * 0.55));
       const ty = Math.round(Phaser.Math.Clamp(tree.y + rnd(2, 14), L.FLOOR_TOP + 4, L.ROOM_H - 2));
       sfx.pick();

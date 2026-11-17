@@ -47,6 +47,17 @@ export const PLACES = [
       { key: 'toyshop', stat: 14, music: 10, icon: 'claw_icon', colors: [0xd6f0ff, 0xf2c94c], clean: 'toystand' },
     ],
   },
+  {
+    // море: пляж с остановкой, открытая вода, морское дно и остров (под водой неба нет — там звучит «глубокая» мелодия снов)
+    key: 'sea', icon: 'place_sea', gate: 'beach', stop: 0.88, cart: 0.66,
+    card: { who: 'sailor', pics: ['palm', 'sandcastle_3', 'boat'] },
+    rooms: [
+      { key: 'beach', stat: 15, music: 12, outdoor: true, clouds: [[40, 8], [130, 5]], icon: 'sandcastle_3_icon', colors: [0x9fdcff, 0xf2dca0], clean: 'sandcastle' },
+      { key: 'waves', stat: 16, music: 12, outdoor: true, clouds: [[60, 6], [170, 10]], icon: 'boat_icon', colors: [0x9fdcff, 0x4fb3e8], clean: 'boat' },
+      { key: 'deep', stat: 17, music: 6, icon: 'sub_icon', colors: [0x2c6ab0, 0xe8d39a], clean: 'seachest' },
+      { key: 'island', stat: 18, music: 12, outdoor: true, clouds: [[30, 9], [150, 6]], icon: 'palm_icon', colors: [0x9fdcff, 0xf2dca0], clean: 'campot' },
+    ],
+  },
 ];
 
 /** Все комнаты по порядку на ленте: { key, idx, place, … }. */

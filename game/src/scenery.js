@@ -7,6 +7,7 @@
 import { ROOMS, R } from './places.js';
 import { VILLAGE_SCENERY } from './villagescene.js';
 import { CITY_SCENERY } from './cityscene.js';
+import { SEA_SCENERY } from './seascene.js';
 
 const HOME_SCENERY = {
   // ===== спальня: обои в полоску с точками, пол — доски
@@ -144,7 +145,7 @@ const HOME_SCENERY = {
   },
 };
 
-const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY, ...CITY_SCENERY };
+const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY, ...CITY_SCENERY, ...SEA_SCENERY };
 
 /** Белая рама окна с переплётом. */
 function windowFrame(f, { x, y, w, h }) {
