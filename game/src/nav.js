@@ -12,11 +12,14 @@ export function installNav(Room, { L, pixelMap, sfx, statHit }) {
       const g = this.add.graphics().setDepth(19001).setScrollFactor(0);
       pixelMap(g, ['.....X.....', '....XXX....', '...XXXXX...', '..XXXXXXX..', '.XXXXXXXXX.', '..XXXXXXX..', '..XX.X.XX..', '..XX.X.XX..', '..XXXXXXX..'], 5, 5, 0xffffff);
       this.mapBtn = [b, g];
+      // звёздочка на кнопке: на карте есть место, где ещё не были
+      this.mapDot = this.add.image(19, 3, 'spark').setTint(0xfff07a).setDepth(19002).setScrollFactor(0);
+      this.tweens.add({ targets: this.mapDot, alpha: 0.35, duration: 500, yoyo: true, repeat: -1 });
     },
 
     /** Карта: сверху значки локаций, под ними — комнаты той, что выбрана (по умолчанию — где сейчас игрок). */
     openMap(view = null) {
-      if (this.dress || this.albumUi || this.mapUi || this.travelling) return;
+      if (this.dress || this.albumUi || this.mapUi || this.cardUi || this.travelling) return;
       sfx.page();
       statHit('map');
       const { W, H } = L;
@@ -34,6 +37,10 @@ export function installNav(Room, { L, pixelMap, sfx, statHit }) {
         tab.setStrokeStyle(1, p === this.placeNow() ? 0xfff07a : 0xffffff, 0.9);
         tab.ui = { mapPlace: p.key };
         add(this.add.image(x + tw / 2, 17, p.icon).setScale(2), 30002);
+        if (!this.flags.seen?.[p.key]) { // здесь ещё не были
+          const star = add(this.add.image(x + tw - 2, 5, 'spark').setTint(0xfff07a), 30003);
+          this.tweens.add({ targets: star, alpha: 0.35, duration: 500, yoyo: true, repeat: -1 });
+        }
       });
       // комнаты выбранной локации
       const rooms = ROOMS.filter((r) => r.place === place.key);
@@ -62,7 +69,7 @@ export function installNav(Room, { L, pixelMap, sfx, statHit }) {
 
     closeMap() {
       if (!this.mapUi) return;
-      this.mapUi.parts.forEach((o) => o.destroy());
+      this.mapUi.parts.forEach((o) => { this.tweens.killTweensOf(o); o.destroy(); });
       this.mapUi = null;
     },
 

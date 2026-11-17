@@ -237,6 +237,7 @@ export const sfx = {
   creak: () => [0, 1, 2].forEach((i) => tone(330 + i * 40, 0.12, { type: 'sawtooth', vol: 0.03, slide: 60, delay: i * 0.16 })),
   rattle: () => { for (let i = 0; i < 7; i++) noise(0.03, { freq: 2200 + (i % 3) * 600, vol: 0.09, delay: i * 0.05 }); },
   rustle: () => { for (let i = 0; i < 5; i++) noise(0.06, { freq: 3500, vol: 0.06, delay: i * 0.06 }); },
+  honk: () => { tone(392, 0.16, { type: 'square', vol: 0.05 }); tone(494, 0.16, { type: 'square', vol: 0.05 }); tone(392, 0.3, { type: 'square', vol: 0.05, delay: 0.22 }); tone(494, 0.3, { type: 'square', vol: 0.05, delay: 0.22 }); },
   clop: () => { for (let i = 0; i < 6; i++) tone(i % 2 ? 420 : 330, 0.04, { type: 'square', vol: 0.05, delay: i * 0.14 }); },
 };
 

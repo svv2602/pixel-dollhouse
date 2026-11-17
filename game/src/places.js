@@ -11,11 +11,12 @@
 //   icon    — картинка комнаты на карте, colors — [стена или небо, пол] для её карточки;
 //   clean   — предмет, которым комната отмечена на странице наклеек «чистюля»;
 //   clouds  — где облака на небе уличной комнаты (если не как в саду у дома).
-// Поля локации: icon — значок на карте; gate — комната-«калитка»: там стоит указатель (sign — доля ширины комнаты)
-// и туда приезжает повозка (cart — доля ширины).
+// Поля локации: icon — значок на карте; gate — комната-«калитка»: там автобусная остановка (stop — доля ширины комнаты)
+// и туда приезжает повозка (cart — доля ширины); card — открытка, которая один раз зовёт в эту локацию:
+// who — кто из кукол на ней нарисован, pics — что ещё (ключи текстур).
 export const PLACES = [
   {
-    key: 'home', icon: 'place_home', gate: 'garden', sign: 0.63, cart: 0.48,
+    key: 'home', icon: 'place_home', gate: 'garden', stop: 0.63, cart: 0.48,
     rooms: [
       { key: 'bedroom', stat: 0, music: 0, icon: 'big_bed_icon', colors: [0xf8dce8, 0xd39a68], clean: 'big_bed' },
       { key: 'kitchen', stat: 1, music: 1, icon: 'big_cauldron_icon', colors: [0xe6f6ef, 0xe3cfae], clean: 'big_fridge' },
@@ -25,7 +26,8 @@ export const PLACES = [
     ],
   },
   {
-    key: 'village', icon: 'place_village', gate: 'yard', sign: 0.9, cart: 0.84,
+    key: 'village', icon: 'place_village', gate: 'yard', stop: 0.87, cart: 0.71,
+    card: { who: 'granny', pics: ['farm_cow', 'farm_hen', 'coop'] },
     rooms: [
       { key: 'yard', stat: 6, music: 8, outdoor: true, clouds: [[150, 16], [205, 7]], icon: 'coop_icon', colors: [0x9fdcff, 0xd9b77a], clean: 'coop' },
       { key: 'veg', stat: 7, music: 8, outdoor: true, icon: 'scarecrow_icon', colors: [0x9fdcff, 0x8fd16a], clean: 'scarecrow' },

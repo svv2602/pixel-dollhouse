@@ -25,7 +25,7 @@ const BREAD = ['loaf of bread', 'round bread loaf', 'rye bread loaf'];
 
 // Подсказки-облачка, приманки и страница альбома — дописываются к общим спискам в main.js и stickers.js
 export const VILLAGE_HINTS = {
-  travel: { room: R.garden, seq: () => ['tex:sign_village_icon', 'tex:place_village'] },
+  travel: { room: 'home', seq: () => ['tex:busstop_icon', 'tex:place_village'] }, // просят в любой комнате дома
   coop: { room: R.yard, seq: () => ['coop', 'egg'] },
   farmfood: { room: R.yard, seq: () => ['ear of corn', 'farm-cow', 'glass bottle of milk'] },
   wool: { room: R.yard, seq: () => ['pet-brush', 'farm-sheep', 'ball of yarn'] },
@@ -188,6 +188,8 @@ export function installVillage(Room, { L, rnd, pick, sfx }) {
     /** Тап по предмету села. true — тап обработан. */
     villageTap(o) {
       const b = o.beh;
+      if (b.cart) { this.cartTap(o); return true; }
+      if (b.postcard) { this.openCard(o); return true; }
       if (b.coop) { this.coopTap(o); return true; }
       if (b.well) { this.wellTap(o); return true; }
       if (b.scarecrow) { this.scarecrowTap(o); return true; }

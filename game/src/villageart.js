@@ -230,12 +230,38 @@ const barnIcon = (r, x, y) => {
   r(x + 2, y, 4, 1, '#6b4a58'); r(x + 1, y + 1, 6, 1, '#6b4a58'); r(x, y + 2, 8, 6, '#c8443a');
   r(x + 3, y + 4, 2, 4, '#ffffff'); r(x + 3, y + 2, 2, 1, '#f2c94c');
 };
-/** Указатель у калитки: доска-стрелка с картинкой места, куда он ведёт. */
-const sign = (icon) => canvasFor(16, 26, (r) => {
-  r(7, 10, 2, 16, '#a8714d'); r(7, 10, 1, 16, '#c98a52');
-  r(0, 0, 14, 11, '#f4ead8'); r(0, 0, 14, 1, '#ffffff'); r(0, 10, 14, 1, '#d8c8a8');
-  r(14, 2, 1, 7, '#f4ead8'); r(15, 4, 1, 3, '#f4ead8');
-  icon(r, 3, 2);
+/** Автобусная остановка у калитки: навес, лавочка, табло. На табло — автобус; если ехать можно в одно место, поверх него — значок этого места. */
+const busStop = () => canvasFor(36, 34, (r) => {
+  r(10, 0, 16, 12, '#ffffff'); r(11, 1, 14, 10, '#5a7fd9');                            // табло
+  r(13, 4, 10, 4, '#ffc83d'); r(14, 5, 2, 2, '#bfe6ff'); r(17, 5, 2, 2, '#bfe6ff'); r(20, 5, 2, 2, '#bfe6ff');
+  r(14, 8, 2, 1, '#3a3040'); r(20, 8, 2, 1, '#3a3040');
+  r(0, 12, 36, 3, '#3fb5a0'); r(0, 12, 36, 1, '#7ad9c5'); r(0, 14, 36, 1, '#2f8a7a');  // навес
+  r(2, 15, 2, 19, '#8f96b0'); r(32, 15, 2, 19, '#8f96b0');                             // стойки
+  r(4, 15, 28, 11, '#cfeeff'); r(4, 15, 28, 1, '#ffffff'); r(8, 17, 1, 7, '#ffffff'); r(10, 17, 1, 4, '#ffffff'); // стекло
+  r(7, 27, 22, 2, '#c98a52'); r(7, 27, 22, 1, '#e0a971'); r(9, 29, 2, 5, '#a8693c'); r(25, 29, 2, 5, '#a8693c'); // лавочка
+});
+/** Автобус (едет влево). */
+const bus = () => canvasFor(32, 15, (r) => {
+  r(0, 1, 32, 11, '#ffc83d'); r(1, 0, 30, 1, '#ffe38a'); r(0, 1, 32, 1, '#ffe38a'); r(0, 10, 32, 2, '#e0a020');
+  r(1, 3, 4, 5, '#bfe6ff');                                                            // лобовое стекло
+  for (let x = 7; x < 25; x += 6) { r(x, 3, 4, 4, '#bfe6ff'); r(x, 3, 4, 1, '#ffffff'); }
+  r(25, 3, 5, 8, '#e0a020'); r(26, 4, 3, 6, '#bfe6ff');                                // дверь
+  r(0, 8, 1, 2, '#fff07a');                                                            // фара
+  disc(r, 7, 12, 2, '#3a3040'); disc(r, 21, 12, 2, '#3a3040'); r(7, 12, 1, 1, '#b8bccc'); r(21, 12, 1, 1, '#b8bccc');
+});
+/** Облачко выбора: над остановкой или повозкой — картинки того, что можно сделать. */
+const choiceBubble = () => canvasFor(22, 19, (r) => { r(1, 0, 20, 16, '#ffffff'); r(0, 1, 22, 14, '#ffffff'); r(9, 16, 4, 2, '#ffffff'); r(10, 18, 2, 1, '#ffffff'); });
+/** «Выгрузить»: стрелка вниз над ящиком. */
+const unloadIcon = () => canvasFor(12, 12, (r) => {
+  r(5, 0, 2, 5, '#8a52cc'); r(3, 4, 6, 1, '#8a52cc'); r(4, 5, 4, 1, '#8a52cc'); r(5, 6, 2, 1, '#8a52cc');
+  r(1, 9, 10, 3, '#c98a52'); r(1, 9, 10, 1, '#e0a971');
+});
+/** Открытка из села: картинка с сараем, строчки и марка. */
+const postcard = () => canvasFor(18, 12, (r) => {
+  r(0, 0, 18, 12, '#fff8e8');
+  r(1, 1, 8, 10, '#9fdcff'); r(1, 8, 8, 3, '#8fd16a'); r(3, 5, 4, 4, '#c8443a'); r(3, 4, 4, 1, '#6b4a58'); r(4, 7, 2, 2, '#ffffff');
+  r(13, 1, 4, 4, '#ef5a6f'); r(14, 2, 2, 2, '#ffd0e4');
+  r(10, 6, 7, 1, '#c9b3e0'); r(10, 8, 6, 1, '#c9b3e0'); r(10, 10, 4, 1, '#c9b3e0');
 });
 /** Значок локации для карты. */
 const placeIcon = (icon) => canvasFor(12, 10, (r) => icon(r, 2, 1));
@@ -276,8 +302,11 @@ export function makeVillageArt(scene) {
   add('cart', cart(false));
   add('cart_full', cart(true), false);
   add('sheaf', sheaf());
-  add('sign_home', sign(houseIcon));
-  add('sign_village', sign(barnIcon));
+  add('busstop', busStop());
+  add('bus', bus(), false);
+  add('choice', choiceBubble(), false);
+  add('unload', unloadIcon(), false);
+  add('postcard', postcard());
   add('place_home', placeIcon(houseIcon), false);
   add('place_village', placeIcon(barnIcon), false);
   add('bucket', canvasFor(5, 5, (r) => { r(0, 0, 5, 5, '#8fa8f2'); r(0, 0, 5, 1, '#d6e0ff'); r(1, 1, 3, 1, '#5ac4f2'); }), false);
@@ -306,6 +335,8 @@ export function makeVillageArt(scene) {
     big('windmill', 'windmill', { mill: true }, 60),
     big('tractor', 'red tractor', { tractor: true, perch: { dy: 9, lo: -10, hi: -10, behind: true } }, 61),
     big('cart', 'travel cart', { cart: true, container: true, perch: { dy: 10, lo: -13, hi: 11, behind: true } }, 62),
+    // открытка из села: один раз прилетает в дом (см. travel.js); тап — картинка двора, тап по ней — едем
+    { id: 'postcard-village', subject: 'postcard from the village', cat: 'toy', tags: ['toy'], tex: 'postcard', bbox: [0, 0, 15, 15], hidden: true, beh: { postcard: 'village' } },
     { id: 'sheaf', subject: 'wheat sheaf', cat: 'garden', tags: ['garden'], tex: 'sheaf', bbox: [0, 0, 15, 15], hidden: true, beh: { sheaf: true } },
   ];
 }

@@ -459,8 +459,8 @@ test('подсказки: в ванной просит щётку — почис
     s.testCh3 = c;
     return { bathHints, kitchenHints, shown: s.wish?.hint };
   });
-  assert.equal(st.bathHints, 'bubbles,dreamsea,makeup,teeth,toilet,wash');
-  assert.equal(st.kitchenHints, 'cook,dreamcandy,fridge,smoothie');
+  assert.equal(st.bathHints, 'bubbles,dreamsea,makeup,teeth,toilet,travel,wash'); // «в село» просятся в любой комнате дома
+  assert.equal(st.kitchenHints, 'cook,dreamcandy,fridge,smoothie,travel');
   assert.equal(st.shown, 'teeth');
   await waitFor((s) => !s.testCh3.busy);
   await room((s) => s.brushTeeth(s.testCh3));
@@ -1098,7 +1098,8 @@ test('миры снов: в каждом из семи работает своя
   // море: рыбки плывут за пальцем; кит катает
   await enter('sea');
   await dream((d) => { d.fx0 = d.fish.map((f) => f.x); d.def.skyDown(d, { x: 30, y: 40 }); });
-  await waitDream((d) => d.fish.every((f) => Math.abs(f.x - 30) < 30));
+  // палец остаётся на воде (рыбки, доплыв, разбредаются; на загруженной машине они не успевали собраться все разом)
+  await waitDream((d) => { d.def.skyMove(d, { x: 30, y: 40 }); return d.fish.every((f) => Math.abs(f.x - 30) < 30); });
   await dream((d) => d.mount(d.dolls[0], d.actors.find((a) => a.rec?.subject === 'whale')));
   await waitDream((d) => d.dolls[0].mount && Math.abs(d.dolls[0].y - (d.dolls[0].mount.y - 13)) < 2);
   // сундук заперт, ключ у краба: тап по крабу — ключ падает; ключ на сундук — он открывается, первой выпадает жемчужина
@@ -1848,6 +1849,101 @@ test('локации: камера не выходит из своей лока�
     return { place: s.placeNow().key, cam: s.cameras.main.scrollX / W, cart: Math.floor(cart.x / W), on: kid.restOn === cart, load: cart.contents.length };
   });
   assert.deepEqual(st3, { place: 'village', cam: 5, cart: 5, on: true, load: 1 });
+});
+
+test('дорога: открытка зовёт в село; автобус и остановка; повозка — тапом, с грузом — выбор; кукла просится в дорогу; звёздочка на карте', async () => {
+  await freshRoom();
+  // открытка из села сама прилетает в дом; пока в селе не были — на кнопке карты звёздочка
+  await waitFor((s) => s.objs.some((o) => o.beh?.postcard) && s.mapDot.visible);
+  // пока никуда не ездили, к остановке в саду подъезжает автобус-приманка
+  await room((s) => s.goRoom(2));
+  await waitFor((s) => s.curRoom === 2);
+  assert.equal(await room((s) => { const r = Math.random; Math.random = () => 0; s.busAfter = 0; s.busTick(); Math.random = r; return !!s.bus; }), true);
+  const card = await room((s) => {
+    const pc = s.objs.find((o) => o.beh?.postcard);
+    const unseen = s.unseenPlace()?.key;
+    s.tap(pc);
+    const res = { unseen, open: s.cardUi?.place, sent: s.flags.cards.village, go: s.cardUi.parts.filter((o) => o.ui && 'cardGo' in o.ui).length };
+    s.onCardUi({ cardGo: 'village' });
+    return { ...res, closed: !s.cardUi, travelling: s.travelling };
+  });
+  assert.deepEqual(card, { unseen: 'village', open: 'village', sent: 1, go: 1, closed: true, travelling: true });
+  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await waitFor((s) => !s.mapDot.visible && !s.unseenPlace());
+  // съездили — автобус больше не приманка: следующий придёт через три минуты, и тогда уже наверняка
+  const calm = await room((s) => {
+    const wait = Math.round((s.busAfter - s.time.now) / 60000);
+    s.busTick();
+    const early = !!s.bus;
+    const r = Math.random; Math.random = () => 0.99; s.busAfter = s.time.now - 1; s.busTick(); Math.random = r;
+    return { wait, early, came: !!s.bus };
+  });
+  assert.deepEqual(calm, { wait: 3, early: false, came: true });
+  // тап по автобусу у остановки во дворе везёт домой, в сад
+  await waitFor((s) => s.bus?.waiting);
+  const bus = await room((s, mk) => {
+    const f = new Function(`return ${mk}`)();
+    const stop = s.stopHere();
+    const res = { at: Math.abs(s.bus.x - stop.x) <= 3, to: s.bus.portal };
+    s.onDown(f(1, s.bus.x, s.bus.y - 6), [s.bus]); // настоящий тап: автобус — не предмет
+    return { ...res, travelling: s.travelling, press: !!s.press };
+  }, finger.toString());
+  assert.deepEqual(bus, { at: true, to: 'home', travelling: true, press: false });
+  await waitFor((s) => !s.travelling && s.curRoom === 2 && !s.bus);
+  // повозка: пустая — тап, и едем; с грузом — два облачка: ехать или выгрузить
+  await room((s) => s.tap(s.objs.find((o) => o.beh?.cart)));
+  assert.equal(await room((s) => s.travelling), true);
+  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  const loaded = await room((s, mk) => {
+    const f = new Function(`return ${mk}`)();
+    const cart = s.objs.find((o) => o.beh?.cart);
+    s.putIn(cart, s.spawnItem(s.findRec('carrot'), cart.x, cart.y - 30));
+    s.tap(cart);
+    const picks = s.choices.parts.filter((o) => o.choice);
+    const res = { travelling: s.travelling, icons: picks.map((o) => o.choice.icon).join() };
+    const unload = picks.find((o) => o.choice.icon === 'unload');
+    s.onDown(f(1, unload.x, unload.y - 8), [unload]);
+    return { ...res, closed: !s.choices, left: cart.contents.length };
+  }, finger.toString());
+  assert.deepEqual(loaded, { travelling: false, icons: 'place_home,unload', closed: true, left: 0 });
+  // выбор из нескольких мест (пригодится, когда локаций станет больше): облачка целиком на экране, тап мимо их убирает
+  const many = await room((s, mk) => {
+    const f = new Function(`return ${mk}`)();
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    let went = '';
+    s.showChoices(s.stopHere(), ['a', 'b', 'c', 'd'].map((k) => ({ icon: 'place_home', act: () => { went = k; } })));
+    const picks = s.choices.parts.filter((o) => o.choice);
+    const cam = s.cameras.main.scrollX;
+    const res = { n: picks.length, inside: picks.every((o) => o.x - 12 >= cam && o.x + 12 <= cam + W && o.y - 20 >= 0) };
+    s.onDown(f(1, cam + 20, 70), []);
+    res.dismissed = !s.choices;
+    s.press = null;
+    s.showChoices(s.stopHere(), ['a', 'b', 'c'].map((k) => ({ icon: 'place_home', act: () => { went = k; } })));
+    const third = s.choices.parts.filter((o) => o.choice)[2];
+    s.onDown(f(1, third.x, third.y - 8), [third]);
+    return { ...res, went };
+  }, finger.toString());
+  assert.deepEqual(many, { n: 4, inside: true, dismissed: true, went: 'c' });
+  // домой — по остановке; кукла в спальне просится в село: поехали — желание исполнено, она приходит следом
+  await room((s) => s.portalTap(s.stopHere()));
+  await waitFor((s) => !s.travelling && s.curRoom === 2);
+  await room((s) => s.goRoom(0));
+  await waitFor((s) => s.curRoom === 0);
+  await waitFor((s) => { const m = s.castChar('mia'); return !m.walking && m.x > 0 && m.x < Math.ceil(s.sys.game.config.width / s.cameras.main.zoom); }); // кукла, с которой ездили, дошла до спальни
+  const ask = await room((s) => {
+    const mia = s.castChar('mia');
+    s.clearWish(false);
+    const can = s.hintsFor(mia).includes('travel') && !s.hintsFor(s.castChar('granny')).includes('travel');
+    s.showHint(mia, 'travel');
+    const res = { can, hint: s.wish?.hint, buddy: s.buddy === mia.uid };
+    s.goPlace('village');
+    return { ...res, wish: !!s.wish, travelling: s.travelling };
+  });
+  assert.deepEqual(ask, { can: true, hint: 'travel', buddy: true, wish: false, travelling: true });
+  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await waitFor((s) => { const m = s.castChar('mia'); return !m.walking && Math.floor(m.x / Math.ceil(s.sys.game.config.width / s.cameras.main.zoom)) === 5; });
+  const feats = await page.evaluate(() => window.__dev.getStats().feats);
+  assert.ok(feats.postcard >= 1 && feats.travel >= 5, `счётчики: открытка ${feats.postcard}, поездки ${feats.travel}`);
 });
 
 test('село: курятник, корова и овца, колодец, пугало и вороны, фруктовые деревья, улей, скворечник, гамак, стог, трактор, мельница', async () => {

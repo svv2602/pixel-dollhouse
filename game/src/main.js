@@ -2061,6 +2061,8 @@ class Room extends Phaser.Scene {
     if (top?.curtain) { this.toggleCurtain(); this.press = null; return; }
     if (top?.raincloud) { this.rain(); this.press = null; return; }
     if (top?.butterfly) { this.catchButterfly(top); this.press = null; return; }
+    if (top?.choice) { const c = top.choice; this.closeChoices(); c.act(); this.press = null; return; }
+    this.closeChoices(); // тап мимо облачков выбора — они исчезают
     if (top?.crow) { this.shooCrow(top); this.press = null; return; }
     if (top?.portal) { this.portalTap(top); this.press = null; return; }
     if (top?.ui) { this.press.ui = top.ui; this.press.t0 = performance.now(); return; }
@@ -2144,6 +2146,7 @@ class Room extends Phaser.Scene {
     if (pr.moved && pr.obj) { this.drop(pr.obj, q); if (this.edgeScrolled) { this.edgeScrolled = false; this.snapCamera(); } return; }
     if (pr.ui?.nav) { this.goRoom(this.inPlace(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav)); return; }
     if (pr.ui && (pr.ui.map || pr.ui.mapClose || 'mapRoom' in pr.ui || 'mapPlace' in pr.ui)) { this.onMapUi(pr.ui); return; }
+    if (pr.ui && (pr.ui.cardClose || 'cardGo' in pr.ui)) { this.onCardUi(pr.ui); return; }
     if (pr.ui && ('albumSel' in pr.ui || 'albumTab' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
     if (pr.ui?.dress || pr.ui?.dressDone || pr.ui?.block) { this.onDressUi(pr.ui); return; }
     if (pr.ui) {
@@ -2712,7 +2715,8 @@ class Room extends Phaser.Scene {
     if (ch.needs?.size) return [...ch.needs];
     if (ch.look.mustache) return ['teeth'];
     const room = Math.floor(ch.x / L.W);
-    return Object.keys(HINTS).filter((k) => HINTS[k].room === room && !!HINTS[k].night === !!this.night);
+    const here = (r) => r === room || (r === 'home' && placeOf(room).key === 'home'); // 'home' — в любой комнате дома
+    return Object.keys(HINTS).filter((k) => here(HINTS[k].room) && !!HINTS[k].night === !!this.night);
   }
 
   fridgeRecs() {
@@ -2757,6 +2761,7 @@ class Room extends Phaser.Scene {
     if (!seq.length) return;
     this.showWish(ch, 'hint', null, null, seq);
     this.wish.hint = name;
+    if (name === 'travel') this.buddy = ch.uid; // попросилась в дорогу — она и пойдёт следом
     if (BED_HINTS.has(name)) this.noteBed();
   }
 
@@ -3571,13 +3576,14 @@ class Room extends Phaser.Scene {
     this.updateDreams(time);
     this.updateClean(); // седоки робота-пылесоса и следы испачканной куклы
     this.updateVillage(); // повозка с грузом, седоки трактора
-    const plain = !this.dress && !this.albumUi && !this.mapUi; // нет открытых экранов поверх комнаты
+    const plain = !this.dress && !this.albumUi && !this.mapUi && !this.cardUi; // нет открытых экранов поверх комнаты
     const [camLo, camHi] = this.camRange(); // стрелки ведут только по комнатам своей локации
     if (this.nav) {
       this.nav[0].forEach((o) => o.setVisible(cam.scrollX > camLo + 2 && plain));
       this.nav[1].forEach((o) => o.setVisible(cam.scrollX < camHi - 2 && plain));
     }
     this.mapBtn?.forEach((o) => o.setVisible(plain));
+    this.mapDot?.setVisible(plain && !!this.unseenPlace()); // есть локация, где ещё не были
     // статистика для родителей: секунды активной игры по комнатам (экран трогали в последние 20 с)
     this.statAcc = (this.statAcc || 0) + delta;
     if (this.statAcc >= 1000) {
