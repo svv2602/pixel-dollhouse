@@ -2,6 +2,7 @@
 // зимой (1 декабря – 14 января) — ёлка с огоньками в спальне и снег в саду.
 import { canvasFor } from './furniture.js';
 import { writeSnapshot } from './repair.js';
+import { R, placeByKey } from './places.js';
 
 /** Сегодняшняя дата 'ГГГГ-ММ-ДД' по часам устройства (в dev-сборке подменяется ключом pixel-house-date — для тестов). */
 export function today() {
@@ -112,10 +113,14 @@ export function installSeason(Room, { L, rnd, sfx }) {
         this.save();
       }
       if (this.winter && !this.snow) {
-        this.snow = this.add.particles(0, 0, 'px', {
-          x: { min: 2 * L.W, max: 3 * L.W }, y: -2, lifespan: 7000, speedY: { min: 9, max: 20 }, speedX: { min: -5, max: 5 },
-          frequency: 160, tint: 0xffffff, alpha: { start: 1, end: 0.7 },
+        // снег идёт на улице: в саду у дома и над всем селом (оно на ленте одним куском — и снег над ним один)
+        const fall = (a, b) => this.add.particles(0, 0, 'px', {
+          x: { min: a * L.W, max: b * L.W }, y: -2, lifespan: 7000, speedY: { min: 9, max: 20 }, speedX: { min: -5, max: 5 },
+          frequency: Math.round(160 / (b - a)), tint: 0xffffff, alpha: { start: 1, end: 0.7 },
         }).setDepth(4500);
+        this.snow = fall(R.garden, R.garden + 1);
+        const farm = placeByKey('village');
+        fall(farm.first, farm.last + 1);
       }
     },
 

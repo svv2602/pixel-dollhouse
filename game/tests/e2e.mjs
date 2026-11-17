@@ -74,7 +74,7 @@ test('комната загружается: персонажи, кухня, к�
     bath: s.objs.some((o) => o.beh?.tub && o.x >= 3 * 293),
     album: s.objs.some((o) => o.beh?.album),
   }));
-  assert.equal(st.chars, 5); // две свои куклы + жильцы кухни, ванной и зала
+  assert.equal(st.chars, 8); // две свои куклы + жильцы кухни, ванной и зала + трое в селе
   assert.ok(st.kitchen, 'котёл на кухне');
   assert.ok(st.album, 'альбом в комнате');
   assert.ok(st.garden, 'сад с грядками и яблоней');
@@ -646,16 +646,18 @@ test('семья: жильцы в комнатах, портрет зовёт к
     s.cat = 'people';
     s.buildView();
     const before = { mia: roomOf('mia'), mom: roomOf('mom'), boy: roomOf('boy'), star: roomOf('star'), dad: roomOf('dad'), view: s.view.length };
-    s.callCast('dad');   // папы в доме ещё нет
+    s.castLeave(s.castChar('kid')); // малыш ушёл из дома (и из села) совсем
+    s.callCast('kid');   // …и возвращается: приходит в комнату, где игрок
+    s.callCast('dad');   // папа живёт в селе, в поле — придёт оттуда
     s.callCast('star');  // певица — из зала
     return before;
   });
-  assert.deepEqual(st, { mia: 0, mom: 1, boy: 3, star: 4, dad: -1, view: 8 });
+  assert.deepEqual(st, { mia: 0, mom: 1, boy: 3, star: 4, dad: 8, view: 8 });
   await waitFor((s) => {
     const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
-    return ['dad', 'star'].every((id) => { const c = s.castChar(id); return c && !c.walking && c.x > 0 && c.x < W; });
+    return ['dad', 'star', 'kid'].every((id) => { const c = s.castChar(id); return c && !c.walking && c.x > 0 && c.x < W; });
   });
-  assert.equal(await room((s) => s.objs.filter((o) => o.kind === 'char').length), 6);
+  assert.equal(await room((s) => s.objs.filter((o) => o.kind === 'char').length), 8);
 });
 
 test('кукла, с которой играли, идёт следом в соседнюю комнату; сидящая — остаётся', async () => {
@@ -718,7 +720,7 @@ test('куклы следят глазами за тем, что несут; п�
 test('альбом наклеек: блюдо, урожай, клад и сон дают наклейки на своих страницах', async () => {
   const st = await room((s) => {
     const tabs = s.albumTabs();
-    const sizes = tabs.map((t) => `${t.key}:${t.entries.length > 5}`).join(','); // «чистюля» — ровно пять наклеек, по одной на комнату
+    const sizes = tabs.map((t) => `${t.key}:${t.entries.length}`).join(',').replace(/(recipe|dish|plant|treasure|dream):\d+/g, (m, k) => `${k}:${+m.split(':')[1] > 5}`); // «чистюля» — по наклейке на комнату (5 дома + 4 в селе), «село» — 13
     const rec = s.findRec('fried egg');
     const first = s.sticker('dish', rec, 100, 50);
     const again = s.sticker('dish', rec, 100, 50);
@@ -729,7 +731,7 @@ test('альбом наклеек: блюдо, урожай, клад и сон 
     s.onAlbumUi({ albumDone: true });
     return { sizes, first, again, openedOn, found: dish?.found, closed: !s.albumUi };
   });
-  assert.deepEqual(st, { sizes: 'recipe:true,dish:true,plant:true,treasure:true,tidy:false,dream:true', first: true, again: false, openedOn: 1, found: true, closed: true });
+  assert.deepEqual(st, { sizes: 'recipe:true,dish:true,plant:true,treasure:true,tidy:9,farm:13,dream:true', first: true, again: false, openedOn: 1, found: true, closed: true });
 });
 
 test('карта комнат и подсветка желания в ящике', async () => {
@@ -788,8 +790,9 @@ test('родительская зона: удержание шестерёнки
       count: document.querySelector('#pz-help details summary span').textContent,
     };
   });
-  assert.equal(help.groups.length, 15);
-  for (const g of ['Общее', 'Уборка', 'Спальня', 'Кухня', 'Сад', 'Ванная', 'Концертный зал', 'Сон: игрушечный мир']) assert.ok(help.groups.includes(g), `раздел справки: ${g}`);
+  assert.equal(help.groups.length, 20);
+  for (const g of ['Общее', 'Уборка', 'Спальня', 'Кухня', 'Сад', 'Ванная', 'Концертный зал', 'Село: дорога', 'Село: двор', 'Село: поле', 'Сон: игрушечный мир']) assert.ok(help.groups.includes(g), `раздел справки: ${g}`);
+  assert.match(await page.textContent('#pz-stats'), /Село: двор[\s\S]*Село: поле/);
   assert.ok(help.rows > 80, `строк справки: ${help.rows}`);
   assert.deepEqual({ fed: help.fed, slide: help.slide, note: help.note }, { fed: 'ok', slide: 'no', note: 'na' });
   assert.match(help.count, /пробовали \d+ из \d+/);
@@ -886,8 +889,12 @@ test('поворот телефона не меняет раскладку; со
 
 test('дом, уехавший под потолок, сам возвращается на место; снимок «до починки» сохраняется', async () => {
   const before = await spots();
-  // то, что сделала старая ошибка: всё растянуто по ширине и сжато к потолку — и уже сохранено
+  // то, что сделала старая ошибка: всё растянуто по ширине и сжато к потолку — и уже сохранено.
+  // Сбой случался до появления села: в таком сохранении есть только дом, а село обставляется уже после починки
   await reloadWith((st) => {
+    st.objs = st.objs.filter((o) => o.x < 5 * 293);
+    st.chars = st.chars.filter((o) => o.x < 5 * 293);
+    delete st.flags.village; delete st.flags.cast3;
     for (const o of [...st.objs, ...st.chars]) {
       o.x = Math.round(Math.max(6, Math.min(5 * 293 - 6, o.x * 293 / 270)));
       o.y = Math.round(Math.max(4, Math.min(94, o.y * 55 / 455)));
@@ -895,6 +902,12 @@ test('дом, уехавший под потолок, сам возвращае�
   });
   const after = await spots();
   assert.equal(after.repaired, 1);
+  // село появилось в починенном доме: всё на своих местах, повозка — в саду
+  const farm = await room((s) => {
+    const at = (pred) => { const o = s.objs.find(pred); return o ? [Math.floor(o.x / 293), o.y > 55] : null; };
+    return { coop: at((o) => o.beh?.coop), mill: at((o) => o.beh?.mill), cart: at((o) => o.beh?.cart), granny: at((o) => o.cast === 'granny'), bins: s.objs.filter((o) => o.beh?.bin).length };
+  });
+  assert.deepEqual(farm, { coop: [5, true], mill: [8, true], cart: [2, true], granny: [5, true], bins: 9 });
   // стулья и шарик у правой стены зала при сбое упёрлись в край мира — и всё равно встают на свои места
   for (const k of ['bed', 'wardrobe', 'clock', 'fridge', 'tub', 'chairs', 'balloon']) assert.deepEqual(after[k], before[k], `${k} — точно на прежнем месте`);
   for (const k of ['kite', 'mia']) {
@@ -1259,7 +1272,7 @@ test('миры снов: в каждом из семи работает своя
 
   const end = await room((s) => ({ seen: Object.keys(s.flags.dreamSeen).sort().join(), chars: s.objs.filter((o) => o.kind === 'char').length }));
   assert.equal(end.seen, 'candy,clouds,forest,ice,planet,sea,toys');
-  assert.equal(end.chars, 5, 'все куклы на месте');
+  assert.equal(end.chars, 8, 'все куклы на месте'); // пятеро в доме и трое в селе
   const stats = await page.evaluate(() => window.__dev.getStats());
   for (const w of ['forest', 'planet', 'sea', 'clouds', 'candy', 'ice', 'toys']) assert.ok(stats.feats[`w_${w}`] >= 1, `счётчик мира ${w}`);
 });
@@ -1497,12 +1510,12 @@ test('уборка: урна в каждой комнате ест брошен�
     const back = s.objs.includes(cake) && s.objs.includes(ball) && !bin.stash && bin.texture.key === 'bin' && cake.input.enabled;
     s.tap(bin); // снова собрали — и больше не трогаем
     return {
-      rooms: bins.map((b) => Math.floor(b.x / 293)).sort().join(), eaten, pet, swept, back,
+      rooms: bins.map((b) => Math.floor(b.x / 293)).sort().join(), eaten, pet, swept, back, // по урне в каждой комнате дома и села
       furniture: s.objs.filter((o) => o.beh?.furniture).length === furniture,
       tools: !!s.objs.find((o) => o.rec?.id === 'broom') && s.objs.some((o) => o.rec?.subject === 'leaf rake' && o.beh.sweeper),
     };
   });
-  assert.deepEqual(st, { rooms: '0,1,2,3,4', eaten: true, pet: true, swept: { n: 2, tex: 'bin_full', gone: true, pet: true }, back: true, furniture: true, tools: true });
+  assert.deepEqual(st, { rooms: '0,1,2,3,4,5,6,7,8', eaten: true, pet: true, swept: { n: 2, tex: 'bin_full', gone: true, pet: true }, back: true, furniture: true, tools: true });
   // через несколько секунд собранное исчезает насовсем, урна снова пустая
   await waitFor((s) => { const bin = s.objs.find((o) => o.beh?.bin && o.x < 293); return !bin.stash && bin.texture.key === 'bin'; });
   // метла: провели по предмету на полу — он улетел в урну; лопатку и лейку уборка не трогает
@@ -1565,6 +1578,7 @@ test('уборка, вторая волна: робот разносит вещ�
     s.goRoom(2);
     const mud = s.objs.find((o) => o.beh?.puddle);
     const c = s.objs.find((o) => o.kind === 'char');
+    s.removeObj(s.objs.find((o) => o.beh?.cart), true); // повозка стоит рядом с лужей: кукла, брошенная на неё, села бы в повозку
     const teddy = s.spawnItem(s.findRec('teddy bear'), mud.x, mud.y - 20);
     s.startDrag(teddy);
     s.drop(teddy, { x: mud.x, y: mud.y - 2 });
@@ -1748,6 +1762,218 @@ test('позы: на стуле кукла сидит, в кровати раз�
   await wakeUp(uid);
   const stats = await page.evaluate(() => window.__dev.getStats().feats);
   assert.ok(stats.castleave >= 1, 'счётчик ухода из дома');
+});
+
+test('локации: камера не выходит из своей локации; карта, указатель и повозка везут в село и обратно; место запоминается', async () => {
+  await freshRoom();
+  const st0 = await room((s) => {
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    const at = (pred) => { const o = s.objs.find(pred); return o ? Math.floor(o.x / W) : -1; };
+    s.goRoom(4);
+    return {
+      chars: s.objs.filter((o) => o.kind === 'char').length,
+      granny: at((o) => o.cast === 'granny'), dad: at((o) => o.cast === 'dad'), kid: at((o) => o.cast === 'kid'),
+      coop: at((o) => o.beh?.coop), well: at((o) => o.beh?.well), hive: at((o) => o.beh?.hive), mill: at((o) => o.beh?.mill),
+      cart: at((o) => o.beh?.cart), bins: s.objs.filter((o) => o.beh?.bin).length,
+      signs: s.portals.map((p) => `${Math.floor(p.x / W)}>${p.portal}`).join(),
+      place: s.placeNow().key, range: s.camRange().map((x) => x / W).join(), edge: s.inPlace(5),
+    };
+  });
+  assert.deepEqual(st0, {
+    chars: 8, granny: 5, dad: 8, kid: 7, coop: 5, well: 6, hive: 7, mill: 8, cart: 2, bins: 9,
+    signs: '2>village,5>home', place: 'home', range: '0,4', edge: 4,
+  });
+  await waitFor((s) => s.curRoom === 4);
+  // занавес зала не заходит во двор села (он справа от зала на ленте)
+  const curtain = await room((s) => {
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    const r = s.curtain[1];
+    // картинка правой половины отражена: видимой остаётся правая часть текстуры шириной до края зала
+    return r.x + r.input.hitArea.width <= 5 * W && r.isCropped && r._crop.x === r.width - r._crop.width && r.x + r._crop.width <= 5 * W;
+  });
+  assert.ok(curtain, 'правая половина занавеса обрезана по краю зала');
+  // карта: значки локаций и комнаты выбранной
+  const map = await room((s) => {
+    s.openMap();
+    const cards = () => s.mapUi.parts.filter((o) => o.ui && 'mapRoom' in o.ui).map((o) => o.ui.mapRoom).join();
+    const res = { tabs: s.mapUi.parts.filter((o) => o.ui && 'mapPlace' in o.ui).length, home: cards() };
+    s.onMapUi({ mapPlace: 'village' });
+    res.village = cards();
+    res.view = s.mapUi.place;
+    s.onMapUi({ mapRoom: 7 }); // фруктовый сад — в другой локации: едем
+    res.travelling = s.travelling;
+    res.closed = !s.mapUi;
+    return res;
+  });
+  assert.deepEqual(map, { tabs: 2, home: '0,1,2,3,4', village: '5,6,7,8', view: 'village', travelling: true, closed: true });
+  await waitFor((s) => !s.travelling && s.curRoom === 7);
+  const st1 = await room((s) => {
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    const cart = s.objs.find((o) => o.beh?.cart);
+    // в повозку — морковку, на повозку — куклу; и домой по указателю
+    s.putIn(cart, s.spawnItem(s.findRec('carrot'), cart.x, cart.y - 30));
+    const kid = s.castChar('kid');
+    s.startDrag(kid);
+    s.drop(kid, { x: cart.x, y: cart.y - 8 });
+    const res = {
+      cam: s.cameras.main.scrollX / W, place: s.placeNow().key, range: s.camRange().map((x) => x / W).join(),
+      cartRoom: Math.floor(cart.x / W), tried: !!s.flags.tried.travel, onCart: kid.restOn === cart, edge: s.inPlace(4),
+    };
+    s.testCart = cart; s.testKid = kid;
+    return res;
+  });
+  assert.deepEqual(st1, { cam: 7, place: 'village', range: '5,8', cartRoom: 5, tried: true, onCart: true, edge: 5 });
+  assert.equal(await page.evaluate(() => window.__dev.musicTheme()), 9, 'в саду села — своя мелодия');
+  await waitFor((s) => s.testKid.pose === 'sit' && s.testCart.texture.key === 'cart_full');
+  await room((s) => s.goRoom(5));
+  await waitFor((s) => s.curRoom === 5);
+  await room((s) => s.portalTap(s.portals.find((p) => p.portal === 'home')));
+  await waitFor((s) => !s.travelling && s.placeNow().key === 'home');
+  const st2 = await room((s) => {
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    const { testCart: cart, testKid: kid } = s;
+    return { room: s.curRoom, cart: Math.floor(cart.x / W), kid: Math.floor(kid.x / W), on: kid.restOn === cart, load: cart.contents.length, cartStat: !!s.flags.tried.cart };
+  });
+  assert.deepEqual(st2, { room: 2, cart: 2, kid: 2, on: true, load: 1, cartStat: true }); // приехали к калитке — в сад у дома
+  // в село — и перезагрузка: игра открывается там же, груз и седок на месте
+  await room((s) => s.goPlace('village'));
+  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await room((s) => s.saveNow());
+  await page.reload();
+  await waitFor((s) => s.objs.length > 10 && s.curRoom === 5);
+  const st3 = await room((s) => {
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    const cart = s.objs.find((o) => o.beh?.cart);
+    const kid = s.castChar('kid');
+    return { place: s.placeNow().key, cam: s.cameras.main.scrollX / W, cart: Math.floor(cart.x / W), on: kid.restOn === cart, load: cart.contents.length };
+  });
+  assert.deepEqual(st3, { place: 'village', cam: 5, cart: 5, on: true, load: 1 });
+});
+
+test('село: курятник, корова и овца, колодец, пугало и вороны, фруктовые деревья, улей, скворечник, гамак, стог, трактор, мельница', async () => {
+  await freshRoom();
+  await room((s) => s.goRoom(5));
+  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  const count = (sub) => room((s, sub) => s.objs.filter((o) => o.rec?.subject === sub).length, sub);
+  // ---- двор
+  const yard = await room((s) => {
+    const cow = s.objs.find((o) => o.beh?.farm === 'cow');
+    const sheep = s.objs.find((o) => o.beh?.farm === 'sheep');
+    const eggs0 = s.objs.filter((o) => /egg$/.test(o.rec?.subject || '')).length;
+    s.coopTap(s.objs.find((o) => o.beh?.coop));
+    s.feedPet(cow, s.spawnItem(s.findRec('ear of corn'), cow.x, cow.y));
+    for (let i = 0; i < 4; i++) { sheep.brushT = 0; s.brushPet(sheep); }
+    const hat = s.spawnItem(s.findRec('cowboy hat'), cow.x, cow.y - 10);
+    s.petWear(cow, hat);
+    s.petVoice(cow);
+    return { eggs: s.objs.filter((o) => /egg$/.test(o.rec?.subject || '')).length - eggs0, coop: !!s.flags.tried.coop, wool: !!s.flags.tried.wool, hat: cow.slots.pethat === hat };
+  });
+  assert.deepEqual(yard, { eggs: 1, coop: true, wool: true, hat: true });
+  await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'glass bottle of milk') && s.flags.tried.farmfood);
+  assert.equal(await count('ball of yarn'), 1);
+  // ---- огород
+  await room((s) => s.goRoom(6));
+  await waitFor((s) => s.curRoom === 6);
+  const dry = await room((s) => {
+    const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
+    const beds = s.objs.filter((o) => o.beh?.gardenBed && Math.floor(o.x / W) === 6);
+    s.testBeds = beds;
+    s.wellTap(s.objs.find((o) => o.beh?.well));
+    return beds.flatMap((b) => b.plots).filter((p) => p && p.stage < 3 && !p.watered).length;
+  });
+  assert.ok(dry >= 4, 'на огороде есть что поливать');
+  await waitFor((s) => s.flags.tried.well && s.testBeds.flatMap((b) => b.plots).every((p) => !p || p.stage >= 3 || p.watered || p.stage > 1));
+  await room((s) => { const rnd = Math.random; Math.random = () => 0.99; s.villageTick(); s.villageTick(); Math.random = rnd; });
+  await waitFor((s) => s.crows.length === 2 && s.crows.every((c) => c.landed));
+  const veg = await room((s) => {
+    const sc = s.objs.find((o) => o.beh?.scarecrow);
+    const hat = s.spawnItem(s.findRec('cowboy hat'), sc.x, sc.y - 20);
+    s.startDrag(hat);
+    s.drop(hat, { x: sc.x, y: sc.y - 14 });
+    const [a, b] = s.crows;
+    s.shooCrow(a);
+    s.scarecrowTap(sc);
+    return { hat: sc.slots.pethat === hat, gone: a.gone && b.gone, scare: !!s.flags.tried.scarecrow };
+  });
+  assert.deepEqual(veg, { hat: true, gone: true, scare: true });
+  await waitFor((s) => s.crows.every((c) => !c.active));
+  // ---- фруктовый сад
+  await room((s) => s.goRoom(7));
+  await waitFor((s) => s.curRoom === 7);
+  const orchard = await room((s) => {
+    const trees = s.objs.filter((o) => o.beh?.fruit);
+    const fruit0 = s.objs.filter((o) => ['pear', 'pair of cherries', 'plum'].includes(o.rec?.subject)).length;
+    for (const t of trees) s.tap(t);
+    s.tap(s.objs.find((o) => o.beh?.hive));
+    s.tap(s.objs.find((o) => o.beh?.birdhouse));
+    const ham = s.objs.find((o) => o.rec?.id === 'hammock');
+    const kid = s.castChar('kid');
+    s.startDrag(kid);
+    s.drop(kid, { x: ham.x, y: ham.y - 10 });
+    s.testKid = kid;
+    return {
+      trees: trees.length, fruit: s.objs.filter((o) => ['pear', 'pair of cherries', 'plum'].includes(o.rec?.subject)).length - fruit0,
+      tried: ['fruit', 'hive', 'birdhouse'].every((k) => s.flags.tried[k]), inHammock: kid.restOn === ham,
+    };
+  });
+  assert.deepEqual(orchard, { trees: 3, fruit: 3, tried: true, inHammock: true });
+  await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'jar of honey'));
+  await waitFor((s) => s.testKid.sleeping && s.testKid.pose === 'lie' && s.testKid.dreamPicks); // в гамаке спят и видят сны
+  await room((s) => { s.startDrag(s.testKid); s.drop(s.testKid, { x: s.testKid.x - 60, y: 90 }); });
+  // ---- поле
+  await room((s) => s.goRoom(8));
+  await waitFor((s) => s.curRoom === 8);
+  const field = await room((s) => {
+    const hay = s.objs.find((o) => o.beh?.hay);
+    const n0 = s.objs.length;
+    s.tap(hay);
+    const popped = s.objs.length - n0;
+    const dad = s.castChar('dad');
+    s.startDrag(dad);
+    s.drop(dad, { x: hay.x, y: hay.y - 10 });
+    const onHay = dad.restOn === hay;
+    hay.busyUntil = 0;
+    s.tap(hay); // с куклой наверху — подбрасывает
+    const bounced = dad.busy;
+    s.testDad = dad;
+    return { popped, onHay, bounced, hay: !!s.flags.tried.hay };
+  });
+  assert.deepEqual(field, { popped: 1, onHay: true, bounced: true, hay: true });
+  await waitFor((s) => !s.testDad.busy);
+  const drive = await room((s) => {
+    const t = s.objs.find((o) => o.beh?.tractor);
+    const dad = s.testDad;
+    s.startDrag(dad);
+    s.drop(dad, { x: t.x - 10, y: t.y - 12 });
+    s.testT = t;
+    const res = { on: dad.restOn === t, dx: dad.x - t.x, x0: t.x, sheaves: s.objs.filter((o) => o.beh?.sheaf).length };
+    s.tap(t);
+    return { ...res, driving: t.driving };
+  });
+  assert.deepEqual({ on: drive.on, dx: drive.dx, driving: drive.driving, sheaves: drive.sheaves }, { on: true, dx: -10, driving: true, sheaves: 1 });
+  await waitFor((s) => !s.testT.driving && s.testT.flipX);
+  const after = await room((s) => {
+    const t = s.testT;
+    const sheaf = s.objs.find((o) => o.beh?.sheaf);
+    const mill = s.objs.find((o) => o.beh?.mill);
+    const res = { moved: t.x - s.testDad.x, far: t.x, sheaves: s.objs.filter((o) => o.beh?.sheaf).length, sit: s.testDad.pose };
+    s.startDrag(sheaf);
+    s.drop(sheaf, { x: mill.x, y: mill.y - 10 });
+    res.spin = mill.spinUntil > s.time.now;
+    return res;
+  });
+  assert.ok(after.far > drive.x0 + 100, 'трактор проехал через поле');
+  assert.deepEqual({ moved: after.moved, sheaves: after.sheaves, sit: after.sit, spin: after.spin }, { moved: -10, sheaves: 2, sit: 'sit', spin: true }); // развернулся — седок с другой стороны
+  await waitFor((s) => s.objs.some((o) => /bread/.test(o.rec?.subject || '')) && s.flags.tried.mill);
+  // ---- альбом: страница «село», справка и статистика
+  const album = await room((s) => {
+    const tab = s.albumTabs().find((t) => t.key === 'farm');
+    return { n: tab.entries.length, found: tab.entries.filter((e) => e.found).map((e) => e.result.subject).sort().join('|') };
+  });
+  assert.equal(album.n, 13);
+  for (const sub of ['egg', 'glass bottle of milk', 'ball of yarn', 'jar of honey', 'pear', 'plum', 'pair of cherries']) assert.ok(album.found.includes(sub), `наклейка «${sub}»: ${album.found}`);
+  const feats = await page.evaluate(() => window.__dev.getStats().feats);
+  for (const k of ['travel', 'coop', 'farmfood', 'wool', 'well', 'scarecrow', 'crow', 'fruit', 'hive', 'birdhouse', 'hay', 'tractor', 'mill']) assert.ok(feats[k] >= 1, `счётчик ${k}`);
 });
 
 test('нет ошибок в консоли', () => {

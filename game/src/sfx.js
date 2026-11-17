@@ -221,6 +221,23 @@ export const sfx = {
   beam: () => { for (let i = 0; i < 6; i++) tone(500 + i * 120, 0.12, { type: 'sine', vol: 0.06, delay: i * 0.09 }); },
   baa: () => { tone(430, 0.14, { type: 'sawtooth', vol: 0.035, slide: -40 }); tone(410, 0.22, { type: 'sawtooth', vol: 0.035, slide: -70, delay: 0.14 }); },
   rocket: () => { noise(1.1, { freq: 900, vol: 0.14 }); tone(160, 1.1, { type: 'sawtooth', slide: 500, vol: 0.05 }); },
+  // ---- село: голоса животных и звуки хозяйства
+  moo: () => { tone(150, 0.25, { type: 'sawtooth', vol: 0.05, slide: 30 }); tone(180, 0.6, { type: 'sawtooth', vol: 0.05, slide: -50, delay: 0.22 }); },
+  oink: () => { tone(260, 0.09, { type: 'sawtooth', vol: 0.05, slide: 90 }); tone(230, 0.12, { type: 'sawtooth', vol: 0.05, slide: 110, delay: 0.13 }); },
+  cluck: () => [0, 1, 2].forEach((i) => tone(640 + (i === 2 ? 260 : 0), i === 2 ? 0.14 : 0.05, { type: 'square', vol: 0.045, slide: i === 2 ? -200 : 0, delay: i * 0.09 })),
+  neigh: () => { for (let i = 0; i < 6; i++) tone(900 - i * 90 + (i % 2) * 60, 0.09, { type: 'sawtooth', vol: 0.04, delay: i * 0.08 }); },
+  quack: () => [0, 1].forEach((i) => tone(520, 0.1, { type: 'square', vol: 0.045, slide: -180, delay: i * 0.14 })),
+  woof: () => [0, 1].forEach((i) => { tone(240, 0.09, { type: 'sawtooth', vol: 0.06, slide: -90, delay: i * 0.16 }); noise(0.05, { freq: 700, vol: 0.06, delay: i * 0.16 }); }),
+  meow: () => { tone(620, 0.16, { type: 'triangle', vol: 0.08, slide: 240 }); tone(860, 0.3, { type: 'triangle', vol: 0.08, slide: -330, delay: 0.15 }); },
+  ribbit: () => [0, 1].forEach((i) => tone(190, 0.1, { type: 'square', vol: 0.045, slide: 140, delay: i * 0.13 })),
+  caw: () => [0, 1].forEach((i) => tone(520, 0.16, { type: 'sawtooth', vol: 0.04, slide: -140, delay: i * 0.2 })),
+  buzz: () => { for (let i = 0; i < 8; i++) tone(210 + (i % 2) * 22, 0.22, { type: 'sawtooth', vol: 0.025, delay: i * 0.2 }); },
+  tweet: () => [5, 7, 6, 7, 4, 7].forEach((n, i) => tone(PENTA[n] * 2, 0.09, { type: 'sine', vol: 0.07, slide: i % 2 ? 260 : -160, delay: i * 0.13 })),
+  putt: () => { tone(85, 0.09, { type: 'square', vol: 0.06 }); noise(0.05, { freq: 300, vol: 0.07 }); },
+  creak: () => [0, 1, 2].forEach((i) => tone(330 + i * 40, 0.12, { type: 'sawtooth', vol: 0.03, slide: 60, delay: i * 0.16 })),
+  rattle: () => { for (let i = 0; i < 7; i++) noise(0.03, { freq: 2200 + (i % 3) * 600, vol: 0.09, delay: i * 0.05 }); },
+  rustle: () => { for (let i = 0; i < 5; i++) noise(0.06, { freq: 3500, vol: 0.06, delay: i * 0.06 }); },
+  clop: () => { for (let i = 0; i < 6; i++) tone(i % 2 ? 420 : 330, 0.04, { type: 'square', vol: 0.05, delay: i * 0.14 }); },
 };
 
 // ---------------------------------------------------------------- фоновая музыка
@@ -261,6 +278,15 @@ const THEMES = [
   { // музыкальная шкатулка: конфеты и лёд
     step: 0.27, type: 'sine', vol: 0.03, len: 0.3, mul: 2, bass: [0, 3, 4, 3],
     melody: [4, 5, 7, 5, 4, 2, 4, -1, 5, 4, 2, 0, 2, -1, -1, -1, 4, 5, 7, 5, 7, 5, 4, -1, 2, 4, 2, 1, 0, -1, 0, -1],
+  },
+  // ---- село (8…9): наигрыш «вприпрыжку» и неспешная дудочка
+  { // двор и огород
+    step: 0.26, type: 'triangle', vol: 0.03, len: 0.2, bass: [0, 4, 0, 3], bassEvery: 4,
+    melody: [0, 2, 4, 2, 4, 5, 4, -1, 5, 4, 2, 4, 2, 0, 2, -1, 0, 2, 4, 5, 7, 5, 4, -1, 5, 4, 2, 1, 0, -1, 0, -1],
+  },
+  { // фруктовый сад и поле
+    step: 0.36, type: 'sine', vol: 0.04, len: 0.55, slide: 6, bass: [0, 3, 4, 3],
+    melody: [4, -1, 5, 4, 2, -1, 0, -1, 2, -1, 4, 5, 4, -1, -1, -1, 7, -1, 5, 4, 5, -1, 2, -1, 4, -1, 2, 1, 0, -1, -1, -1],
   },
 ];
 export const DREAM_MUSIC = 5; // номер первой мелодии снов
@@ -303,7 +329,7 @@ export function setMusic(on) {
   pumpSync();
 }
 export const musicPlaying = () => musicOn;
-/** Мелодия комнаты (0…4); та же самая — без перезапуска. */
+/** Мелодия по номеру (комнаты дома — 0…4, сны — 5…7, село — 8…9; см. places.js); та же самая — без перезапуска. */
 export function setMusicTheme(i) {
   const t = ((i % THEMES.length) + THEMES.length) % THEMES.length;
   if (t === theme) return;

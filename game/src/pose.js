@@ -47,7 +47,7 @@ export function installPose(Room, { L, sfx, RX }) {
       const on = ch.restOn;
       if (ch.dragging || ch.walking || !on || !on.active) return 'stand';
       if (isBed(on)) return ch.sleeping ? 'lie' : 'sit';
-      return on.beh?.seat || on.beh?.swing || on.beh?.toilet ? 'sit' : 'stand';
+      return on.beh?.seat || on.beh?.swing || on.beh?.toilet || on.beh?.perch ? 'sit' : 'stand'; // perch — стог, трактор, повозка
     },
 
     /** Каждый кадр: поза по обстоятельствам; лежащая — на подушке под одеялом. */

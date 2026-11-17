@@ -6,6 +6,7 @@
 // Причина устранена в main.js (раскладка всегда альбомная; сохранение — до смены раскладки),
 // а этот файл возвращает на места то, что уже успело уехать.
 import Phaser from 'phaser';
+import { placeByKey } from './places.js';
 
 const SNAP_KEY = 'pixel-house-snapshots'; // { метка: строка сохранения } — последние снимки дома
 
@@ -36,7 +37,7 @@ export function installRepair(Room, { L }) {
       try {
         this.defaultRoom(); this.ensureKitchen(); this.ensureGarden(); this.ensureBath(); this.ensureParty();
         this.ensureHall(); this.ensurePetBed(); this.ensureKitchen2(); this.ensureBath2(); this.ensureHall2();
-        this.ensureBedroom2(); this.ensureGarden2(); this.ensureTidy(); this.ensureClean();
+        this.ensureBedroom2(); this.ensureGarden2(); this.ensureTidy(); this.ensureClean(); this.ensureVillage();
         for (const o of this.objs) if (o.kind === 'item') (spots[o.rec.id] ||= []).push({ x: o.x, y: o.y });
       } finally {
         for (const o of this.objs) { o.glow?.destroy(); o.destroy(); }
@@ -51,7 +52,9 @@ export function installRepair(Room, { L }) {
      * В обычной игре так не бывает — мебель без опоры падает на пол. Возвращает true, если дом починен.
      */
     repairLayout() {
-      const { FLOOR_TOP, ROOM_H, WORLD } = L;
+      const { FLOOR_TOP, ROOM_H } = L;
+      // сбой случался, когда мир состоял из одного дома: «край мира», в который упирались вещи, — правый край дома
+      const WORLD = (placeByKey('home').last + 1) * L.W;
       const items = this.objs.filter((o) => o.kind === 'item');
       const wallish = (o) => o.kind === 'item' && (o.beh.wall || o.beh.shelf);
       const heavy = items.filter((o) => o.rec.tex?.startsWith('big_') && o.beh.furniture && !wallish(o) && !o.beh.flat && !o.beh.album && !o.restOn && !o.owner);
@@ -91,7 +94,7 @@ export function installRepair(Room, { L }) {
       const lost = [];
       for (const o of all) {
         const atEdge = o.x >= WORLD - 7 && edge < Infinity;
-        o.x = Math.round(Phaser.Math.Clamp(o.x / rx, 6, WORLD - 6));
+        o.x = Math.round(Phaser.Math.Clamp(o.x / rx, 6, L.WORLD - 6));
         // вещь на стандартном месте — возвращаем точно, как было в новом доме
         const spot = o.kind === 'item' && spots[o.rec.id]?.find((s) => !used.has(s) && (atEdge ? s.x >= edge - 3 : Math.abs(s.x - o.x) <= 2));
         if (spot) { used.add(spot); o.x = spot.x; o.y = spot.y; o.fixed = true; continue; }

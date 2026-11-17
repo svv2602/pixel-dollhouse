@@ -11,6 +11,7 @@
 import Phaser from 'phaser';
 import { canvasFor } from './furniture.js';
 import { LEAVES } from './tidy.js';
+import { roomAt, R } from './places.js';
 
 const tex = (scene, key, canvas) => {
   if (!scene.textures.exists(key)) scene.textures.addCanvas(key, canvas);
@@ -21,8 +22,6 @@ const SOCKS = ['sock', 'ankle sock', 'knee sock', 'toe sock', 'slipper sock'];
 const DIRT = 0x9a7a5a;      // цвет испачканной вещи
 const MAX_PRINTS = 30;
 const WASH_MS = 2600;
-/** Какая мебель «отвечает» за комнату на странице наклеек «чистюля» (по номеру комнаты). */
-export const CLEAN_ROOMS = ['bed', 'fridge', 'tree', 'tub', 'stage'];
 
 const robot = (on) => canvasFor(16, 8, (r) => {
   r(2, 2, 12, 5, '#e6e8f0'); r(1, 3, 14, 3, '#e6e8f0'); r(3, 1, 10, 1, '#f6f7fb'); r(1, 6, 14, 1, '#b8bccc');
@@ -97,9 +96,9 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       const { W, FLOOR_TOP, ROOM_H } = L;
       const has = (id) => this.objs.some((o) => o.rec?.id === id);
       if (!has('robo-vac')) this.spawnItem(this.byId.get('robo-vac'), Math.round(W * 0.68), ROOM_H - 3);
-      if (!has('washer')) this.spawnItem(this.byId.get('washer'), Math.round(3 * W + W * 0.66), FLOOR_TOP + 14);
-      if (!has('mop')) this.spawnItem(this.byId.get('mop'), Math.round(3 * W + W * 0.76), FLOOR_TOP + 16);
-      if (!has('compost')) this.spawnItem(this.byId.get('compost'), Math.round(2 * W + W * 0.28), FLOOR_TOP + 9);
+      if (!has('washer')) this.spawnItem(this.byId.get('washer'), Math.round(R.bath * W + W * 0.66), FLOOR_TOP + 14);
+      if (!has('mop')) this.spawnItem(this.byId.get('mop'), Math.round(R.bath * W + W * 0.76), FLOOR_TOP + 16);
+      if (!has('compost')) this.spawnItem(this.byId.get('compost'), Math.round(R.garden * W + W * 0.28), FLOOR_TOP + 9);
       this.save();
     },
 
@@ -135,7 +134,7 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
         });
       }
       for (const c of this.objs) if (c.kind === 'char' && inRoom(c, room) && !c.sleeping && !c.dragging && !c.inTub && !c.restOn) this.celebrate(c, 2);
-      const rec = this.big[CLEAN_ROOMS[room]];
+      const rec = this.byId.get(roomAt(room).clean); // предмет, которым комната отмечена в альбоме (places.js)
       if (rec) this.sticker('tidy', rec, at.x, at.y - 10);
     },
 

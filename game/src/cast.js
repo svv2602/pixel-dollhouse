@@ -3,18 +3,20 @@
 // Кукол нельзя ни удалить, ни размножить: состав ограничен, любимицы не теряются.
 import Phaser from 'phaser';
 import { HAIR, SKIN, DRESS, makeHeadIcon } from './character.js';
+import { R } from './places.js';
 
 export const CAST = [
   { id: 'mia', look: { hair: HAIR[0], skin: SKIN[0], dress: DRESS[0], hairStyle: 'long', outfit: 'dress' } },      // две первые —
   { id: 'zoe', look: { hair: HAIR[2], skin: SKIN[1], dress: DRESS[1], hairStyle: 'pigtails', outfit: 'pants' } },  // куклы из старых сохранений
   { id: 'mom', home: 1, look: { hair: '#6b3f2a', skin: SKIN[0], dress: '#c48ff2', hairStyle: 'bun', outfit: 'skirt' } },
-  { id: 'dad', look: { hair: '#2a2433', skin: SKIN[1], dress: '#5ac4f2', hairStyle: 'short', outfit: 'pants', stache: true } },
+  { id: 'dad', farm: 'field', look: { hair: '#2a2433', skin: SKIN[1], dress: '#5ac4f2', hairStyle: 'short', outfit: 'pants', stache: true } },
   { id: 'boy', home: 3, look: { hair: '#d9653b', skin: '#ffe0cc', dress: '#7ad9b5', hairStyle: 'short', outfit: 'overalls' } },
-  { id: 'granny', look: { hair: '#f2f2f2', skin: SKIN[0], dress: '#f2955a', hairStyle: 'bun', outfit: 'dress', glasses: true } },
+  { id: 'granny', farm: 'yard', look: { hair: '#f2f2f2', skin: SKIN[0], dress: '#f2955a', hairStyle: 'bun', outfit: 'dress', glasses: true } },
   { id: 'star', home: 4, look: { hair: '#b46ad9', skin: SKIN[2], dress: '#ef5a6f', hairStyle: 'ponytail', outfit: 'princess' } },
-  { id: 'kid', look: { hair: '#e8b04a', skin: SKIN[3], dress: '#f2c94c', hairStyle: 'curly', outfit: 'shorts' } },
+  { id: 'kid', farm: 'orchard', look: { hair: '#e8b04a', skin: SKIN[3], dress: '#f2c94c', hairStyle: 'curly', outfit: 'shorts' } },
 ];
 const HOME_X = { 1: 0.72, 3: 0.5, 4: 0.5 }; // где встаёт жилец комнаты (доля ширины)
+const FARM_X = { yard: 0.2, orchard: 0.37, field: 0.41 }; // жильцы села: бабушка во дворе, малыш в саду, папа в поле
 
 export function installCast(Room, { L, rnd, sfx, statHit }) {
   Object.assign(Room.prototype, {
@@ -48,6 +50,15 @@ export function installCast(Room, { L, rnd, sfx, statHit }) {
         for (const c of CAST) {
           if (c.home === undefined || this.castChar(c.id)) continue;
           this.spawnChar(Math.round(c.home * L.W + L.W * HOME_X[c.home]), L.ROOM_H - 5, { ...c.look }, { cast: c.id });
+        }
+        this.save();
+      }
+      // в селе живут те, кого ещё не позвали в дом (кто уже в доме — там и остаётся)
+      if (!this.flags.cast3) {
+        this.flags.cast3 = true;
+        for (const c of CAST) {
+          if (!c.farm || this.castChar(c.id)) continue;
+          this.spawnChar(Math.round(R[c.farm] * L.W + L.W * FARM_X[c.farm]), L.ROOM_H - 5, { ...(this.flags.castLook?.[c.id] || c.look) }, { cast: c.id });
         }
         this.save();
       }

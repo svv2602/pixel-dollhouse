@@ -360,20 +360,24 @@ export function makeFurnitureTextures(scene) {
     if (scene.textures.exists(k)) continue;
     const big = canvasFor(w, h, draw);
     scene.textures.addCanvas(k, big);
-    // иконка 16×16 для ящика — уменьшенная копия той же мебели (без сглаживания)
-    const ic = document.createElement('canvas');
-    ic.width = ic.height = 16;
-    const g = ic.getContext('2d', { willReadFrequently: true });
-    g.imageSmoothingEnabled = false;
-    // рисуем «внутренность» без старого контура в 14×14, затем обводим заново
-    const sc = Math.min(14 / (big.width - 2), 14 / (big.height - 2));
-    const dw = Math.max(1, Math.round((big.width - 2) * sc));
-    const dh = Math.max(2, Math.round((big.height - 2) * sc));
-    g.drawImage(big, 1, 1, big.width - 2, big.height - 2, 1 + Math.floor((14 - dw) / 2), 15 - dh, dw, dh);
-    const d = g.getImageData(0, 0, 16, 16);
-    for (let i = 0; i < d.data.length; i += 4) d.data[i + 3] = d.data[i + 3] > 127 ? 255 : 0; // без полупрозрачности
-    g.putImageData(d, 0, 0);
-    outline(ic);
-    scene.textures.addCanvas(`${k}_icon`, ic);
+    scene.textures.addCanvas(`${k}_icon`, iconFrom(big));
   }
+}
+
+/** Иконка 16×16 для ящика — уменьшенная копия крупного рисунка (без сглаживания); grow = false — мелкий рисунок не растягивать. */
+export function iconFrom(big, grow = true) {
+  const ic = document.createElement('canvas');
+  ic.width = ic.height = 16;
+  const g = ic.getContext('2d', { willReadFrequently: true });
+  g.imageSmoothingEnabled = false;
+  // рисуем «внутренность» без старого контура в 14×14, затем обводим заново
+  const sc = Math.min(grow ? Infinity : 1, 14 / (big.width - 2), 14 / (big.height - 2));
+  const dw = Math.max(1, Math.round((big.width - 2) * sc));
+  const dh = Math.max(2, Math.round((big.height - 2) * sc));
+  g.drawImage(big, 1, 1, big.width - 2, big.height - 2, 1 + Math.floor((14 - dw) / 2), 15 - dh, dw, dh);
+  const d = g.getImageData(0, 0, 16, 16);
+  for (let i = 0; i < d.data.length; i += 4) d.data[i + 3] = d.data[i + 3] > 127 ? 255 : 0; // без полупрозрачности
+  g.putImageData(d, 0, 0);
+  outline(ic);
+  return ic;
 }

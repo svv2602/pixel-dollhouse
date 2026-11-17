@@ -8,6 +8,7 @@
 // питомцы, музыкальные инструменты, всё, что на полках, в руках, в ванне и на плите, уборка не трогает.
 import Phaser from 'phaser';
 import { canvasFor } from './furniture.js';
+import { placeByKey, R } from './places.js';
 
 const tex = (scene, key, canvas) => {
   if (!scene.textures.exists(key)) scene.textures.addCanvas(key, canvas);
@@ -53,14 +54,14 @@ export function installTidy(Room, { L, rnd, pick, sfx }) {
       if (this.flags.tidy) return;
       this.flags.tidy = true;
       const bin = this.byId.get('tidy-bin');
-      const rooms = Math.round(L.WORLD / L.W);
-      for (let k = 0; k < rooms; k++) {
+      const home = placeByKey('home'); // в других локациях урны ставит их собственная расстановка (ensureVillage)
+      for (let k = home.first; k <= home.last; k++) {
         if (this.objs.some((o) => o.beh?.bin && roomOf(o) === k)) continue;
         this.spawnItem(bin, k * L.W + 12, L.ROOM_H - 2);
       }
       if (!this.objs.some((o) => o.rec?.id === 'broom')) this.spawnItem(this.byId.get('broom'), 26, L.ROOM_H - 1);
       const rake = this.findRec('leaf rake');
-      if (rake && !this.objs.some((o) => RAKES.test(o.rec?.subject || ''))) this.spawnItem(rake, 2 * L.W + 28, L.ROOM_H - 1);
+      if (rake && !this.objs.some((o) => RAKES.test(o.rec?.subject || ''))) this.spawnItem(rake, R.garden * L.W + 28, L.ROOM_H - 1);
       this.save();
     },
 

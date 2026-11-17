@@ -7,7 +7,7 @@ import { makePotions } from './potions.js';
 import { makeBath } from './bath.js';
 import { makeParty, BIRTHDAY_TUNE } from './party.js';
 import { makeSalon, blenderTex, smoothieTex } from './salon.js';
-import { makePlay, rainbowTex, makePhoto } from './play.js';
+import { makePlay, makePhoto } from './play.js';
 import { installCast } from './cast.js';
 import { installLife } from './life.js';
 import { installNav } from './nav.js';
@@ -19,6 +19,11 @@ import { installDream, Dream } from './dream.js';
 import { makeTidy, installTidy, RAKES } from './tidy.js';
 import { makeClean, installClean } from './clean.js';
 import { makePose, installPose } from './pose.js';
+import { ROOMS, R, roomAt, placeOf } from './places.js';
+import { installGarden, GROW, PLOT_DX, TREASURE } from './garden.js';
+import { installScenery } from './scenery.js';
+import { installTravel } from './travel.js';
+import { makeVillage, installVillage, VILLAGE_HINTS, VILLAGE_LURES } from './village.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -51,11 +56,13 @@ function computeLayout() {
   L.SLOT_Y = L.ROOM_H + 29;
   const wh = Math.min(26, L.FLOOR_TOP - 22);
   L.WINDOW = { x: Math.round(L.W * 0.66), y: Math.max(5, Math.round((L.FLOOR_TOP - 16 - wh) / 2)), w: 30, h: wh };
-  // мир — две комнаты по ширине экрана: спальня [0, W) и алхимическая кухня [W, 2W)
-  L.ROOMS = 5; // спальня, алхимическая кухня, сад, ванная, концертный зал
+  // мир — лента комнат шириной в экран: комнаты дома, за ними — комнаты других локаций (см. places.js)
+  L.ROOMS = ROOMS.length;
   L.WORLD = L.W * L.ROOMS;
-  L.WINDOWS = [L.WINDOW, { ...L.WINDOW, x: L.W + L.WINDOW.x }];
-  L.SUN = { x: 2 * L.W + L.W - 26, y: 5, w: 14, h: 14 }; // солнце/луна в саду: тап меняет день и ночь
+  L.WINDOWS = [L.WINDOW, { ...L.WINDOW, x: L.W + L.WINDOW.x }]; // окна спальни и кухни
+  // солнце/луна в каждой уличной комнате: тап меняет день и ночь
+  L.SUNS = ROOMS.filter((r) => r.outdoor).map((r) => ({ x: r.idx * L.W + L.W - 26, y: 5, w: 14, h: 14 }));
+  L.SUN = L.SUNS[0]; // сад у дома
 }
 computeLayout();
 
@@ -112,12 +119,6 @@ const COOK = {
   'sweet potato': 'potato wedges', 'hamburger patty': 'hamburger', 'broccoli': 'steamed broccoli',
   'cabbage': 'bowl of vegetable soup', 'carrot': 'bowl of vegetable soup', 'lemon': 'lemon tart',
 };
-// Сад: что можно посадить (вырастет то же самое); пакетик семян — сюрприз из этого списка
-const GROW = ['strawberry', 'apple', 'carrot', 'tomato', 'pumpkin', 'potato', 'banana', 'watermelon', 'pear', 'peach',
-  'pair of cherries', 'ear of corn', 'eggplant', 'onion', 'broccoli', 'lemon', 'orange', 'bunch of grapes', 'blueberry',
-  'cabbage', 'radish', 'pineapple', 'sunflower', 'tulip', 'rose', 'daisy flower', 'button mushroom'];
-const SEEDS = /seed packet|seed pouch|\bseeds?\b/;
-const PLOT_DX = [-13, 0, 13];
 // Холодильник: что выпадает по тапу (сырое для плиты, фрукты для блендера, немного кислого и острого)
 const FRIDGE = ['egg', 'glass of milk', 'wedge of cheese', 'tomato', 'carrot', 'apple', 'strawberry', 'banana', 'lemon',
   'pair of cherries', 'potato', 'broccoli', 'sausage link', 'slice of bread', 'blueberry', 'watermelon slice', 'peach',
@@ -163,6 +164,7 @@ const HINTS = {
   potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
   dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
 };
+Object.assign(HINTS, VILLAGE_HINTS); // подсказки села — рядом с его механиками, в village.js
 // Облачка с кроватью («хочу спать», сон, прыжки на кровати) — после показа берут паузу, см. noteBed()
 const BED_HINTS = new Set(['dream', 'bounce']);
 const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
@@ -170,12 +172,10 @@ const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|maca
 const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
   ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco],
   ['robot', (b) => b.robot], ['wash', (b) => b.washer], ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
+LURES.push(...VILLAGE_LURES);
 // Сундук с сюрпризами: что выскакивает по тапу
 const TOYBOX = ['teddy bear', 'beach ball', 'rubber duck', 'kite', 'yo-yo', 'spinning top', 'toy robot', 'rag doll', 'nesting doll',
   'jack-in-the-box', 'toy castle', 'soccer ball', 'pinwheel', 'toy car', 'balloon', 'toy train engine', 'toy sailboat'];
-// Клад в саду
-const TREASURE = ['seashell', 'pearl', 'diamond', 'ruby', 'emerald', 'amethyst', 'four leaf clover', 'starfish', 'treasure chest',
-  'bag of gold coins', 'crystal apple', 'crystal egg', 'toy robot', 'spinning top'];
 // Любимые игрушки питомцев (у каждого своя — по номеру)
 const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
@@ -270,6 +270,7 @@ function behaviorOf(rec) {
     bin: !!rec.bin,
     sweeper: !!rec.sweeper || RAKES.test(s),
     robot: !!rec.robot, mop: !!rec.mop, washer: !!rec.washer, compost: !!rec.compost, fertilizer: !!rec.fertilizer,
+    ...rec.beh, // у предметов, нарисованных в коде, поведение можно задать прямо в записи (см. villageart.js)
   };
 }
 
@@ -340,16 +341,18 @@ class Room extends Phaser.Scene {
     makePose(this);
     const clean = makeClean(this); // робот и швабра — в игрушках, стиральная машина — в мебели, компост — в саду
     for (const r of clean) this.byId.set(r.id, r);
+    const village = makeVillage(this); // животные села — во вкладке зверей, постройки и техника — в мебели
+    for (const r of village) this.byId.set(r.id, r);
     this.winter = isWinter(today());
     const season = makeSeason(this); // ёлка — во вкладке мебели, только зимой
     for (const r of season) this.byId.set(r.id, r);
     this.byCat = {
-      furniture: [...Object.values(this.big), ...clean.filter((r) => r.cat === 'furniture'), ...(this.winter ? season : [])], magic: potions.slice(),
+      furniture: [...Object.values(this.big), ...clean.filter((r) => r.cat === 'furniture'), ...village.filter((r) => r.cat === 'furniture'), ...(this.winter ? season : [])], magic: potions.slice(),
       garden: clean.filter((r) => r.cat === 'garden' && !r.hidden),
       kitchen: salon.filter((r) => r.cat === 'kitchen'),
       food: party.filter((r) => r.cat === 'food'),
       toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden), ...tidy, ...clean.filter((r) => r.cat === 'toy')],
-      animal: bath.filter((r) => r.cat === 'animal'),
+      animal: [...bath.filter((r) => r.cat === 'animal'), ...village.filter((r) => r.cat === 'animal')],
     };
     for (const r of this.items) {
       if (HIDE.test(r.subject) || bigSubjects.has(r.subject)) continue;
@@ -426,6 +429,9 @@ class Room extends Phaser.Scene {
     this.ensureTidy();
     this.ensureClean();
     this.initClean();
+    this.ensureVillage();
+    this.initVillage();
+    this.initTravel();
     this.ensureCast();
     this.dailyVisit();
     this.ensureWinter();
@@ -535,175 +541,6 @@ class Room extends Phaser.Scene {
     this.textures.addCanvas('glow', c);
   }
 
-  drawRoom() {
-    const { W, ROOM_H, FLOOR_TOP } = L;
-    const g = this.add.graphics().setDepth(-10);
-    // ===== спальня [0, W): обои в полоску с точками
-    g.fillStyle(0xf8dce8).fillRect(0, 0, W, FLOOR_TOP);
-    g.fillStyle(0xf2cadb);
-    for (let x = 0; x < W; x += 8) g.fillRect(x, 0, 3, FLOOR_TOP);
-    g.fillStyle(0xe6aec7);
-    for (let y = 5, r = 0; y < FLOOR_TOP - 16; y += 10, r++) for (let x = r % 2 ? 9 : 1; x < W; x += 16) g.fillRect(x, y, 1, 1);
-    const wy = FLOOR_TOP - 14;
-    g.fillStyle(0xe7b6cd).fillRect(0, wy, W, 14);
-    g.fillStyle(0xd197b4).fillRect(0, wy - 1, W, 1);
-    g.fillStyle(0xdba8c0);
-    for (let x = 3; x < W - 14; x += 18) g.fillRect(x, wy + 3, 13, 7);
-    g.fillStyle(0x8d5a78).fillRect(0, FLOOR_TOP - 2, W, 2);
-    // пол — доски
-    g.fillStyle(0xd39a68).fillRect(0, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
-    for (let y = FLOOR_TOP, row = 0; y < ROOM_H; y += 6, row++) {
-      g.fillStyle(0xdeab7c).fillRect(0, y, W, 1);
-      g.fillStyle(0xb98153).fillRect(0, y + 5, W, 1);
-      for (let x = (row % 2) * 12; x < W; x += 24) g.fillRect(x, y + 1, 1, 4);
-    }
-    // ===== кухня [W, 2W): мятная стена, плитка-фартук, пол в клетку
-    const k = W;
-    g.fillStyle(0xe6f6ef).fillRect(k, 0, W, FLOOR_TOP);
-    g.fillStyle(0xcdeee0);
-    for (let y = 6, r = 0; y < FLOOR_TOP - 26; y += 9, r++) for (let x = k + (r % 2 ? 10 : 2); x < k + W; x += 16) g.fillRect(x, y, 2, 2);
-    const ty = FLOOR_TOP - 24;
-    g.fillStyle(0xd8f3e8).fillRect(k, ty, W, 22);
-    g.fillStyle(0xbfe6d5);
-    for (let y = ty; y < FLOOR_TOP - 2; y += 6) g.fillRect(k, y, W, 1);
-    for (let y = ty, r = 0; y < FLOOR_TOP - 2; y += 6, r++) for (let x = k + (r % 2) * 3; x < k + W; x += 6) g.fillRect(x, y, 1, 6);
-    g.fillStyle(0x5f9c85).fillRect(k, FLOOR_TOP - 2, W, 2);
-    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 6, r++) {
-      for (let x = k, c = r % 2; x < k + W; x += 6, c ^= 1) g.fillStyle(c ? 0xf4ead8 : 0xe3cfae).fillRect(x, y, 6, 6);
-    }
-    // проём между комнатами
-    g.fillStyle(0xc9a3b9).fillRect(W - 2, 0, 4, FLOOR_TOP - 2);
-    g.fillStyle(0xa77f97).fillRect(W + 1, 0, 1, FLOOR_TOP - 2);
-    // ===== ванная [3W, 4W): голубая плитка, пол в крупную клетку
-    const bx = 3 * W;
-    g.fillStyle(0xdff6fb).fillRect(bx, 0, W, FLOOR_TOP);
-    g.fillStyle(0xc2e6f0);
-    for (let y = 0; y < FLOOR_TOP; y += 8) g.fillRect(bx, y, W, 1);
-    for (let x = bx; x < bx + W; x += 8) g.fillRect(x, 0, 1, FLOOR_TOP);
-    g.fillStyle(0xb7e0ec).fillRect(bx, FLOOR_TOP - 16, W, 14);
-    g.fillStyle(0x9fd2e2);
-    for (let x = bx; x < bx + W; x += 8) g.fillRect(x, FLOOR_TOP - 16, 1, 14);
-    g.fillStyle(0x7fbfd2).fillRect(bx, FLOOR_TOP - 17, W, 1).fillRect(bx, FLOOR_TOP - 2, W, 2);
-    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 8, r++) {
-      for (let x = bx, c = r % 2; x < bx + W; x += 8, c ^= 1) g.fillStyle(c ? 0xffffff : 0xd6eef6).fillRect(x, y, 8, 8);
-    }
-    g.fillStyle(0xb0d8e4).fillRect(bx - 2, 0, 4, FLOOR_TOP);
-    // ===== концертный зал [4W, 5W): тёмная стена со звёздочками, бархатный занавес, паркет
-    const hx = 4 * W;
-    g.fillStyle(0x3b2160).fillRect(hx, 0, W, FLOOR_TOP);
-    g.fillStyle(0xffd84a);
-    for (let y = 6, r = 0; y < FLOOR_TOP - 20; y += 11, r++) for (let x = hx + (r % 2 ? 12 : 4); x < hx + W; x += 17) {
-      g.fillRect(x, y, 1, 1); if ((x + y) % 3 === 0) g.fillRect(x - 1, y, 3, 1).fillRect(x, y - 1, 1, 3);
-    }
-    const cw = Math.round(W * 0.16);
-    for (const [x1, dir] of [[hx, 1], [hx + W - cw, -1]]) {
-      g.fillStyle(0xb8264a).fillRect(x1, 0, cw, FLOOR_TOP);
-      g.fillStyle(0x8e1838);
-      for (let x = 3; x < cw; x += 6) g.fillRect(x1 + x, 0, 2, FLOOR_TOP);
-      g.fillStyle(0xd8406a);
-      for (let x = 1; x < cw; x += 6) g.fillRect(x1 + x, 0, 1, FLOOR_TOP);
-      g.fillStyle(0xffd84a).fillRect(dir > 0 ? x1 + cw - 3 : x1, Math.round(FLOOR_TOP * 0.55), 3, 3); // подхват
-    }
-    g.fillStyle(0xb8264a).fillRect(hx, 0, W, 8);
-    g.fillStyle(0x8e1838);
-    for (let x = hx; x < hx + W; x += 12) g.fillRect(x, 8, 12, 2).fillRect(x + 3, 10, 6, 1);
-    g.fillStyle(0xffd84a).fillRect(hx, 7, W, 1);
-    g.fillStyle(0x24123c).fillRect(hx, FLOOR_TOP - 2, W, 2);
-    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 4, r++) {
-      g.fillStyle(r % 2 ? 0x9a5a3a : 0xa8683f).fillRect(hx, y, W, 4);
-      g.fillStyle(0x7d4529);
-      for (let x = hx + (r % 3) * 7; x < hx + W; x += 21) g.fillRect(x, y, 1, 4);
-    }
-    g.fillStyle(0x6e3a8a).fillRect(hx - 2, 0, 4, FLOOR_TOP);
-    // ===== сад [2W, 3W): трава (небо, холмы и забор — на своих слоях)
-    const gx = 2 * W;
-    const snowy = this.winter; // зимой сад в снегу
-    g.fillStyle(snowy ? 0xf4f9ff : 0x8fd16a).fillRect(gx, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
-    for (let y = FLOOR_TOP + 2, r = 0; y < ROOM_H; y += 5, r++) {
-      g.fillStyle(snowy ? 0xd9e8f5 : 0x7cc25a);
-      for (let x = gx + (r % 2) * 5; x < gx + W; x += 10) { g.fillRect(x, y, 1, 2); g.fillRect(x + 2, y + 1, 1, 1); }
-    }
-    g.fillStyle(snowy ? 0xffffff : 0xb5e38f).fillRect(gx, FLOOR_TOP, W, 1);
-    // дверной косяк между кухней и садом
-    g.fillStyle(0x8d5a3b).fillRect(gx - 2, 0, 4, FLOOR_TOP);
-    g.fillStyle(0xa8714d).fillRect(gx - 2, 0, 1, FLOOR_TOP);
-    // холмы и белый заборчик — поверх неба
-    const hz = this.add.graphics().setDepth(-8);
-    for (let x = gx; x < gx + W; x++) {
-      const hgt = Math.round(7 + 4 * Math.sin((x - gx) / 23) + 2 * Math.sin((x - gx) / 9));
-      hz.fillStyle(snowy ? 0xd3e3f2 : 0x7cc25a).fillRect(x, FLOOR_TOP - hgt, 1, hgt);
-    }
-    hz.fillStyle(0xfff8f0);
-    for (let x = gx + 3; x < gx + W; x += 8) { hz.fillRect(x, FLOOR_TOP - 13, 3, 13); hz.fillRect(x + 1, FLOOR_TOP - 14, 1, 1); }
-    hz.fillRect(gx, FLOOR_TOP - 10, W, 2).fillRect(gx, FLOOR_TOP - 5, W, 2);
-    hz.fillStyle(0xe0d6cc);
-    for (let x = gx + 5; x < gx + W; x += 8) hz.fillRect(x, FLOOR_TOP - 13, 1, 13);
-    // окна: небо — отдельный слой (перерисовывается днём/ночью), рамы — поверх
-    this.sky = this.add.graphics().setDepth(-9);
-    const f = this.add.graphics().setDepth(-8);
-    L.WINDOWS.forEach(({ x, y, w, h }, i) => {
-      const mx = x + w / 2;
-      const my = y + Math.floor(h / 2);
-      f.fillStyle(0xffffff)
-        .fillRect(x - 2, y - 2, w + 4, 2).fillRect(x - 2, y + h, w + 4, 2)
-        .fillRect(x - 2, y, 2, h).fillRect(x + w, y, 2, h)
-        .fillRect(mx - 1, y, 2, h).fillRect(x, my - 1, w, 2);
-      if (i === 0) {
-        f.fillStyle(0xd197b4).fillRect(x - 4, y + h + 2, w + 8, 2); // подоконник
-        f.fillStyle(0xfff4a8).fillRect(x - 7, y - 4, 5, h + 7).fillRect(x + w + 2, y - 4, 5, h + 7);
-        f.fillStyle(0xf2df7a).fillRect(x - 5, y - 4, 1, h + 7).fillRect(x + w + 4, y - 4, 1, h + 7);
-        f.fillStyle(0xc98aa9).fillRect(x - 9, y - 5, w + 18, 1); // карниз
-      } else {
-        // кухня: короткая занавеска-«кафе» в клетку
-        f.fillStyle(0x5f9c85).fillRect(x - 4, y + h + 2, w + 8, 2);
-        for (let cx = 0; cx < w; cx += 2) for (let cy = 0; cy < 6; cy += 2) {
-          f.fillStyle((cx + cy) % 4 ? 0xff9ab8 : 0xffffff).fillRect(x + cx, y - 1 + cy, 2, 2);
-        }
-      }
-    });
-  }
-
-  drawSky() {
-    const s = this.sky.clear();
-    for (const win of L.WINDOWS) this.drawSkyIn(s, win);
-    // небо сада: днём — голубое с солнцем и облаками, ночью — тёмное с луной и звёздами
-    const gx = 2 * L.W;
-    const { x: sx, y: sy } = L.SUN;
-    if (!this.night) {
-      s.fillStyle(0x9fdcff).fillRect(gx, 0, L.W, L.FLOOR_TOP);
-      s.fillStyle(0xc8ecff).fillRect(gx, L.FLOOR_TOP - 22, L.W, 22);
-      s.fillStyle(0xffe066).fillRect(sx + 2, sy, 10, 14).fillRect(sx, sy + 2, 14, 10);
-      s.fillStyle(0xfff4a8).fillRect(sx + 3, sy + 3, 4, 4);
-      s.fillStyle(0xffffff);
-      for (const [cx, cy] of [[30, 10], [110, 18], [190, 8]]) {
-        s.fillRect(gx + cx, cy, 16, 4).fillRect(gx + cx + 3, cy - 3, 8, 3).fillRect(gx + cx + 9, cy - 2, 5, 2);
-      }
-    } else {
-      s.fillStyle(0x24205a).fillRect(gx, 0, L.W, L.FLOOR_TOP);
-      s.fillStyle(0xfff6c2).fillRect(sx + 2, sy, 10, 14).fillRect(sx, sy + 2, 14, 10);
-      s.fillStyle(0x24205a).fillRect(sx + 6, sy - 1, 9, 12);
-      s.fillStyle(0xffffff);
-      for (let i = 0; i < 40; i++) s.fillRect(gx + ((i * 73 + i * i * 29) % L.W), (i * 37 + i * i * 13) % (L.FLOOR_TOP - 16), 1, 1); // разбросанные звёзды
-    }
-  }
-
-  drawSkyIn(s, { x, y, w, h }) {
-    if (!this.night) {
-      s.fillStyle(0x8fd3ff).fillRect(x, y, w, h);
-      s.fillStyle(0xffe066).fillRect(x + w - 9, y + 3, 5, 5);
-      s.fillStyle(0xffffff).fillRect(x + 3, y + 8, 8, 2).fillRect(x + 5, y + 6, 4, 2)
-        .fillRect(x + 17, y + 14, 9, 2).fillRect(x + 19, y + 12, 4, 2);
-      s.fillStyle(this.winter ? 0xf4f9ff : 0x7ccf6a).fillRect(x, y + h - 4, w, 4);
-    } else {
-      s.fillStyle(0x24205a).fillRect(x, y, w, h);
-      s.fillStyle(0xfff6c2).fillRect(x + w - 10, y + 3, 6, 6);
-      s.fillStyle(0x24205a).fillRect(x + w - 8, y + 2, 5, 5);
-      s.fillStyle(0xffffff);
-      [[3, 4], [9, 12], [13, 3], [5, 17], [20, 19], [24, 14], [11, 20]].forEach(([dx, dy]) => s.fillRect(x + dx, y + dy, 1, 1));
-      s.fillStyle(this.winter ? 0x9aa8c8 : 0x2f5a4a).fillRect(x, y + h - 4, w, 4);
-    }
-  }
-
   makeParticles() {
     this.fxZ = this.add.particles(0, 0, 'zzz', {
       lifespan: 1600, speedX: { min: 4, max: 10 }, speedY: { min: -14, max: -9 },
@@ -739,7 +576,7 @@ class Room extends Phaser.Scene {
       contents: extra.contents || [], lit: extra.lit ?? true, owner: null, slot: null, restOn: null,
       plots: beh.gardenBed ? (extra.plots || [null, null, null]) : null,
       deco: beh.cake ? (extra.deco || {}) : null,
-      slots: beh.pet ? { pethat: null } : undefined,
+      slots: beh.pet || beh.scarecrow ? { pethat: null } : undefined, // шапка на питомце или на пугале
     });
     this.uidSeq = Math.max(this.uidSeq, o.uid + 1);
     // накладки (слои торта, пятна, пена, свечение) исчезают вместе с предметом, как бы он ни был уничтожен
@@ -848,7 +685,7 @@ class Room extends Phaser.Scene {
 
   /** Алхимическая кухня: появляется и в старых сохранениях (если во второй комнате пусто). */
   ensureKitchen() {
-    if (this.objs.some((o) => o.x >= L.W && o.x < 2 * L.W)) return;
+    if (this.objs.some((o) => o.x >= R.kitchen * L.W && o.x < (R.kitchen + 1) * L.W)) return;
     const { W, FLOOR_TOP } = L;
     const x0 = W;
     const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
@@ -868,152 +705,6 @@ class Room extends Phaser.Scene {
     if (pot) { pot.x = px; pot.y = FLOOR_TOP + 22; pot.restOn = null; } else big('cauldron', 0.53, FLOOR_TOP + 22);
     big('fridge', (W - 28) / W, FLOOR_TOP + 5);
     this.save();
-  }
-
-  /** Сад: появляется и в старых сохранениях (если третья комната пуста). */
-  ensureGarden() {
-    if (this.objs.some((o) => o.x >= 2 * L.W && o.x < 3 * L.W)) return;
-    const { W, FLOOR_TOP, ROOM_H } = L;
-    const x0 = 2 * W;
-    const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
-    const put = (subj, fx, y) => { const r = this.findRec(subj); return r ? this.spawnItem(r, Math.round(x0 + W * fx), Math.round(y)) : null; };
-    big('tree', 0.14, FLOOR_TOP + 10);
-    const bed1 = big('gardenbed', 0.45, FLOOR_TOP + 14);
-    big('gardenbed', 0.72, FLOOR_TOP + 26);
-    // подсолнух уже пророс и ждёт полива — механика понятна сразу
-    const sun = this.findRec('sunflower');
-    if (sun) bed1.plots[1] = { id: sun.id, stage: 1, watered: false };
-    put('watering can', 0.3, ROOM_H - 6);
-    put('seed packet', 0.58, ROOM_H - 3);
-    put('strawberry', 0.88, ROOM_H - 8);
-    put('rabbit', 0.6, FLOOR_TOP + 36);
-    this.save();
-  }
-
-  growRec(rec) {
-    if (SEEDS.test(rec.subject)) return true;
-    return GROW.includes(rec.subject);
-  }
-
-  plotAt(bed, x) {
-    let best = 0;
-    PLOT_DX.forEach((dx, i) => { if (Math.abs(bed.x + dx - x) < Math.abs(bed.x + PLOT_DX[best] - x)) best = i; });
-    return best;
-  }
-
-  /** Посадить: в лунку под пальцем (или любую свободную). Из клубники вырастет клубника, из семян — сюрприз. */
-  plant(bed, o, x) {
-    let i = this.plotAt(bed, x);
-    if (bed.plots[i]) i = bed.plots.findIndex((p) => !p);
-    if (i < 0) return false;
-    let rec = o.rec;
-    if (SEEDS.test(rec.subject)) rec = this.findRec(pick(GROW.filter((g) => this.findRec(g)))) || rec;
-    bed.plots[i] = { id: rec.id, stage: 0, watered: false };
-    this.stat('plant');
-    this.objs = this.objs.filter((x2) => x2 !== o);
-    const px = bed.x + PLOT_DX[i];
-    this.tweens.add({
-      targets: o, x: px, y: bed.y - bed.displayHeight + 4, alpha: 0, duration: 260,
-      onComplete: () => { o.destroy(); this.renderPlots(bed); },
-    });
-    sfx.drop();
-    this.fxCrumbs.setParticleTint(0x6b4a32);
-    this.fxCrumbs.explode(5, px, bed.y - bed.displayHeight + 4);
-    return true;
-  }
-
-  waterPlot(bed, i) {
-    const p = bed.plots[i];
-    if (!p || p.stage >= 3 || p.watered) return;
-    p.watered = true;
-    sfx.splash();
-    this.renderPlots(bed);
-    this.growLater(bed, i);
-    this.save();
-  }
-
-  /** Политое растение подрастает через пару секунд: семечко → росток → кустик → урожай. */
-  growLater(bed, i) {
-    const p = bed.plots[i];
-    this.time.delayedCall(2500, () => {
-      if (!bed.active || bed.plots[i] !== p || !p.watered) return;
-      p.stage += 1;
-      p.watered = false;
-      const px = bed.x + PLOT_DX[i];
-      this.fxSparks.explode(p.stage === 3 ? 16 : 6, px, bed.y - bed.displayHeight - 4);
-      if (p.stage === 3) sfx.sparkle(); else sfx.squeak();
-      this.renderPlots(bed);
-      const img = bed.plantImgs[i];
-      if (img) this.tweens.add({ targets: img, y: img.y - 3, duration: 120, yoyo: true });
-      this.save();
-    });
-  }
-
-  /** Тап по грядке: созрело — собрать урожай (вдвойне); нужно полить — капля подпрыгивает. */
-  plotTap(bed, x) {
-    const i = this.plotAt(bed, x);
-    const p = bed.plots[i];
-    if (!p) { sfx.boing(); return; }
-    if (p.stage < 3) {
-      const drop = bed.dropImgs[i];
-      if (drop) { sfx.blub(); this.tweens.add({ targets: drop, scale: 1.0, y: drop.y - 4, duration: 120, yoyo: true }); }
-      return;
-    }
-    const rec = this.recOf(p.id);
-    bed.plots[i] = null;
-    this.renderPlots(bed);
-    if (!rec) return;
-    sfx.chestOut();
-    this.stat('harvest');
-    this.sticker('plant', rec, bed.x + PLOT_DX[i], bed.y - bed.displayHeight);
-    const px = bed.x + PLOT_DX[i];
-    for (let k = 0; k < 2; k++) {
-      const o = this.spawnItem(rec, Math.round(px), Math.round(bed.y - bed.displayHeight));
-      const tx = Math.round(Phaser.Math.Clamp(px + (k ? 1 : -1) * rnd(10, 22), 2 * L.W + 8, L.WORLD - 8));
-      const ty = Math.round(rnd(L.FLOOR_TOP + 6, L.ROOM_H - 2));
-      this.tweens.add({ targets: o, x: tx, duration: 500, delay: k * 120 });
-      this.tweens.add({
-        targets: o, y: o.y - 18, duration: 220, delay: k * 120, ease: 'Quad.easeOut',
-        onComplete: () => this.tweens.add({ targets: o, y: ty, duration: 360, ease: 'Bounce.easeOut' }),
-      });
-    }
-    this.fxHearts.explode(3, px, bed.y - 14);
-    this.time.delayedCall(900, () => this.save());
-  }
-
-  /** Картинки растений и капель на грядке по её состоянию. */
-  renderPlots(bed) {
-    bed.plantImgs ||= [null, null, null];
-    bed.dropImgs ||= [null, null, null];
-    bed.plots.forEach((p, i) => {
-      bed.plantImgs[i]?.destroy();
-      bed.dropImgs[i]?.destroy();
-      bed.plantImgs[i] = null;
-      bed.dropImgs[i] = null;
-      if (!p) return;
-      const rec = this.recOf(p.id);
-      let img;
-      if (p.stage === 0) img = this.add.image(0, 0, 'plant_seed');
-      else if (p.stage === 1) img = this.add.image(0, 0, 'plant_sprout');
-      else if (p.stage === 2) img = this.add.image(0, 0, 'plant_bush');
-      else img = rec ? this.recImage(rec, 0, 0) : this.add.image(0, 0, 'plant_bush');
-      bed.plantImgs[i] = img.setOrigin(0.5, 1);
-      if (p.stage < 3 && !p.watered) bed.dropImgs[i] = this.add.image(0, 0, 'water_drop').setOrigin(0.5, 1);
-    });
-  }
-
-  /** Тап по яблоне: дерево качается, падает яблоко. */
-  shakeTree(tree) {
-    const x0 = tree.x;
-    this.tweens.add({ targets: tree, x: x0 + 1, duration: 60, yoyo: true, repeat: 3, onComplete: () => { tree.x = x0; } });
-    this.itemDream('tree', tree, 'forest');
-    this.leafFall(tree);
-    const rec = this.findRec('apple');
-    if (!rec) return;
-    const o = this.spawnItem(rec, Math.round(tree.x + rnd(-10, 10)), Math.round(tree.y - tree.displayHeight * 0.55));
-    const ty = Math.round(Phaser.Math.Clamp(tree.y + rnd(2, 14), L.FLOOR_TOP + 4, L.ROOM_H - 2));
-    sfx.pick();
-    this.tweens.add({ targets: o, y: ty, duration: 520, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } });
   }
 
   // ---------------------------------------------------------------- день рождения
@@ -1133,6 +824,7 @@ class Room extends Phaser.Scene {
     if (pet.strokes % 4 === 0) {
       this.fxHearts.explode(3, pet.x, pet.y - pet.displayHeight);
       if (!pet.walking) this.tweens.add({ targets: pet, y: pet.y - 4, duration: 120, yoyo: true });
+      this.farmBrushed(pet); // с овцы — клубок шерсти
     }
   }
 
@@ -1248,10 +940,10 @@ class Room extends Phaser.Scene {
     if (this.flags.hall) return;
     this.flags.hall = true;
     const { W, FLOOR_TOP, ROOM_H } = L;
-    const x0 = 4 * W;
+    const x0 = R.hall * W;
     const cx = Math.round(x0 + W * 0.5);
     const sy = FLOOR_TOP + 6;
-    let stage = this.flags.stage && this.objs.find((o) => o.rec?.id === 'big_stage' && o.x >= 2 * W && o.x < 3 * W);
+    let stage = this.flags.stage && this.objs.find((o) => o.rec?.id === 'big_stage' && o.x >= R.garden * W && o.x < (R.garden + 1) * W);
     if (stage) {
       const dx = cx - stage.x, dy = sy - stage.y;
       for (const o of this.objs) if (o.restOn === stage) { o.x += dx; o.y += dy; }
@@ -1284,9 +976,9 @@ class Room extends Phaser.Scene {
   /** Ванная (4-я комната) и лужа грязи в саду — появляются и в старых сохранениях. */
   ensureBath() {
     const { W, FLOOR_TOP, ROOM_H } = L;
-    if (!this.objs.some((o) => o.beh?.puddle)) this.spawnItem(this.big.puddle, Math.round(2 * W + W * 0.22), FLOOR_TOP + 32);
-    if (this.objs.some((o) => o.x >= 3 * W && o.x < 4 * W)) return;
-    const x0 = 3 * W;
+    if (!this.objs.some((o) => o.beh?.puddle)) this.spawnItem(this.big.puddle, Math.round(R.garden * W + W * 0.22), FLOOR_TOP + 32);
+    if (this.objs.some((o) => o.x >= R.bath * W && o.x < (R.bath + 1) * W)) return;
+    const x0 = R.bath * W;
     const big = (key, fx, y) => this.spawnItem(this.big[key], Math.round(x0 + W * fx), Math.round(y));
     const tub = big('tub', 0.52, FLOOR_TOP + 20);
     const sink = big('sink', 0.17, FLOOR_TOP + 12);
@@ -1410,7 +1102,7 @@ class Room extends Phaser.Scene {
     this.flags.kitchen2 = true;
     if (!this.objs.some((o) => o.beh?.blender)) {
       const { W, FLOOR_TOP } = L;
-      const counter = this.objs.find((o) => o.rec?.id === 'big_counter' && o.x >= W && o.x < 2 * W) || this.objs.find((o) => o.rec?.id === 'big_counter');
+      const counter = this.objs.find((o) => o.rec?.id === 'big_counter' && o.x >= R.kitchen * W && o.x < (R.kitchen + 1) * W) || this.objs.find((o) => o.rec?.id === 'big_counter');
       if (counter) {
         // то, что стояло посередине тумбы, переезжает на пол перед ней
         for (const x of this.objs) {
@@ -1607,7 +1299,7 @@ class Room extends Phaser.Scene {
     if (this.flags.bath2) return;
     this.flags.bath2 = true;
     const { W, FLOOR_TOP } = L;
-    const x0 = 3 * W;
+    const x0 = R.bath * W;
     if (!this.objs.some((o) => o.beh?.toilet)) this.spawnItem(this.big.toilet, Math.round(x0 + W * 0.9), FLOOR_TOP + 12);
     const shelf = this.spawnItem(this.big.shelf, Math.round(x0 + W * 0.36), FLOOR_TOP - 28);
     ['paint-whiskers', 'paint-hearts', 'paint-freckles'].forEach((id, i) => {
@@ -1742,7 +1434,7 @@ class Room extends Phaser.Scene {
     if (this.flags.hall2) return;
     this.flags.hall2 = true;
     const { W, FLOOR_TOP } = L;
-    const x0 = 4 * W;
+    const x0 = R.hall * W;
     const inHall = (o) => o.x >= x0 && o.x < x0 + W;
     const stage = this.objs.find((o) => o.beh?.stage && inHall(o));
     if (!this.objs.some((o) => o.beh?.mic)) {
@@ -1767,7 +1459,7 @@ class Room extends Phaser.Scene {
     sfx.drop();
     if (seat.beh.swing) { sfx.whee(); this.hintDone('swing'); if (o.kind === 'char') this.time.delayedCall(300, () => sfx.giggle()); return; }
     this.tweens.add({ targets: o, y: o.y - 3, duration: 100, yoyo: true });
-    if (Math.floor(seat.x / L.W) === 4) this.hintDone('audience');
+    if (Math.floor(seat.x / L.W) === R.hall) this.hintDone('audience');
   }
 
   audienceIn(room) {
@@ -1854,7 +1546,7 @@ class Room extends Phaser.Scene {
       for (let x = 1; x < hw; x += 3) g.fillRect(x, h - 1, 1, 1); // бахрома
       this.textures.addCanvas(key, c);
     }
-    const x0 = 4 * W;
+    const x0 = R.hall * W;
     this.curtainCw = Math.round(W * 0.16);
     this.curtain = [0, 1].map((i) => {
       const img = this.add.image(0, 10, key).setOrigin(0, 0).setDepth(FLOOR_TOP + 6.9).setInteractive();
@@ -1867,7 +1559,7 @@ class Room extends Phaser.Scene {
 
   placeCurtain(closed, animate = false) {
     const { W } = L;
-    const x0 = 4 * W;
+    const x0 = R.hall * W;
     const hw = this.curtain[0].width;
     const pos = closed ? [x0 + W / 2 - hw, x0 + W / 2] : [x0 + this.curtainCw - hw, x0 + W - this.curtainCw];
     this.curtain.forEach((c, i) => {
@@ -1878,13 +1570,17 @@ class Room extends Phaser.Scene {
     this.clipCurtain();
   }
 
-  /** Левая половина открытого занавеса шире кулисы: всё, что левее зала, не рисуется и не ловит касания. */
+  /** Половины открытого занавеса шире кулис: всё, что левее и правее зала, не рисуется и не ловит касания. */
   clipCurtain() {
-    const c = this.curtain?.[0];
+    const [c, r] = this.curtain || [];
     if (!c) return;
-    const cut = Phaser.Math.Clamp(Math.ceil(4 * L.W - c.x), 0, c.width);
+    const cut = Phaser.Math.Clamp(Math.ceil(R.hall * L.W - c.x), 0, c.width);
     c.setCrop(cut, 0, c.width - cut, c.height);
     c.input?.hitArea.setTo(cut, 0, c.width - cut, c.height);
+    // правая половина: за залом на ленте теперь двор села — туда она заходить не должна
+    const keep = Phaser.Math.Clamp(Math.floor((R.hall + 1) * L.W - r.x), 0, r.width);
+    r.setCrop(r.width - keep, 0, keep, r.height); // картинка отражена: обрезка задаётся в координатах текстуры
+    r.input?.hitArea.setTo(0, 0, keep, r.height);
   }
 
   toggleCurtain() {
@@ -1896,7 +1592,7 @@ class Room extends Phaser.Scene {
     if (!closed) {
       // начало концерта: фанфары, конфетти, зрители хлопают
       const { W } = L;
-      const cx = 4 * W + W / 2;
+      const cx = R.hall * W + W / 2;
       this.time.delayedCall(450, () => {
         sfx.fanfare();
         for (let i = 0; i < 5; i++) this.time.delayedCall(i * 120, () => this.fxSparks.explode(10, cx + rnd(-W * 0.35, W * 0.35), rnd(14, 34)));
@@ -1953,7 +1649,7 @@ class Room extends Phaser.Scene {
   }
 
   /** Тап по кровати с персонажем: прыгает всё выше, летят пёрышки, на третьем прыжке — сальто. */
-  bounce(bed) {
+  bounce(bed, hint = 'bounce') {
     const riders = this.objs.filter((o) => o.restOn === bed && (o.kind === 'char' || o.beh?.pet) && !o.dragging);
     if (!riders.length) return false;
     const now = this.time.now;
@@ -1988,7 +1684,7 @@ class Room extends Phaser.Scene {
         },
       });
     }
-    this.hintDone('bounce');
+    this.hintDone(hint);
     return true;
   }
 
@@ -2108,222 +1804,6 @@ class Room extends Phaser.Scene {
   }
 
   // ---------------------------------------------------------------- сад: тучка и радуга, качели, бабочки, клад
-  /** Качели и лопатка в саду — и в старых сохранениях. */
-  ensureGarden2() {
-    if (this.flags.garden2) return;
-    this.flags.garden2 = true;
-    const { W, FLOOR_TOP, ROOM_H } = L;
-    if (!this.objs.some((o) => o.beh?.swing)) this.spawnItem(this.big.swing, Math.round(2 * W + W * 0.88), FLOOR_TOP + 12);
-    const sh = this.findRec('shovel');
-    if (sh && !this.objs.some((o) => o.beh?.shovel)) this.spawnItem(sh, Math.round(2 * W + W * 0.38), ROOM_H - 4);
-    this.save();
-  }
-
-  /** Тучка над садом — тап вызывает дождь (живёт на слое неба, не предмет). */
-  buildCloud() {
-    const x = Math.round(2 * L.W + L.W * 0.42);
-    this.cloud = this.add.image(x, 14, 'raincloud').setDepth(-8.5).setInteractive();
-    this.cloud.raincloud = true;
-    this.tweens.add({ targets: this.cloud, x: x + 14, duration: 9000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-    this.cloud.setVisible(!this.night);
-  }
-
-  /** Дождь: поливает все грядки, мочит всех в саду (→ фен); днём после дождя — радуга. */
-  rain() {
-    if (this.raining || this.night) return;
-    this.raining = true;
-    this.hintDone('rain');
-    const gx = 2 * L.W;
-    sfx.rain();
-    this.cloud.setTint(0xaab3c5);
-    const dim = this.add.rectangle(gx, 0, L.W, L.ROOM_H, 0x5a6a8a, 0).setOrigin(0).setDepth(9998);
-    this.tweens.add({ targets: dim, fillAlpha: 0.18, duration: 400 });
-    const drops = this.add.particles(gx, 4, 'raindrop', {
-      x: { min: 0, max: L.W }, speedY: { min: 150, max: 190 }, speedX: -10, lifespan: (L.ROOM_H / 160) * 1000,
-      tint: [0x7fbfff, 0xb8e0ff], alpha: 0.85, frequency: 12, quantity: 2,
-    }).setDepth(9999);
-    this.time.delayedCall(900, () => {
-      for (const bed of this.objs) {
-        if (!bed.beh?.gardenBed || Math.floor(bed.x / L.W) !== 2) continue;
-        bed.plots.forEach((p, i) => { if (p && p.stage < 3 && !p.watered) this.waterPlot(bed, i); });
-      }
-      for (const o of this.objs) {
-        if (Math.floor(o.x / L.W) !== 2 || o.inTub) continue;
-        if (o.kind === 'char') { o.wetUntil = this.time.now + 20000; if (!this.flags.tried?.dryer || Math.random() < 0.5) this.addNeed(o, 'dryer', 2500); }
-        else if (o.beh?.pet) o.wetUntil = this.time.now + 7000;
-      }
-    });
-    this.time.delayedCall(3400, () => {
-      drops.stop();
-      this.time.delayedCall(800, () => drops.destroy());
-      this.cloud.clearTint();
-      this.tweens.add({ targets: dim, fillAlpha: 0, duration: 500, onComplete: () => dim.destroy() });
-      this.raining = false;
-      if (this.night) return;
-      const bow = this.add.image(gx + L.W / 2, L.FLOOR_TOP - 6, rainbowTex(this, Math.round(L.W * 0.8), Math.max(16, L.FLOOR_TOP - 12))).setOrigin(0.5, 1).setDepth(-8.7).setAlpha(0);
-      sfx.sparkle();
-      this.tweens.add({ targets: bow, alpha: 0.85, duration: 900, hold: 8000, yoyo: true, onComplete: () => bow.destroy() });
-    });
-  }
-
-  pushSwing(sw) {
-    sw.amp = Math.min(0.6, (sw.amp || 0) + 0.2);
-    sfx.whee();
-    const rider = this.objs.find((o) => o.restOn === sw);
-    if (rider?.kind === 'char') { sfx.giggle(); this.fxHearts.explode(1, rider.x, rider.y - rider.displayHeight); }
-    this.swingDream(sw);
-  }
-
-  /** Качели: сиденье на верёвках — маятник; седок качается вместе с ним. */
-  updateSwings(time, delta) {
-    const g = this.swingG;
-    if (!g) return;
-    g.clear();
-    for (const sw of this.objs) {
-      if (!sw.beh?.swing || !sw.active) continue;
-      const rider = this.objs.find((o) => o.restOn === sw && !o.dragging);
-      const base = rider ? 0.22 : 0;
-      sw.amp = (sw.amp || 0) > base ? sw.amp * Math.pow(0.9993, delta) : Math.min(base, (sw.amp || 0) + 0.002 * delta);
-      sw.phase = (sw.phase || 0) + delta * 0.0034;
-      const top = sw.y - sw.displayHeight + 4;
-      const len = sw.displayHeight - 14;
-      const th = sw.amp * Math.sin(sw.phase);
-      const sx = Math.round(sw.x + len * Math.sin(th));
-      const sy = Math.round(top + len * Math.cos(th));
-      g.setDepth(sw.depth + 0.3);
-      g.lineStyle(1, 0x7a4a32, 1);
-      g.lineBetween(sw.x - 5, top, sx - 5, sy);
-      g.lineBetween(sw.x + 5, top, sx + 5, sy);
-      g.fillStyle(0x2b1d2e).fillRect(sx - 8, sy - 1, 16, 5);
-      g.fillStyle(0xf27aa6).fillRect(sx - 7, sy, 14, 3);
-      g.fillStyle(0xffb0d0).fillRect(sx - 7, sy, 14, 1);
-      if (rider) { rider.x = sx; rider.y = sy + (rider.kind === 'char' ? 8 : 1); }
-    }
-  }
-
-  /** Раз в полторы секунды: бабочки над садом (больше — над выросшими цветами) и блестящий крестик-клад. */
-  gardenTick() {
-    const inGarden = Math.round(this.cameras.main.scrollX / L.W) === 2 && !this.dress && !this.albumUi;
-    if (this.cloud) this.cloud.setVisible(!this.night);
-    this.butterflies = this.butterflies.filter((b) => b.active);
-    if (!inGarden || this.night) {
-      for (const b of this.butterflies) if (!b.onChar) b.destroy();
-      this.butterflies = this.butterflies.filter((b) => b.active);
-    } else {
-      const want = Math.min(3, 1 + this.ripeFlowers().length);
-      const rec = this.findRec('butterfly');
-      if (rec && this.butterflies.filter((b) => !b.onChar).length < want) {
-        const b = this.add.image(2 * L.W + (Math.random() < 0.5 ? 4 : L.W - 4), Math.round(rnd(10, L.FLOOR_TOP)), rec.cat, rec.frame).setDepth(15000).setInteractive();
-        b.butterfly = true;
-        this.butterflies.push(b);
-        this.flutter(b);
-      }
-    }
-    // клад: крестик на траве появляется время от времени и поблёскивает
-    if (inGarden && !this.digSpot && this.time.now > (this.nextDigAt || 0)) {
-      const x = Math.round(2 * L.W + L.W * rnd(0.3, 0.8));
-      const y = Math.round(rnd(L.FLOOR_TOP + 10, L.ROOM_H - 6));
-      this.digSpot = this.add.image(x, y, 'dig_x').setDepth(-4.9);
-    }
-    if (this.digSpot && Math.random() < 0.5) this.fxSparks.explode(2, this.digSpot.x, this.digSpot.y - 2);
-  }
-
-  ripeFlowers() {
-    const out = [];
-    for (const bed of this.objs) {
-      if (!bed.beh?.gardenBed) continue;
-      bed.plots.forEach((p, i) => {
-        const r = p && p.stage >= 3 && this.recOf(p.id);
-        if (r && /sunflower|tulip|rose|daisy|flower/.test(r.subject)) out.push({ x: bed.x + PLOT_DX[i], y: bed.y - bed.displayHeight - 8 });
-      });
-    }
-    return out;
-  }
-
-  /** Бабочка летает от точки к точке (чаще — к цветам). */
-  flutter(b) {
-    if (!b.active || b.onChar) return;
-    const fl = this.ripeFlowers();
-    const t = fl.length && Math.random() < 0.6 ? pick(fl) : { x: 2 * L.W + rnd(12, L.W - 12), y: rnd(10, L.FLOOR_TOP + 16) };
-    b.setFlipX(t.x < b.x);
-    this.tweens.add({ targets: b, x: Math.round(t.x + rnd(-4, 4)), y: Math.round(t.y + rnd(-4, 2)), duration: rnd(1600, 2600), ease: 'Sine.easeInOut', onComplete: () => this.flutter(b) });
-  }
-
-  /** Поймали бабочку: она садится на голову ближайшему персонажу и через время улетает. */
-  catchButterfly(b) {
-    this.tweens.killTweensOf(b);
-    this.hintDone('butterfly');
-    sfx.sparkle();
-    const chars = this.objs.filter((c) => c.kind === 'char' && this.visible(c) && !c.inTub);
-    if (!chars.length) { this.fxSparks.explode(4, b.x, b.y); this.flutter(b); return; }
-    chars.sort((a, c) => Math.abs(a.x - b.x) - Math.abs(c.x - b.x));
-    const ch = chars[0];
-    b.disableInteractive();
-    this.tweens.add({
-      targets: b, x: ch.x + 2, y: ch.y - ch.displayHeight - 3, duration: 600, ease: 'Sine.easeInOut',
-      onComplete: () => {
-        b.onChar = ch;
-        b.until = this.time.now + 12000;
-        sfx.giggle();
-        this.fxHearts.explode(3, ch.x, ch.y - ch.displayHeight);
-      },
-    });
-  }
-
-  updateButterflies(time) {
-    for (const b of this.butterflies || []) {
-      const ch = b.onChar;
-      if (!ch || !b.active) continue;
-      if (!ch.active || time > b.until) {
-        b.onChar = null;
-        this.tweens.add({ targets: b, y: -12, x: b.x + rnd(-30, 30), duration: 1400, onComplete: () => b.destroy() });
-        continue;
-      }
-      b.x = Math.round(ch.x + 2);
-      b.y = Math.round(ch.y - ch.displayHeight - 3 + Math.sin(time / 300)); // на макушке, не на лице
-      b.setDepth(ch.depth + 0.3);
-    }
-  }
-
-  /** Лопатку — на крестик: копает, и из ямки выскакивает клад. */
-  digTreasure(shovel) {
-    const spot = this.digSpot;
-    this.digSpot = null;
-    this.nextDigAt = this.time.now + 15000; // новый крестик — не сразу, а после паузы
-    const { x, y } = spot;
-    shovel.x = x + 7; shovel.y = y + 2;
-    shovel.restOn = null;
-    for (let i = 0; i < 3; i++) {
-      this.time.delayedCall(i * 260, () => {
-        sfx.dig();
-        this.tweens.add({ targets: shovel, y: shovel.y - 4, duration: 110, yoyo: true });
-        this.fxCrumbs.setParticleTint(0x7a5232);
-        this.fxCrumbs.explode(5, x, y);
-      });
-    }
-    this.time.delayedCall(850, () => {
-      spot.destroy();
-      const hole = this.add.ellipse(x, y - 1, 10, 4, 0x5a3a22).setDepth(-4.9);
-      this.tweens.add({ targets: hole, alpha: 0, delay: 3000, duration: 800, onComplete: () => hole.destroy() });
-      this.treasureList ||= TREASURE.map((sub) => this.findRec(sub)).filter(Boolean);
-      const rec = pick(this.treasureList);
-      if (!rec) return;
-      const o = this.spawnItem(rec, x, y - 2);
-      this.lastTreasure = rec.subject;
-      this.sticker('treasure', rec, x, y - 6);
-      const tx = Math.round(Phaser.Math.Clamp(x + rnd(-20, 20), 2 * L.W + 8, 3 * L.W - 8));
-      const ty = Math.round(Phaser.Math.Clamp(y + rnd(-4, 6), L.FLOOR_TOP + 6, L.ROOM_H - 2));
-      sfx.fanfare();
-      this.fxSparks.explode(16, x, y - 6);
-      this.tweens.add({ targets: o, x: tx, duration: 600 });
-      this.tweens.add({
-        targets: o, y: y - 26, duration: 280, ease: 'Quad.easeOut',
-        onComplete: () => this.tweens.add({ targets: o, y: ty, duration: 380, ease: 'Bounce.easeOut', onComplete: () => { sfx.thud(); this.save(); } }),
-      });
-      this.hintDone('dig');
-    });
-  }
-
   // ---------------------------------------------------------------- навигация между комнатами
   buildNav() {
     const { W, ROOM_H } = L;
@@ -2346,8 +1826,10 @@ class Room extends Phaser.Scene {
 
   goRoom(idx) {
     const cam = this.cameras.main;
-    if (this.jam?.size && Phaser.Math.Clamp(idx, 0, L.ROOMS - 1) !== Math.round(this.cameras.main.scrollX / L.W)) this.jamEnded();
-    this.targetRoom = Phaser.Math.Clamp(idx, 0, L.ROOMS - 1);
+    idx = Phaser.Math.Clamp(idx, 0, L.ROOMS - 1);
+    if (placeOf(idx) !== this.placeNow()) { this.travel(idx); return; } // комната другой локации — туда едут (travel.js)
+    if (this.jam?.size && idx !== Math.round(this.cameras.main.scrollX / L.W)) this.jamEnded();
+    this.targetRoom = idx;
     const target = this.targetRoom * L.W;
     if (Math.abs(cam.scrollX - target) > 1) sfx.pick();
     this.tweens.add({ targets: cam, scrollX: target, duration: 350, ease: 'Sine.easeInOut', onComplete: () => { this.save(); this.potHello(); this.arrived(); } });
@@ -2358,7 +1840,7 @@ class Room extends Phaser.Scene {
     const prev = this.curRoom ?? 0;
     if (this.targetRoom === prev) return;
     this.curRoom = this.targetRoom;
-    setMusicTheme(this.night ? 0 : this.curRoom);
+    setMusicTheme(this.night ? 0 : roomAt(this.curRoom).music);
     this.onRoomEnter(this.curRoom, prev);
   }
 
@@ -2374,13 +1856,13 @@ class Room extends Phaser.Scene {
     // неопробованное подпрыгивает с искорками — «потрогай меня»
     if (Math.random() < 0.5) return;
     const tried = this.flags.tried || {};
-    if (!tried.rain && this.cloud && !this.night && Math.round(this.cameras.main.scrollX / L.W) === 2 && Math.random() < 0.4) {
+    if (!tried.rain && this.cloud && !this.night && Math.round(this.cameras.main.scrollX / L.W) === R.garden && Math.random() < 0.4) {
       this.tweens.add({ targets: this.cloud, y: this.cloud.y - 2, duration: 140, yoyo: true, repeat: 1 });
       this.fxCrumbs.setParticleTint(0x7fbfff);
       this.fxCrumbs.explode(3, this.cloud.x, this.cloud.y + 6);
       return;
     }
-    if (!tried.curtain && this.curtain && Math.round(this.cameras.main.scrollX / L.W) === 4 && Math.random() < 0.4) {
+    if (!tried.curtain && this.curtain && Math.round(this.cameras.main.scrollX / L.W) === R.hall && Math.random() < 0.4) {
       for (const [i, c] of this.curtain.entries()) this.tweens.add({ targets: c, x: c.x + (i ? -2 : 2), duration: 140, yoyo: true, repeat: 1, onUpdate: () => this.clipCurtain() });
       return;
     }
@@ -2408,7 +1890,7 @@ class Room extends Phaser.Scene {
   /** Довести камеру до ближайшей комнаты (после свайпа или переноса предмета к краю). */
   snapCamera(bias = 0) {
     const cam = this.cameras.main;
-    this.goRoom(Math.round(cam.scrollX / L.W + bias));
+    this.goRoom(this.inPlace(Math.round(cam.scrollX / L.W + bias)));
   }
 
   // ---------------------------------------------------------------- drawer UI
@@ -2567,7 +2049,7 @@ class Room extends Phaser.Scene {
       if (pref !== '0' && !musicPlaying() && !over[0]?.ui?.music) { setMusic(true); this.drawMusicIcon(); }
     }
     goFullscreen();
-    if (this.dreaming) return; // уже улетаем в сон
+    if (this.dreaming || this.travelling) return; // уже улетаем в сон или едем в другую локацию
     const q = this.pt(p);
     const top = over[0];
     // второй палец (ладонь, палец держащей руки): начатое перетаскивание/свайп не трогаем;
@@ -2579,6 +2061,8 @@ class Room extends Phaser.Scene {
     if (top?.curtain) { this.toggleCurtain(); this.press = null; return; }
     if (top?.raincloud) { this.rain(); this.press = null; return; }
     if (top?.butterfly) { this.catchButterfly(top); this.press = null; return; }
+    if (top?.crow) { this.shooCrow(top); this.press = null; return; }
+    if (top?.portal) { this.portalTap(top); this.press = null; return; }
     if (top?.ui) { this.press.ui = top.ui; this.press.t0 = performance.now(); return; }
     if (top?.drawerRec?.cast) { this.press.ui = { cast: top.drawerRec.cast }; return; } // портрет: позвать куклу
     if (top?.drawerRec) { this.press.rec = top.drawerRec; return; }
@@ -2597,7 +2081,7 @@ class Room extends Phaser.Scene {
       pr.scrolling = true;
       const cam = this.cameras.main;
       this.tweens.killTweensOf(cam);
-      cam.scrollX = Phaser.Math.Clamp(pr.swipe.cam - dx, 0, L.WORLD - L.W);
+      cam.scrollX = Phaser.Math.Clamp(pr.swipe.cam - dx, ...this.camRange()); // только по комнатам своей локации
       return;
     }
     const q = this.pt(p);
@@ -2614,7 +2098,8 @@ class Room extends Phaser.Scene {
       this.startDrag(pr.obj);
     }
     const o = pr.obj;
-    o.x = Phaser.Math.Clamp(q.x + pr.offX, 4, L.WORLD - 4);
+    const [lo, hi] = this.camRange();
+    o.x = Phaser.Math.Clamp(q.x + pr.offX, lo + 4, hi + L.W - 4);
     o.y = Phaser.Math.Clamp(q.y + pr.offY, o.displayHeight * 0.6, L.H + 10);
     // метла и грабли: что задели на полу — летит в урну
     if (o.kind === 'item' && o.beh.sweeper) this.sweepAt(o);
@@ -2653,12 +2138,12 @@ class Room extends Phaser.Scene {
       // свайп на 15% экрана — перелистнуть комнату
       const dx = (p.x - pr.swipe.sx) / L.P;
       const from = Math.round(pr.swipe.cam / L.W);
-      this.goRoom(dx < -L.W * 0.15 ? from + 1 : dx > L.W * 0.15 ? from - 1 : from);
+      this.goRoom(this.inPlace(dx < -L.W * 0.15 ? from + 1 : dx > L.W * 0.15 ? from - 1 : from));
       return;
     }
     if (pr.moved && pr.obj) { this.drop(pr.obj, q); if (this.edgeScrolled) { this.edgeScrolled = false; this.snapCamera(); } return; }
-    if (pr.ui?.nav) { this.goRoom(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav); return; }
-    if (pr.ui && (pr.ui.map || pr.ui.mapClose || 'mapRoom' in pr.ui)) { this.onMapUi(pr.ui); return; }
+    if (pr.ui?.nav) { this.goRoom(this.inPlace(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav)); return; }
+    if (pr.ui && (pr.ui.map || pr.ui.mapClose || 'mapRoom' in pr.ui || 'mapPlace' in pr.ui)) { this.onMapUi(pr.ui); return; }
     if (pr.ui && ('albumSel' in pr.ui || 'albumTab' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
     if (pr.ui?.dress || pr.ui?.dressDone || pr.ui?.block) { this.onDressUi(pr.ui); return; }
     if (pr.ui) {
@@ -2685,7 +2170,7 @@ class Room extends Phaser.Scene {
     }
     if (pr.rec) { this.tossIn(pr.rec); return; }
     if (pr.obj) { this.tapPoint = q; this.tap(pr.obj); return; }
-    if ([...L.WINDOWS, L.SUN].some(({ x, y, w, h }) => q.x >= x - 2 && q.x <= x + w + 2 && q.y >= y - 2 && q.y <= y + h + 2)) this.applyNight(!this.night, true);
+    if ([...L.WINDOWS, ...L.SUNS].some(({ x, y, w, h }) => q.x >= x - 2 && q.x <= x + w + 2 && q.y >= y - 2 && q.y <= y + h + 2)) this.applyNight(!this.night, true);
   }
 
   startDrag(o) {
@@ -2725,6 +2210,8 @@ class Room extends Phaser.Scene {
     }
     // робот, стиральная машина, компост, удобрение, лужа для вещей
     if (this.cleanDrop(o, q)) { this.save(); return; }
+    // село: стог, трактор, повозка, пугало, мельница
+    if (this.villageDrop(o, q)) { this.save(); return; }
     if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
       const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && (x.beh.seat || x.beh.swing) && x !== o);
       if (seat) { this.sitOn(o, seat); this.save(); return; }
@@ -2968,6 +2455,7 @@ class Room extends Phaser.Scene {
       if (b.edible) { this.feed(o.owner, o); return; }
       if (b.mic) { this.sing(o.owner); return; }
     }
+    if (this.villageTap(o)) return;
     if (b.disco) { this.toggleDisco(o); return; }
     if (b.bin) { this.binTap(o); return; }
     if (b.robot) { this.robotTap(o); return; }
@@ -2985,7 +2473,7 @@ class Room extends Phaser.Scene {
     if (b.album) { this.openAlbum(); return; }
     if (b.cake && o.deco.candles) { if (o.deco.lit) this.blowCandles(o); else this.lightCandles(o); return; }
     if (b.gardenBed) { this.plotTap(o, this.tapPoint?.x ?? o.x); return; }
-    if (b.appleTree) { this.shakeTree(o); return; }
+    if (b.appleTree || b.fruit) { this.shakeTree(o); return; }
     if (b.cauldron) {
       sfx.blub();
       this.fxSparks.explode(4, o.x, o.y - o.displayHeight);
@@ -3014,7 +2502,7 @@ class Room extends Phaser.Scene {
     }
     else if (b.pet) {
       if (o.sleeping) { o.sleeping = false; o.awakeUntil = this.time.now + 8000; }
-      sfx.squeak();
+      this.petVoice(o); // корова мычит, собака лает; у остальных — писк
       this.fxHearts.explode(1, o.x, o.y - o.displayHeight);
     }
     else sfx.boing();
@@ -3542,6 +3030,7 @@ class Room extends Phaser.Scene {
         sfx.chew(); sfx.chew(0.15);
         this.tweens.add({ targets: pet, y: pet.y - 5, duration: 140, yoyo: true, repeat: 1 });
         this.time.delayedCall(320, () => { sfx.squeak(); this.fxHearts.explode(4, pet.x, pet.y - pet.displayHeight); });
+        this.farmFed(pet); // корова после еды даёт молоко, курица — яйцо
       },
     });
   }
@@ -4008,7 +3497,7 @@ class Room extends Phaser.Scene {
       }
     }
     this.night = night;
-    setMusicTheme(night ? 0 : (this.curRoom || 0)); // ночью везде колыбельная
+    setMusicTheme(night ? 0 : roomAt(this.curRoom || 0).music); // ночью везде колыбельная
     this.drawSky();
     this.nightLight?.();
     this.cloud?.setVisible(!night);
@@ -4081,10 +3570,12 @@ class Room extends Phaser.Scene {
     }
     this.updateDreams(time);
     this.updateClean(); // седоки робота-пылесоса и следы испачканной куклы
+    this.updateVillage(); // повозка с грузом, седоки трактора
     const plain = !this.dress && !this.albumUi && !this.mapUi; // нет открытых экранов поверх комнаты
+    const [camLo, camHi] = this.camRange(); // стрелки ведут только по комнатам своей локации
     if (this.nav) {
-      this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && plain));
-      this.nav[1].forEach((o) => o.setVisible(cam.scrollX < L.WORLD - L.W - 2 && plain));
+      this.nav[0].forEach((o) => o.setVisible(cam.scrollX > camLo + 2 && plain));
+      this.nav[1].forEach((o) => o.setVisible(cam.scrollX < camHi - 2 && plain));
     }
     this.mapBtn?.forEach((o) => o.setVisible(plain));
     // статистика для родителей: секунды активной игры по комнатам (экран трогали в последние 20 с)
@@ -4092,7 +3583,7 @@ class Room extends Phaser.Scene {
     if (this.statAcc >= 1000) {
       const sec = Math.floor(this.statAcc / 1000);
       this.statAcc -= sec * 1000;
-      if (!document.hidden && performance.now() - (this.lastInput || -1e9) < 20000) statTime(Math.round(cam.scrollX / L.W), sec, today());
+      if (!document.hidden && performance.now() - (this.lastInput || -1e9) < 20000) statTime(roomAt(Math.round(cam.scrollX / L.W)).stat, sec, today());
     }
     // шестерёнка: удержание 2 секунды открывает родительскую зону
     if (this.press?.ui?.gear) {
@@ -4108,8 +3599,8 @@ class Room extends Phaser.Scene {
       const sy = p.y / L.P;
       const v = sy > L.ROOM_H ? 0 : sx < 12 ? -3 : sx > L.W - 12 ? 3 : 0;
       if (v) {
-        cam.scrollX = Phaser.Math.Clamp(cam.scrollX + v, 0, L.WORLD - L.W);
-        pr.obj.x = Phaser.Math.Clamp(cam.scrollX + sx + pr.offX, 4, L.WORLD - 4);
+        cam.scrollX = Phaser.Math.Clamp(cam.scrollX + v, camLo, camHi);
+        pr.obj.x = Phaser.Math.Clamp(cam.scrollX + sx + pr.offX, camLo + 4, camHi + L.W - 4);
         this.edgeScrolled = true;
       }
     }
@@ -4119,12 +3610,12 @@ class Room extends Phaser.Scene {
     }
     for (const o of this.objs) {
       if (o.kind === 'char' || o.dragging || o.owner) continue;
-      o.setDepth(o.beh.flat ? -5 : o.restOn ? o.restOn.depth + 0.5 : o.y); // ковёр всегда снизу
+      o.setDepth(o.beh.flat ? -5 : o.restOn ? o.restOn.depth + this.restLayer(o.restOn) : o.y); // ковёр всегда снизу
       if (o.beh.pet) this.updateNest(o);
     }
     for (const ch of this.objs) {
       if (ch.kind !== 'char') continue;
-      if (!ch.dragging) ch.setDepth(ch.restOn ? ch.restOn.depth + 0.5 : ch.y);
+      if (!ch.dragging) ch.setDepth(ch.restOn ? ch.restOn.depth + this.restLayer(ch.restOn) : ch.y);
       this.updatePose(ch); // стоит, сидит или лежит под одеялом
       const s = ch.mul;
       for (const [slot, it] of Object.entries(ch.slots)) {
@@ -4190,7 +3681,7 @@ class Room extends Phaser.Scene {
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
         dirty: o.dirty || undefined, took: o.tookBy ? [o.tookBy, o.tookSlot] : undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
         stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
-        color: o.color, photoId: o.photoId,
+        color: o.color, photoId: o.photoId, flip: (o.beh.tractor && o.flipX) || undefined,
       })),
       chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
         uid: o.uid, cast: o.cast || undefined, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
@@ -4230,6 +3721,7 @@ class Room extends Phaser.Scene {
       const contents = (s.contents || []).map((id) => this.recOf(id)?.id).filter(Boolean);
       const it = this.spawnItem(rec, fx(s.x), fy(s.y), { uid: s.uid, lit: s.lit, contents, plots: s.plots, deco: s.deco, color: s.color, photoId: s.photoId });
       if (s.bites && it.beh.edible) { it.bites = s.bites; this.applyBites(it); }
+      if (s.flip) it.setFlipX(true);
       byUid.set(s.uid, it);
     }
     for (const s of [...st.objs, ...st.chars]) {
@@ -4270,6 +3762,10 @@ installDream(Room, ENV);
 installTidy(Room, ENV);
 installClean(Room, ENV);
 installPose(Room, ENV);
+installGarden(Room, ENV);
+installScenery(Room, ENV);
+installTravel(Room, ENV);
+installVillage(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)

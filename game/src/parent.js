@@ -7,11 +7,12 @@ import { helpHtml, HELP_CSS } from './help.js';
 
 // ---------------------------------------------------------------- статистика
 const STATS_KEY = 'pixel-house-stats';
-const ROOMS = ['Спальня', 'Кухня', 'Сад', 'Ванная', 'Зал', 'Сны (все миры)'];
+// по ячейкам статистики (stat в places.js; 5 — сны)
+const ROOMS = ['Спальня', 'Кухня', 'Сад', 'Ванная', 'Зал', 'Сны (все миры)', 'Село: двор', 'Село: огород', 'Село: сад', 'Село: поле'];
 const FEATS = {
   feed: 'Кормление', potion: 'Зелья', wear: 'Наряды и вещи в руки', brew: 'Котёл', dressup: 'Гардероб', jam: 'Музыка',
   plant: 'Посадка', harvest: 'Урожай', bathe: 'Купание', gift: 'Подарки', album: 'Альбом', sticker: 'Новые наклейки',
-  wish: 'Исполненные желания', cast: 'Позвать куклу', map: 'Карта комнат', tree: 'Ёлка',
+  wish: 'Исполненные желания', cast: 'Позвать куклу', map: 'Карта', tree: 'Ёлка',
   fridge: 'Холодильник', smoothie: 'Блендер', cook: 'Плита', makeup: 'Косметика', teeth: 'Зубная щётка',
   bubbles: 'Пузыри в ванне', toilet: 'Унитаз', potty: 'Горшок', dryer: 'Фен', bounce: 'Прыжки на кровати',
   chest: 'Сундук', photo: 'Фотоаппарат', stars: 'Ночник', rain: 'Тучка', swing: 'Качели', butterfly: 'Бабочки',
@@ -20,6 +21,9 @@ const FEATS = {
   dreamtoys: 'Мечта у сундука', dreamforest: 'Мечта у яблони', dreamspace: 'Мечта под диско-шаром',
   tidy: 'Урна: уборка комнаты', trash: 'Урна: выбросила предмет', sweep: 'Метла и грабли',
   castleave: 'Отпустила куклу из дома',
+  travel: 'Поездка в другую локацию', cart: 'Повозка: привезла груз или седоков',
+  coop: 'Курятник', farmfood: 'Покормила корову или курицу', wool: 'Причесала овцу', well: 'Колодец', scarecrow: 'Пугало', crow: 'Спугнула ворону',
+  fruit: 'Груша, вишня, слива', hive: 'Улей', birdhouse: 'Скворечник', hay: 'Стог сена', tractor: 'Трактор', mill: 'Мельница',
   robot: 'Робот-пылесос', roboride: 'Катание на роботе', wash: 'Стиральная машина', mop: 'Швабра', compost: 'Компост: удобрение', clean: 'Комната убрана',
   dreamwish: 'Во сне: исполнила желание жителя', dreamwalk: 'Во сне: кукла идёт за пальцем', dreamevent: 'Во сне: поймала редкое событие',
   w_forest: 'Мир: сказочный лес', w_planet: 'Мир: другая планета', w_sea: 'Мир: подводное царство', w_clouds: 'Мир: облачная страна',
@@ -72,7 +76,7 @@ const CSS = `
 #parent-zone .row{display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap}
 #parent-zone .bar{flex:1;height:10px;background:#3a2546;border-radius:5px;overflow:hidden;min-width:60px}
 #parent-zone .bar b{display:block;height:100%;background:#52b893}
-#parent-zone .lbl{width:74px}
+#parent-zone .lbl{width:96px}
 #parent-zone .val{width:64px;text-align:right;color:#e2ccff}
 #parent-zone small{color:#cdb8dc}
 #parent-zone input[type=range]{flex:1;height:32px}
@@ -84,9 +88,10 @@ const mins = (sec) => (sec < 60 ? `${Math.round(sec)} с` : `${Math.round(sec / 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 function statsHtml() {
-  const total = stats.rooms.reduce((a, b) => a + b, 0);
-  const max = Math.max(1, ...stats.rooms);
-  const rooms = ROOMS.map((name, i) => `<div class="row"><span class="lbl">${name}</span><span class="bar"><b style="width:${Math.round((stats.rooms[i] || 0) / max * 100)}%"></b></span><span class="val">${mins(stats.rooms[i] || 0)}</span></div>`).join('');
+  const secs = ROOMS.map((_, i) => stats.rooms[i] || 0); // ячейки, в которые ещё не заходили, пусты
+  const total = secs.reduce((a, b) => a + b, 0);
+  const max = Math.max(1, ...secs);
+  const rooms = ROOMS.map((name, i) => `<div class="row"><span class="lbl">${name}</span><span class="bar"><b style="width:${Math.round(secs[i] / max * 100)}%"></b></span><span class="val">${mins(secs[i])}</span></div>`).join('');
   const days = Object.keys(stats.days).sort().slice(-7).map((d) => `${d.slice(8)}.${d.slice(5, 7)} — ${mins(stats.days[d])}`).join(' · ');
   const feats = Object.entries(stats.feats).sort((a, b) => b[1] - a[1]).slice(0, 16)
     .map(([k, n]) => `<li>${esc(FEATS[k] || k)} — ${n}</li>`).join('');
