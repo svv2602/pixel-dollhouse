@@ -235,7 +235,7 @@ export const MAKEUP = {
   hearts: [['#ff3b6b', [[4, 9], [6, 9], [5, 10], [13, 9], [15, 9], [14, 10]]]],
 };
 
-function buildMap(look, face) {
+function buildMap(look, face, pose = null) {
   const rows = BASE.slice();
   for (const [y, r] of Object.entries(OUTFITS[look.outfit] || {})) rows[+y] = r;
   // выражение лица (до причёски: у пучка строки сдвигаются)
@@ -277,6 +277,8 @@ function buildMap(look, face) {
     rows[0] = '..H..H..H..H..H..H..';
     rows[1] = '..HH.HH.HHHH.HH.HH..';
   }
+  // сидит: голеней не видно (строки 28–31), туфли сразу под подолом; голова и руки остаются на месте
+  if (pose === 'sit') { rows.splice(28, 4); rows.push(...Array(4).fill('....................')); }
   return rows;
 }
 
@@ -335,11 +337,11 @@ function draw(map, look) {
 const FACES = [['', 'normal'], ['_open', 'open'], ['_blink', 'blink'], ['_yuck', 'yuck'], ['_sour', 'sour'], ['_hot', 'hot'], ['_smile', 'smile'],
   ['_lookl', 'lookl'], ['_lookr', 'lookr'], ['_yawn', 'yawn']];
 
-export function makeCharTextures(scene, key, look, onlyBase = false) {
+export function makeCharTextures(scene, key, look, onlyBase = false, pose = null) {
   for (const [suffix, face] of onlyBase ? FACES.slice(0, 1) : FACES) {
     const k = key + suffix;
     if (scene.textures.exists(k)) scene.textures.remove(k);
-    scene.textures.addCanvas(k, draw(buildMap(look, face), look));
+    scene.textures.addCanvas(k, draw(buildMap(look, face, pose), look));
   }
 }
 

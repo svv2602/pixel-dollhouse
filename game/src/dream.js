@@ -3,7 +3,7 @@
 // сундук с игрушками (игрушечный мир), яблоня (лес), диско-шар (планета).
 // Мир сна — отдельная сцена: дом в это время спит и не меняется; из сна возвращается только сувенир.
 import Phaser from 'phaser';
-import { ANCHOR, makeCharTextures } from './character.js';
+import { ANCHOR } from './character.js';
 import { WORLDS, WORLD_KEYS, makeDreamTextures } from './dreamworlds.js';
 import { DREAM_MUSIC, setMusicTheme } from './sfx.js';
 import { installDreamPlay } from './dreamplay.js';
@@ -186,7 +186,7 @@ export function installDream(Room, ENV) {
     /** Кто попадает в сон: сама кукла, те, кто спит рядом, и игрушка из рук (во сне она оживает). */
     dreamCast(ch, kind) {
       const doll = (c) => ({
-        kind: 'doll', uid: c.uid, key: c.key, mul: c.mul,
+        kind: 'doll', uid: c.uid, key: c.baseKey, mul: c.mul,
         wear: ['head', 'face'].map((s) => c.slots[s]).filter(Boolean).map((it) => ({
           tex: it.texture.key, frame: it.frame.name, dx: it.x - c.x, dy: it.y - c.y, behind: it.depth < c.depth,
         })),
@@ -287,7 +287,7 @@ export function installDream(Room, ENV) {
       this.clearMark(c);
       if (world === 'candy') {
         c.look = { ...c.look, mustache: '#a8703f' };
-        makeCharTextures(this, c.key, c.look);
+        this.charTex(c);
         if (!c.busy) c.setTexture(c.key);
         return;
       }
@@ -319,6 +319,7 @@ export function installDream(Room, ENV) {
         if (time > m.until) { this.clearMark(c); continue; }
         const k = c.scaleY;
         const d = c.depth;
+        for (const p of m.parts) p.setVisible(c.pose !== 'lie'); // под одеялом следа не видно
         if (m.tail) m.tail.setPosition(c.x, c.y + 3 * k).setScale(k).setFlipX(c.flipX).setDepth(d + 0.1);
         if (m.cap) {
           m.cap.setPosition(c.x, Math.round(c.y - (ANCHOR.hatY - 3) * k)).setScale(k).setDepth(d + 0.35);
@@ -443,7 +444,7 @@ export class Dream extends Phaser.Scene {
 
   addDoll(c, x, y) {
     const d = this.add.image(Math.round(x), Math.round(y), c.key).setOrigin(0.5, 1).setScale(c.mul || 1).setInteractive();
-    Object.assign(d, { kind: 'doll', uid: c.uid, key: c.key, mul: c.mul || 1, drag: true, tws: [], hand: null, wear: [] });
+    Object.assign(d, { kind: 'doll', uid: c.uid, key: c.key, baseKey: c.key, mul: c.mul || 1, drag: true, tws: [], hand: null, wear: [] });
     for (const w of c.wear || []) {
       if (!this.textures.exists(w.tex)) continue;
       d.wear.push(Object.assign(this.add.image(x, y, w.tex, w.frame).setOrigin(0.5, 1).setScale(d.mul), { dx: w.dx, dy: w.dy, behind: w.behind }));
@@ -889,6 +890,9 @@ export class Dream extends Phaser.Scene {
     for (const d of this.dolls) {
       if (!d.active) continue;
       const r = d.mount;
+      // верхом кукла сидит (русалка с хвостом и пассажир корзины шара — стоят)
+      const k = d.baseKey + (r && !d.dragging && !d.tail && !r.ride.over ? 's' : '');
+      if (k !== d.key) { const face = d.texture.key.startsWith(d.key) ? d.texture.key.slice(d.key.length) : ''; d.key = k; d.setTexture(k + face); }
       if (r && !d.dragging) {
         if (!r.active) d.mount = null;
         else { d.x = r.x + (r.flipX ? -1 : 1) * (r.ride.dx || 0); d.y = r.y - r.ride.seat; d.setDepth(r.depth + (r.ride.over ? 0.1 : -0.1)); }

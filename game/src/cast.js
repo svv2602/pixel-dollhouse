@@ -28,7 +28,7 @@ export function installCast(Room, { L, rnd, sfx, statHit }) {
 
     /** Портреты в ящике — по текущему виду куклы (после гардероба меняются). */
     refreshCastIcons() {
-      for (const c of CAST) makeHeadIcon(this, `cast_${c.id}_icon`, this.castChar(c.id)?.look || c.look);
+      for (const c of CAST) makeHeadIcon(this, `cast_${c.id}_icon`, this.castChar(c.id)?.look || this.flags.castLook?.[c.id] || c.look);
       if (this.cat === 'people') this.refreshDrawer();
     },
 
@@ -70,7 +70,7 @@ export function installCast(Room, { L, rnd, sfx, statHit }) {
       }
       let fromLeft = room > 0 && (room === L.ROOMS - 1 || Math.random() < 0.5);
       if (!ch) {
-        ch = this.spawnChar(0, L.ROOM_H - 5, { ...def.look }, { cast: id });
+        ch = this.spawnChar(0, L.ROOM_H - 5, { ...(this.flags.castLook?.[id] || def.look) }, { cast: id }); // ушедшая возвращается в том же виде
         sfx.sparkle();
         this.refreshCastIcons();
       } else {

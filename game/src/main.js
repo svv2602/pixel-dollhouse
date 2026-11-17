@@ -18,6 +18,7 @@ import { installRepair } from './repair.js';
 import { installDream, Dream } from './dream.js';
 import { makeTidy, installTidy, RAKES } from './tidy.js';
 import { makeClean, installClean } from './clean.js';
+import { makePose, installPose } from './pose.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -336,6 +337,7 @@ class Room extends Phaser.Scene {
     for (const r of play) this.byId.set(r.id, r);
     const tidy = makeTidy(this); // урна и метла — в игрушках
     for (const r of tidy) this.byId.set(r.id, r);
+    makePose(this);
     const clean = makeClean(this); // робот и швабра — в игрушках, стиральная машина — в мебели, компост — в саду
     for (const r of clean) this.byId.set(r.id, r);
     this.winter = isWinter(today());
@@ -760,10 +762,10 @@ class Room extends Phaser.Scene {
     const uid = extra.uid || this.uidSeq++;
     this.uidSeq = Math.max(this.uidSeq, uid + 1);
     const key = `char${uid}`;
-    makeCharTextures(this, key, look);
+    this.charTex({ baseKey: key, look }); // стоя и сидя
     const o = this.add.image(x, y, key).setOrigin(0.5, 1).setInteractive();
     Object.assign(o, {
-      kind: 'char', uid, key, look, mul: extra.mul || 1, slots: { head: null, face: null, hand: null }, cast: extra.cast || null,
+      kind: 'char', uid, key, baseKey: key, pose: 'stand', look, mul: extra.mul || 1, slots: { head: null, face: null, hand: null }, cast: extra.cast || null,
       busy: false, rainbow: 0,
     });
     o.setScale(o.mul);
@@ -1327,7 +1329,7 @@ class Room extends Phaser.Scene {
       if (pinkHair || lk.makeup?.length || lk.mustache || lk.frazzled) {
         o.look = { ...lk, makeup: [], mustache: undefined, frazzled: undefined };
         if (pinkHair) o.look = { ...o.look, hair: lk.prevHair, prevHair: undefined };
-        makeCharTextures(this, o.key, o.look);
+        this.charTex(o);
         o.setTexture(o.key);
       }
     }
@@ -1393,7 +1395,7 @@ class Room extends Phaser.Scene {
     this.hintDone('dryer', ch);
     const i = HAIR_STYLE_KEYS.indexOf(ch.look.hairStyle || 'bob');
     ch.look = { ...ch.look, hairStyle: HAIR_STYLE_KEYS[(i + 1) % HAIR_STYLE_KEYS.length] };
-    makeCharTextures(this, ch.key, ch.look);
+    this.charTex(ch);
     ch.setTexture(ch.key);
     sfx.poof(); sfx.sparkle();
     this.fxPoof.explode(12, ch.x - 8, ch.y - ch.displayHeight + 6);
@@ -1592,7 +1594,7 @@ class Room extends Phaser.Scene {
     for (const ch of this.objs) {
       if (ch.kind !== 'char' || ch.inTub || ch.dragging || Math.abs(ch.x - pot.x) > 40 || Math.abs(ch.y - pot.y) > 30) continue;
       ch.look = { ...ch.look, frazzled: true };
-      makeCharTextures(this, ch.key, ch.look);
+      this.charTex(ch);
       ch.setTexture(ch.key + '_open');
       this.stain(ch, 0x3a3340);
       this.time.delayedCall(700, () => { if (!ch.busy && ch.active) ch.setTexture(ch.key); sfx.giggle(); });
@@ -1630,7 +1632,7 @@ class Room extends Phaser.Scene {
     mk.delete(o.beh.makeup);
     mk.add(o.beh.makeup); // последняя — поверх остальных
     ch.look = { ...ch.look, makeup: [...mk] };
-    makeCharTextures(this, ch.key, ch.look);
+    this.charTex(ch);
     this.hintDone('makeup', ch);
     ch.busy = true;
     ch.setTexture(ch.key + '_blink');
@@ -1659,7 +1661,7 @@ class Room extends Phaser.Scene {
         this.fxCrumbs.setParticleTint(0xffffff);
         this.fxCrumbs.explode(2, m.x + rnd(-2, 2), m.y);
         if (++i < 10) return;
-        if (ch.look.mustache) { ch.look = { ...ch.look, mustache: undefined }; makeCharTextures(this, ch.key, ch.look); }
+        if (ch.look.mustache) { ch.look = { ...ch.look, mustache: undefined }; this.charTex(ch); }
         ch.sweets = 0;
         this.hintDone('teeth', ch);
         ch.setTexture(ch.key + '_smile');
@@ -1757,7 +1759,7 @@ class Room extends Phaser.Scene {
   /** Сесть на стул: персонаж, питомец или игрушка — в зале они становятся зрителями. */
   sitOn(o, seat, quiet = false) {
     o.x = Math.round(seat.x);
-    o.y = Math.round(seat.y - (o.kind === 'char' ? 4 : 6));
+    o.y = Math.round(seat.y - (o.kind === 'char' ? 2 : 6)); // кукла сидит: подол на сиденье, туфли свисают
     o.restOn = seat;
     o.inTub = null;
     if (seat.beh.swing) seat.amp = Math.max(seat.amp || 0, 0.3);
@@ -2785,6 +2787,8 @@ class Room extends Phaser.Scene {
       }
     }
     if (q.y > L.ROOM_H) {
+      // куклу в ящик можно утащить только при открытой вкладке «люди» — тогда она уходит из дома (портрет вернёт её)
+      if (o.kind === 'char' && this.cat === 'people' && o.cast) { this.castLeave(o); return; }
       if (o.kind === 'char') { o.y = L.ROOM_H - 3; this.settle(o); } else this.removeObj(o);
       this.save();
       return;
@@ -3127,7 +3131,7 @@ class Room extends Phaser.Scene {
               if (last && o.beh.smoothie) {
                 // коктейль оставляет «усы» — смываются в ванне или зубной щёткой
                 ch.look = { ...ch.look, mustache: lightHex(o.color) };
-                makeCharTextures(this, ch.key, ch.look);
+                this.charTex(ch);
                 this.hintDone('smoothie', ch);
               }
               ch.setTexture(ch.key + (taste ? `_${taste}` : '_blink'));
@@ -3388,7 +3392,8 @@ class Room extends Phaser.Scene {
       if (!should && c.sleeping && !c.busy) { c.sleeping = false; c.setTexture(c.key); }
       if (c.sleeping) {
         c.setTexture(c.key + '_blink');
-        this.fxZ.explode(1, c.x + 6, c.y - c.displayHeight + 4);
+        if (c.lie) this.fxZ.explode(1, c.lie.x + 6, c.lie.y - c.displayHeight + 4); // «Z» — над головой на подушке
+        else this.fxZ.explode(1, c.x + 6, c.y - c.displayHeight + 4);
       }
       // спящей снятся миры: над ней облачка — тап переносит в сон (см. dream.js)
       if (c.sleeping) this.dream(c); else if (c.dreamPicks) this.endDream(c);
@@ -3564,11 +3569,11 @@ class Room extends Phaser.Scene {
             const PINK = HAIR[6];
             if (ch.look.hair === PINK) ch.look = { ...ch.look, hair: ch.look.prevHair || HAIR[0] };
             else ch.look = { ...ch.look, prevHair: ch.look.hair, hair: PINK };
-            makeCharTextures(this, ch.key, ch.look);
+            this.charTex(ch);
           } else if (fx === 'dress') {
             const i = DRESS.indexOf(ch.look.dress);
             ch.look = { ...ch.look, dress: DRESS[(i + 1) % DRESS.length] };
-            makeCharTextures(this, ch.key, ch.look);
+            this.charTex(ch);
           } else if (fx === 'ice') {
             ch.ice = this.time.now + 5000;
             const x0 = ch.x;
@@ -3580,7 +3585,7 @@ class Room extends Phaser.Scene {
             this.tweens.add({ targets: ch, y: ch.y - 4, duration: 120, yoyo: true });
           } else if (fx === 'color') {
             ch.look = { ...ch.look, hair: pick(HAIR.filter((h) => h !== ch.look.hair)), dress: pick(DRESS.filter((d) => d !== ch.look.dress)) };
-            makeCharTextures(this, ch.key, ch.look);
+            this.charTex(ch);
           } else if (fx === 'rainbow') {
             ch.rainbow = this.time.now + 6000;
           } else if (fx === 'float') {
@@ -3959,7 +3964,7 @@ class Room extends Phaser.Scene {
     const { field, value } = ui.dress;
     if (d.ch.look[field] === value) return;
     d.ch.look = { ...d.ch.look, [field]: value };
-    makeCharTextures(this, d.ch.key, d.ch.look);
+    this.charTex(d.ch);
     d.ch.setTexture(d.ch.key);
     d.preview.setTexture(d.ch.key);
     sfx.wear();
@@ -4114,10 +4119,12 @@ class Room extends Phaser.Scene {
     for (const o of this.objs) {
       if (o.kind === 'char' || o.dragging || o.owner) continue;
       o.setDepth(o.beh.flat ? -5 : o.restOn ? o.restOn.depth + 0.5 : o.y); // ковёр всегда снизу
+      if (o.beh.pet) this.updateNest(o);
     }
     for (const ch of this.objs) {
       if (ch.kind !== 'char') continue;
       if (!ch.dragging) ch.setDepth(ch.restOn ? ch.restOn.depth + 0.5 : ch.y);
+      this.updatePose(ch); // стоит, сидит или лежит под одеялом
       const s = ch.mul;
       for (const [slot, it] of Object.entries(ch.slots)) {
         if (!it) continue;
@@ -4250,7 +4257,7 @@ class Room extends Phaser.Scene {
 }
 
 // Крупные блоки вынесены в отдельные файлы и подключаются как методы сцены
-const ENV = { L, rnd, pick, pixelMap, sfx, statHit, statTime, today, COOK, GROW, TREASURE, DREAMS, DREAM_THEMES };
+const ENV = { L, rnd, pick, pixelMap, sfx, statHit, statTime, today, COOK, GROW, TREASURE, DREAMS, DREAM_THEMES, RX };
 installCast(Room, ENV);
 installLife(Room, ENV);
 installNav(Room, ENV);
@@ -4260,6 +4267,7 @@ installRepair(Room, ENV);
 installDream(Room, ENV);
 installTidy(Room, ENV);
 installClean(Room, ENV);
+installPose(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)
