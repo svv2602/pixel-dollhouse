@@ -24,6 +24,8 @@ export const CAST = [
   // в парке: смотрительница зоопарка и чемпионка на спортплощадке
   { id: 'keeper', park: 'zoo', look: { hair: '#6b3f2a', skin: SKIN[1], dress: '#8fb04a', hairStyle: 'pigtails', outfit: 'overalls' } },
   { id: 'champ', park: 'sport', look: { hair: '#2a2433', skin: SKIN[3], dress: '#ef5a6f', hairStyle: 'ponytail', outfit: 'shorts' } },
+  // в игровой дома: подружка с хвостиками
+  { id: 'pip', play: true, look: { hair: '#ff9a4a', skin: SKIN[0], dress: '#7ac8f2', hairStyle: 'pigtails', outfit: 'overalls' } },
 ];
 const HOME_X = { 1: 0.72, 3: 0.5, 4: 0.5 }; // где встаёт жилец комнаты (доля ширины)
 const FARM_X = { yard: 0.2, orchard: 0.37, field: 0.41 }; // жильцы села: бабушка во дворе, малыш в саду, папа в поле
@@ -99,6 +101,15 @@ export function installCast(Room, { L, rnd, sfx, statHit }) {
         for (const c of CAST) {
           if (!c.park || this.castChar(c.id)) continue;
           this.spawnChar(Math.round(R[c.park] * L.W + L.W * PARK_X[c.park]), L.ROOM_H - 5, { ...(this.flags.castLook?.[c.id] || c.look) }, { cast: c.id });
+        }
+        this.save();
+      }
+      // подружка в игровой — и в старых сохранениях
+      if (!this.flags.cast7) {
+        this.flags.cast7 = true;
+        for (const c of CAST) {
+          if (!c.play || this.castChar(c.id)) continue;
+          this.spawnChar(Math.round(R.playroom * L.W + L.W * 0.3), L.ROOM_H - 5, { ...(this.flags.castLook?.[c.id] || c.look) }, { cast: c.id });
         }
         this.save();
       }

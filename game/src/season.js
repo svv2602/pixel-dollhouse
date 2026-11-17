@@ -1,5 +1,6 @@
 // Повод вернуться: раз в день — посылка-сюрприз и подросшие за ночь грядки;
-// зимой (1 декабря – 14 января) — ёлка с огоньками в спальне и снег в саду.
+// зимой (1 декабря – 14 января) — ёлка с огоньками в спальне и на улице города, снег на улицах дома, села,
+// города и парка (море и аквапарк остаются летними: тёплые края).
 import { canvasFor } from './furniture.js';
 import { writeSnapshot } from './repair.js';
 import { R, placeByKey } from './places.js';
@@ -94,7 +95,11 @@ export function installSeason(Room, { L, rnd, sfx }) {
       if (this.winter && this.flags.ny !== winterYear(d)) {
         this.flags.ny = winterYear(d);
         const rec = this.byId.get('ny-tree');
-        if (!this.objs.some((o) => o.beh?.nyTree)) {
+        // ёлка на городской улице, между светофором и фонтаном
+        if (!this.objs.some((o) => o.beh?.nyTree && Math.floor(o.x / L.W) === R.street)) {
+          this.spawnItem(rec, Math.round(R.street * L.W + L.W * 0.47), L.FLOOR_TOP + 4);
+        }
+        if (!this.objs.some((o) => o.beh?.nyTree && Math.floor(o.x / L.W) !== R.street)) {
           const tree = this.spawnItem(rec, Math.round(L.W * 0.37), L.FLOOR_TOP + 10);
           for (const [i, dx] of [[1, -9], [2, 10]]) {
             const g = this.byId.get(`gift-${i}`);
@@ -122,6 +127,8 @@ export function installSeason(Room, { L, rnd, sfx }) {
         const farm = placeByKey('village');
         fall(farm.first, farm.last + 1);
         fall(R.street, R.street + 1); // в городе на улице — только первая комната
+        fall(R.zoo, R.zoo + 1); // в парке — зоопарк, аттракционы и спортплощадка; аквапарк и море остаются летними
+        fall(R.rides, R.sport + 1);
       }
     },
 

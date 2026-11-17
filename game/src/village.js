@@ -237,6 +237,7 @@ export function installVillage(Room, { L, rnd, pick, sfx }) {
       o.inTub = null;
       sfx.drop();
       this.tweens.add({ targets: o, y: o.y - 3, duration: 100, yoyo: true });
+      this.playroomPerch(o, p); // лошадка, шалаш, сухой бассейн
       if (p.beh.hay) {
         sfx.rustle();
         this.fxCrumbs.setParticleTint(0xf2c94c);

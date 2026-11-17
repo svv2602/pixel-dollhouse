@@ -1,7 +1,8 @@
 // Родительская зона: обычная HTML-панель поверх игры (здесь текст можно — это для взрослых).
 // Громкость, локальная статистика «во что играет», голоса семьи, копия сохранения, сброс дома.
 // Всё хранится только на устройстве; в сеть ничего не уходит.
-import { readSnapshots } from './repair.js';
+import { readSnapshots, pruneSnapshots } from './repair.js';
+import { getBedtime, setBedtime, bedtimeLeft, BEDTIME_CHOICES } from './bedtime.js';
 import { getVolume, setVolume, setMusic, musicPlaying, VOICES, hasVoice, setVoice, say, unlockAudio } from './sfx.js';
 import { helpHtml, HELP_CSS } from './help.js';
 
@@ -11,7 +12,9 @@ const STATS_KEY = 'pixel-house-stats';
 const ROOMS = ['Спальня', 'Кухня', 'Сад', 'Ванная', 'Зал', 'Сны (все миры)', 'Село: двор', 'Село: огород', 'Село: сад', 'Село: поле',
   'Город: улица', 'Город: супермаркет', 'Город: кафе', 'Город: одежда', 'Город: игрушки',
   'Море: пляж', 'Море: в море', 'Море: под водой', 'Море: остров',
-  'Парк: зоопарк', 'Парк: аквапарк', 'Парк: аттракционы', 'Парк: спортплощадка'];
+  'Парк: зоопарк', 'Парк: аквапарк', 'Парк: аттракционы', 'Парк: спортплощадка', 'Игровая'];
+/** Порядок строк в таблице: игровая — среди комнат дома, хотя её ячейка появилась последней. */
+const ROOM_ORDER = [0, 1, 2, 3, 4, 23, ...Array.from({ length: 18 }, (_, i) => i + 5)];
 const FEATS = {
   feed: 'Кормление', potion: 'Зелья', wear: 'Наряды и вещи в руки', brew: 'Котёл', dressup: 'Гардероб', jam: 'Музыка',
   plant: 'Посадка', harvest: 'Урожай', bathe: 'Купание', gift: 'Подарки', album: 'Альбом', sticker: 'Новые наклейки',
@@ -38,6 +41,8 @@ const FEATS = {
   bamboo: 'Зоопарк: бамбуковая роща (панды, коала)', icepool: 'Зоопарк: ледяная скала (пингвины, тюлень)', elephant: 'Слон', monkey: 'Обезьянка на дереве',
   zoofeed: 'Покормила слона или обезьянку', slide: 'Водная горка', raft: 'Плот-ватрушка', geyser: 'Фонтанчик в аквапарке', tipbucket: 'Ведро на башне',
   carousel: 'Карусель', coaster: 'Вагончик-гусеница', hammer: 'Силомер', treats: 'Ларёк со сладостями',
+  rockhorse: 'Игровая: лошадка-качалка', tent: 'Игровая: шалаш', ballpit: 'Игровая: сухой бассейн', puppets: 'Игровая: кукольный театр',
+  decor: 'Обои и пол (валик)', bedtime: 'Таймер сна: «спокойной ночи»',
   goal: 'Гол в ворота', hoop: 'Бросок в кольцо', trampoline: 'Батут', winners: 'Пьедестал и медали', wheels: 'Скейт, самокат, велосипед',
   robot: 'Робот-пылесос', roboride: 'Катание на роботе', wash: 'Стиральная машина', mop: 'Швабра', compost: 'Компост: удобрение', clean: 'Комната убрана',
   dreamwish: 'Во сне: исполнила желание жителя', dreamwalk: 'Во сне: кукла идёт за пальцем', dreamevent: 'Во сне: поймала редкое событие',
@@ -106,7 +111,7 @@ function statsHtml() {
   const secs = ROOMS.map((_, i) => stats.rooms[i] || 0); // ячейки, в которые ещё не заходили, пусты
   const total = secs.reduce((a, b) => a + b, 0);
   const max = Math.max(1, ...secs);
-  const rooms = ROOMS.map((name, i) => `<div class="row"><span class="lbl">${name}</span><span class="bar"><b style="width:${Math.round(secs[i] / max * 100)}%"></b></span><span class="val">${mins(secs[i])}</span></div>`).join('');
+  const rooms = ROOM_ORDER.map((i) => `<div class="row"><span class="lbl">${ROOMS[i]}</span><span class="bar"><b style="width:${Math.round(secs[i] / max * 100)}%"></b></span><span class="val">${mins(secs[i])}</span></div>`).join('');
   const days = Object.keys(stats.days).sort().slice(-7).map((d) => `${d.slice(8)}.${d.slice(5, 7)} — ${mins(stats.days[d])}`).join(' · ');
   const feats = Object.entries(stats.feats).sort((a, b) => b[1] - a[1]).slice(0, 16)
     .map(([k, n]) => `<li>${esc(FEATS[k] || k)} — ${n}</li>`).join('');
@@ -115,6 +120,35 @@ function statsHtml() {
     ${days ? `<div class="row"><small>По дням: ${days}</small></div>` : ''}
     <h2 style="margin-top:10px">Чем пользуется (сколько раз)</h2>
     ${feats ? `<ul class="feats">${feats}</ul>` : '<small>Пока нет данных.</small>'}`;
+}
+
+function bedtimeHtml() {
+  const cur = getBedtime();
+  const left = bedtimeLeft();
+  const opts = BEDTIME_CHOICES.map((m) => `<option value="${m}" ${m === cur ? 'selected' : ''}>${m ? `через ${m} мин` : 'выключен'}</option>`).join('');
+  return `<div class="row"><span>Спокойной ночи</span><select data-act="bedtime" style="font:inherit;padding:6px;border-radius:8px">${opts}</select></div>
+    <small>${left === null ? 'Когда время выйдет, в игре наступит ночь: куклы зевают и ложатся спать, звучит колыбельная — естественный конец игры. Ничего не блокируется.'
+    : `Осталось примерно ${Math.ceil(left / 60)} мин игры (считается, только пока игра на экране; с каждого запуска заново).`}</small>`;
+}
+
+/** Сколько места занимает игра в хранилище браузера (лимит обычно около 5 МБ). */
+function storageHtml() {
+  const groups = { 'Дом': 0, 'Фото': 0, 'Снимки дома': 0, 'Голоса': 0, 'Остальное': 0 };
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (!k.startsWith('pixel-house')) continue;
+    const bytes = (k.length + (localStorage.getItem(k) || '').length) * 2; // строки хранятся в UTF-16
+    const g = /^pixel-house-v\d+$/.test(k) ? 'Дом' : k === 'pixel-house-photos' ? 'Фото' : k === 'pixel-house-snapshots' ? 'Снимки дома' : k.startsWith('pixel-house-voice') ? 'Голоса' : 'Остальное';
+    groups[g] += bytes;
+  }
+  const total = Object.values(groups).reduce((a, b) => a + b, 0);
+  const LIMIT = 5 * 1024 * 1024;
+  const kb = (b) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} МБ` : `${Math.round(b / 1024)} КБ`);
+  const pct = Math.round(total / LIMIT * 100);
+  const rows = Object.entries(groups).filter(([, b]) => b).map(([g, b]) => `${g} — ${kb(b)}`).join(' · ');
+  return `<div class="row"><span class="bar"><b style="width:${Math.min(100, pct)}%;background:${pct > 70 ? '#ef5a6f' : '#52b893'}"></b></span><span class="val">${kb(total)}</span></div>
+    <small>${rows}. Обычно браузер даёт игре около 5 МБ${pct > 70 ? ' — <b style="color:#ffd84a">место почти кончилось: сохраните копию в файл и освободите место</b>' : ''}.</small>
+    <div class="row"><button class="sec" data-act="prunesnaps">Оставить два последних снимка дома</button></div>`;
 }
 
 function voicesHtml() {
@@ -198,6 +232,8 @@ export function openParent(scene) {
       <small>Запишите короткие фразы — куклы будут говорить вашими голосами вместо писка.</small>
       <div id="pz-voices">${voicesHtml()}</div>
     </section>
+    <section><h2>Время игры</h2><div id="pz-bedtime">${bedtimeHtml()}</div></section>
+    <section><h2>Место на устройстве</h2><div id="pz-storage">${storageHtml()}</div></section>
     <section><h2>Во что играет</h2><div id="pz-stats">${statsHtml()}</div>
       <div class="row"><button class="sec" data-act="statreset">Обнулить статистику</button></div>
     </section>
@@ -226,6 +262,7 @@ export function openParent(scene) {
   el.addEventListener('input', (e) => {
     const act = e.target.dataset.act;
     if (act === 'vol') { unlockAudio(); setVolume(e.target.value / 100); }
+    if (act === 'bedtime') { setBedtime(Number(e.target.value)); $('#pz-bedtime').innerHTML = bedtimeHtml(); }
     if (act === 'music') {
       setMusic(e.target.checked);
       try { localStorage.setItem('pixel-house-music', e.target.checked ? '1' : '0'); } catch { /* ignore */ }
@@ -240,6 +277,7 @@ export function openParent(scene) {
     if (act === 'statreset') { stats = fresh(); dirty = true; flushStats(); $('#pz-stats').innerHTML = statsHtml(); }
     if (act === 'export') { download(`pixel-house-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(exportData())); msg('Файл сохранён в «Загрузки».'); }
     if (act === 'import') $('input[type=file]').click();
+    if (act === 'prunesnaps') { pruneSnapshots(2); $('#pz-storage').innerHTML = storageHtml(); $('#pz-snaps').innerHTML = snapsHtml(); }
     if (btn.dataset.snap) {
       const raw = readSnapshots()[btn.dataset.snap];
       if (raw && window.confirm(`Вернуть дом из снимка «${btn.textContent}»? Сегодняшние перестановки пропадут.`)) {

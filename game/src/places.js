@@ -2,6 +2,8 @@
 // Камера ходит только внутри своей локации, между локациями — карта, автобусная остановка у калитки или повозка.
 //
 // Комнаты только ДОПИСЫВАЮТСЯ в конец (и новые локации тоже): координаты вещей в сохранении — это место на ленте.
+// Исключение — комнаты из INSERTED (ниже): их вставили в середину ленты, а загрузка старого дома сдвигает всё,
+// что правее вставки, на одну комнату (save.js, migrateRooms).
 //
 // Поля комнаты:
 //   key     — имя (R.garden — номер комнаты на ленте);
@@ -23,6 +25,7 @@ export const PLACES = [
       { key: 'garden', stat: 2, music: 2, outdoor: true, icon: 'big_tree_icon', colors: [0x9fdcff, 0x8fd16a], clean: 'big_tree' },
       { key: 'bath', stat: 3, music: 3, icon: 'big_tub_icon', colors: [0xdff6fb, 0xd6eef6], clean: 'big_tub' },
       { key: 'hall', stat: 4, music: 4, icon: 'curtain_icon', colors: [0x3b2160, 0xa8683f], clean: 'big_stage' },
+      { key: 'playroom', stat: 23, music: 10, icon: 'rockhorse_icon', colors: [0xfff0b8, 0x8fd3ff], clean: 'puppets' },
     ],
   },
   {
@@ -70,6 +73,12 @@ export const PLACES = [
     ],
   },
 ];
+
+/**
+ * Комнаты, вставленные в середину ленты уже после того, как дома были сохранены (по порядку вставки).
+ * В сохранении flags.inserted — список уже учтённых; для остальных загрузка сдвигает вещи правее вставки.
+ */
+export const INSERTED = ['playroom'];
 
 /** Все комнаты по порядку на ленте: { key, idx, place, … }. */
 export const ROOMS = [];

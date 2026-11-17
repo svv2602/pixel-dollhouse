@@ -19,6 +19,7 @@ const files = readdirSync(SRC).filter((f) => f.endsWith('.js'));
 const NO_HELP = {
   sticker: 'итог (новая наклейка), не действие',
   tree: 'сезонная ёлка — только зимой',
+  bedtime: 'срабатывает таймер сна, выставленный родителями, — не действие ребёнка (строка-пояснение в «Общем»)',
 };
 
 // ---- 1. что код отправляет в статистику
@@ -31,9 +32,11 @@ for (const f of files) {
 // двери снов: счётчик приходит через hintDone(DOOR_HINT[kind])
 for (const m of (read('dream.js').match(/const DOOR_HINT = \{([^}]*)\}/)?.[1] || '').matchAll(/'([a-z]+)'/g)) note(m[1], 'dream.js');
 // подсказки-цепочки и потребности (ключи HINTS): отмечаются через hintDone(name)
-const main = read('main.js');
-const hintsBlock = main.slice(main.indexOf('const HINTS = {'), main.indexOf('const BED_HINTS'));
-for (const m of hintsBlock.matchAll(/^\s{2}([a-z]+):\s*\{/gm)) note(m[1], 'main.js (HINTS)');
+// (общие таблицы игры живут в core.js с тех пор, как main.js разбит на модули)
+const core = read('core.js');
+const hintsBlock = core.slice(core.indexOf('const HINTS = {'), core.indexOf('const BED_HINTS'));
+if (!hintsBlock) throw new Error('не нашёл HINTS в core.js — проверка справки устарела');
+for (const m of hintsBlock.matchAll(/^\s{2}([a-z]+):\s*\{/gm)) note(m[1], 'core.js (HINTS)');
 
 // ---- 2. подписи в родительской зоне
 const parent = read('parent.js');

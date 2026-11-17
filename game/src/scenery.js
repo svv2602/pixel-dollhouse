@@ -146,6 +146,55 @@ const HOME_SCENERY = {
   },
 };
 
+// ===== игровая: тёплая жёлтая стена с гирляндой флажков и радугой, пол — мягкие голубые коврики
+HOME_SCENERY.playroom = {
+  bg(g, x0, { L }) {
+    const { W, ROOM_H, FLOOR_TOP } = L;
+    g.fillStyle(0xfff0b8).fillRect(x0, 0, W, FLOOR_TOP);
+    g.fillStyle(0xffe79a);
+    for (let y = 14, r = 0; y < FLOOR_TOP - 10; y += 12, r++) for (let x = r % 2 ? 10 : 2; x < W; x += 16) g.fillRect(x0 + x, y, 3, 3);
+    // радуга на стене слева от окна
+    const cx = x0 + Math.round(W * 0.34);
+    const cy = FLOOR_TOP - 6;
+    [0xff7a8a, 0xffb35a, 0xffe066, 0x8fe07a, 0x7ac8f2, 0xb48ff2].forEach((c, i) => {
+      const rad = 30 - i * 3;
+      g.fillStyle(c);
+      for (let a = 0; a <= 180; a += 2) {
+        const t = (a * Math.PI) / 180;
+        g.fillRect(Math.round(cx + Math.cos(t) * rad), Math.round(cy - Math.sin(t) * rad * 0.8), 2, 2);
+      }
+    });
+    // гирлянда флажков под потолком
+    g.fillStyle(0xc98a52).fillRect(x0, 4, W, 1);
+    const flags = [0xff5a7a, 0xffd84a, 0x5ac4f2, 0x7ad9b5, 0xc48ff2];
+    for (let x = 2, k = 0; x < W - 6; x += 9, k++) {
+      g.fillStyle(flags[k % flags.length]);
+      for (let y = 0; y < 6; y++) g.fillRect(x0 + x + Math.floor(y / 2), 5 + y, 6 - Math.floor(y / 2) * 2, 1);
+    }
+    g.fillStyle(0xf2c94c).fillRect(x0, FLOOR_TOP - 3, W, 1);
+    g.fillStyle(0xc98a52).fillRect(x0, FLOOR_TOP - 2, W, 2); // плинтус
+    // пол: коврики-квадраты с «пазами»
+    const mats = [0x9fd8ff, 0xb8e4ff];
+    for (let y = FLOOR_TOP, r = 0; y < ROOM_H; y += 9, r++) {
+      for (let x = 0, c = r % 2; x < W; x += 9, c ^= 1) {
+        g.fillStyle(mats[c]).fillRect(x0 + x, y, 9, 9);
+        g.fillStyle(0x8ccbf2).fillRect(x0 + x + 3, y, 3, 1).fillRect(x0 + x, y + 3, 1, 3);
+      }
+    }
+  },
+  fg(g, x0, { L }) {
+    const win = L.WINDOWS[2];
+    const { x, y, w, h } = win;
+    windowFrame(g, win);
+    g.fillStyle(0xf2c94c).fillRect(x - 4, y + h + 2, w + 8, 2); // подоконник
+    // занавески в горошек
+    g.fillStyle(0x7ad9b5).fillRect(x - 7, y - 4, 5, h + 7).fillRect(x + w + 2, y - 4, 5, h + 7);
+    g.fillStyle(0xffffff).fillRect(x - 5, y, 1, 1).fillRect(x - 6, y + 6, 1, 1).fillRect(x - 4, y + 12, 1, 1)
+      .fillRect(x + w + 4, y + 3, 1, 1).fillRect(x + w + 3, y + 9, 1, 1).fillRect(x + w + 5, y + 15, 1, 1);
+    g.fillStyle(0xc98a52).fillRect(x - 9, y - 5, w + 18, 1); // карниз
+  },
+};
+
 const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY, ...CITY_SCENERY, ...SEA_SCENERY, ...PARK_SCENERY };
 
 /** Белая рама окна с переплётом. */
@@ -187,6 +236,8 @@ export function installScenery(Room, { L }) {
       j.fillStyle(0xa77f97).fillRect(R.kitchen * W + 1, 0, 1, FLOOR_TOP - 2);
       j.fillStyle(0xb0d8e4).fillRect(R.bath * W - 2, 0, 4, FLOOR_TOP);
       j.fillStyle(0x6e3a8a).fillRect(R.hall * W - 2, 0, 4, FLOOR_TOP);
+      j.fillStyle(0xc98a52).fillRect(R.playroom * W - 2, 0, 4, FLOOR_TOP); // зал → игровая
+      j.fillStyle(0xe0a870).fillRect(R.playroom * W + 1, 0, 1, FLOOR_TOP);
       j.fillStyle(0x8d5a3b).fillRect(R.garden * W - 2, 0, 4, FLOOR_TOP);
       j.fillStyle(0xa8714d).fillRect(R.garden * W - 2, 0, 1, FLOOR_TOP);
       // небо: отдельный слой, перерисовывается днём/ночью

@@ -10,6 +10,14 @@ REMOTE="$(git -C "$ROOT" remote get-url origin)"
 node "$ROOT/.claude/skills/gamepixel-release-check/scripts/check_help.mjs"
 
 cd "$ROOT/game"
+
+# Дымовой набор e2e (~3–5 мин): загрузка, еда, котёл, сохранение, два пальца, поворот, починка дома,
+# локации, родительская зона, ошибки в консоли. Без зелёного дыма не выкладываем.
+# Полный набор — npm run test:e2e (перед большими волнами). Свой порт — чтобы не мешать идущему полному прогону.
+if [[ "${SKIP_SMOKE:-}" != "1" ]]; then
+  E2E_PORT="${E2E_PORT:-5323}" npm run --silent test:smoke
+fi
+
 npm run build
 
 cd dist

@@ -75,7 +75,7 @@ export function installTravel(Room, { L, rnd, sfx }) {
      */
     busTick() {
       const s = this.stopHere();
-      if (!s || this.bus || this.time.now < (this.busAfter || 0)) return;
+      if (!s || this.bus || this.bedtime || this.time.now < (this.busAfter || 0)) return; // «спокойной ночи» — автобус не ходит
       if (this.busEager() && Math.random() > 0.7) return;
       this.busVisit(s);
     },

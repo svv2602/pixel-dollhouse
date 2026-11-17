@@ -12,7 +12,7 @@ import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { chromium } from 'playwright';
 
-const PORT = 5319;
+const PORT = Number(process.env.E2E_PORT) || 5319; // другой порт — чтобы два прогона не мешали друг другу
 const URL = `http://localhost:${PORT}/`;
 let server;
 let browser;
@@ -84,7 +84,7 @@ test('комната загружается: персонажи, кухня, к�
     bath: s.objs.some((o) => o.beh?.tub && o.x >= 3 * 293),
     album: s.objs.some((o) => o.beh?.album),
   }));
-  assert.equal(st.chars, 15); // две свои куклы + жильцы кухни, ванной и зала + трое в селе + трое в городе + двое у моря + двое в парке
+  assert.equal(st.chars, 16); // две свои куклы + жильцы кухни, ванной, зала и игровой + трое в селе + трое в городе + двое у моря + двое в парке
   assert.ok(st.kitchen, 'котёл на кухне');
   assert.ok(st.album, 'альбом в комнате');
   assert.ok(st.garden, 'сад с грядками и яблоней');
@@ -382,7 +382,8 @@ test('кухня: холодильник выдаёт еду, блендер д�
   await waitFor((s) => !s.testBl.blending && s.objs.some((o) => o.beh?.smoothie));
   const sm = await room((s) => {
     const g = s.objs.find((o) => o.beh?.smoothie);
-    const c = s.objs.find((o) => o.kind === 'char' && !o.busy);
+    // не та, что лежит в кровати: после «сна ночью» Мия снова засыпает, и её облачка вытесняют облачка снов
+    const c = s.objs.find((o) => o.kind === 'char' && !o.busy && !o.sleeping && !o.restOn);
     s.testCh = c;
     s.feed(c, g);
     return { color: g.color, empty: s.testBl.contents.length };
@@ -469,8 +470,8 @@ test('подсказки: в ванной просит щётку — почис
     s.testCh3 = c;
     return { bathHints, kitchenHints, shown: s.wish?.hint };
   });
-  assert.equal(st.bathHints, 'bubbles,dreamsea,makeup,teeth,toilet,travel,wash'); // «в село» просятся в любой комнате дома
-  assert.equal(st.kitchenHints, 'cook,dreamcandy,fridge,smoothie,travel');
+  assert.equal(st.bathHints, 'bubbles,decor,dreamsea,makeup,teeth,toilet,travel,wash'); // decor — валик красит стены в комнатах дома // «в село» просятся в любой комнате дома
+  assert.equal(st.kitchenHints, 'cook,decor,dreamcandy,fridge,smoothie,travel');
   assert.equal(st.shown, 'teeth');
   await waitFor((s) => !s.testCh3.busy);
   await room((s) => s.brushTeeth(s.testCh3));
@@ -662,12 +663,12 @@ test('семья: жильцы в комнатах, портрет зовёт к
     s.callCast('star');  // певица — из зала
     return before;
   });
-  assert.deepEqual(st, { mia: 0, mom: 1, boy: 3, star: 4, dad: 8, view: 15 });
+  assert.deepEqual(st, { mia: 0, mom: 1, boy: 3, star: 4, dad: 9, view: 16 });
   await waitFor((s) => {
     const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
     return ['dad', 'star', 'kid'].every((id) => { const c = s.castChar(id); return c && !c.walking && c.x > 0 && c.x < W; });
   });
-  assert.equal(await room((s) => s.objs.filter((o) => o.kind === 'char').length), 15);
+  assert.equal(await room((s) => s.objs.filter((o) => o.kind === 'char').length), 16);
 });
 
 test('кукла, с которой играли, идёт следом в соседнюю комнату; сидящая — остаётся', async () => {
@@ -741,7 +742,7 @@ test('альбом наклеек: блюдо, урожай, клад и сон 
     s.onAlbumUi({ albumDone: true });
     return { sizes, first, again, openedOn, found: dish?.found, closed: !s.albumUi };
   });
-  assert.deepEqual(st, { sizes: 'recipe:true,dish:true,plant:true,treasure:true,tidy:22,farm:13,city:19,sea:24,park:22,dream:true', first: true, again: false, openedOn: 1, found: true, closed: true });
+  assert.deepEqual(st, { sizes: 'recipe:true,dish:true,plant:true,treasure:true,tidy:23,farm:13,city:19,sea:24,park:22,dream:true', first: true, again: false, openedOn: 1, found: true, closed: true });
 });
 
 test('карта комнат и подсветка желания в ящике', async () => {
@@ -761,7 +762,7 @@ test('карта комнат и подсветка желания в ящике
     res.cleared = !s.slotGlow.visible;
     return res;
   });
-  assert.deepEqual(st, { cards: 5, closed: true, target: 0, tabGlow: true, slotGlow: true, tabOff: true, cleared: true });
+  assert.deepEqual(st, { cards: 6, closed: true, target: 0, tabGlow: true, slotGlow: true, tabOff: true, cleared: true });
 });
 
 test('голоса семьи: записанная фраза звучит вместо писка', async () => {
@@ -800,7 +801,7 @@ test('родительская зона: удержание шестерёнки
       count: document.querySelector('#pz-help details summary span').textContent,
     };
   });
-  assert.equal(help.groups.length, 34);
+  assert.equal(help.groups.length, 35);
   for (const g of ['Общее', 'Уборка', 'Спальня', 'Кухня', 'Сад', 'Ванная', 'Концертный зал', 'Дорога: село, город, море, парк', 'Село: двор', 'Село: поле', 'Город: улица', 'Город: кафе', 'Город: магазин игрушек', 'Котёл везде', 'Море: пляж', 'Море: остров', 'Парк: зоопарк', 'Парк: спортплощадка', 'Сон: игрушечный мир']) assert.ok(help.groups.includes(g), `раздел справки: ${g}`);
   assert.match(await page.textContent('#pz-stats'), /Село: двор[\s\S]*Село: поле[\s\S]*Город: улица[\s\S]*Город: игрушки[\s\S]*Море: пляж[\s\S]*Море: остров/);
   assert.ok(help.rows > 80, `строк справки: ${help.rows}`);
@@ -841,13 +842,14 @@ test('новый день: посылка и подросшие грядки; з
   await page.reload();
   await waitFor((s) => s.objs.length > 10 && s.objs.some((o) => o.beh?.nyTree));
   const w = await room((s) => {
-    const tree = s.objs.find((o) => o.beh?.nyTree);
+    const tree = s.objs.find((o) => o.beh?.nyTree && Math.floor(o.x / 293) === 0);
     const t0 = tree.texture.key;
     s.tapTree(tree);
     s.saveNow();
-    return { winter: s.winter, snow: !!s.snow, toggled: tree.texture.key !== t0, inDrawer: s.byCat.furniture.some((r) => r.nyTree), room: Math.floor(tree.x / 293) };
+    const trees = s.objs.filter((o) => o.beh?.nyTree).map((o) => Math.floor(o.x / 293)).sort((a, b) => a - b).join();
+    return { winter: s.winter, snow: !!s.snow, toggled: tree.texture.key !== t0, inDrawer: s.byCat.furniture.some((r) => r.nyTree), trees, zooTex: s.textures.exists('bg_zoo') };
   });
-  assert.deepEqual(w, { winter: true, snow: true, toggled: true, inDrawer: true, room: 0 });
+  assert.deepEqual(w, { winter: true, snow: true, toggled: true, inDrawer: true, trees: `0,${await page.evaluate(() => window.__dev.R.street)}`, zooTex: true });
   await page.evaluate(() => localStorage.setItem('pixel-house-date', '2027-02-01'));
   await page.reload();
   await waitFor((s) => s.objs.length > 10);
@@ -904,7 +906,7 @@ test('дом, уехавший под потолок, сам возвращае�
   await reloadWith((st) => {
     st.objs = st.objs.filter((o) => o.x < 5 * 293);
     st.chars = st.chars.filter((o) => o.x < 5 * 293);
-    for (const k of ['village', 'cast3', 'city', 'cast4', 'sea', 'cast5', 'park', 'cast6', 'pots']) delete st.flags[k];
+    for (const k of ['village', 'cast3', 'city', 'cast4', 'sea', 'cast5', 'park', 'cast6', 'pots', 'inserted', 'playroom', 'cast7']) delete st.flags[k]; // и игровой тогда ещё не было
     for (const o of [...st.objs, ...st.chars]) {
       o.x = Math.round(Math.max(6, Math.min(5 * 293 - 6, o.x * 293 / 270)));
       o.y = Math.round(Math.max(4, Math.min(94, o.y * 55 / 455)));
@@ -918,7 +920,7 @@ test('дом, уехавший под потолок, сам возвращае�
     return { coop: at((o) => o.beh?.coop), mill: at((o) => o.beh?.mill), cart: at((o) => o.beh?.cart), granny: at((o) => o.cast === 'granny'), bins: s.objs.filter((o) => o.beh?.bin).length, claw: at((o) => o.beh?.claw), cook: at((o) => o.cast === 'cook'),
       sub: at((o) => o.beh?.sub), pots: s.objs.filter((o) => o.beh?.cauldron).map((o) => Math.floor(o.x / 293)).sort((a, b) => a - b).join() };
   });
-  assert.deepEqual(farm, { coop: [5, true], mill: [8, true], cart: [2, true], granny: [5, true], bins: 22, claw: [13, true], cook: [11, true], sub: [16, true], pots: '1,5,11,17,20' });
+  assert.deepEqual(farm, { coop: [6, true], mill: [9, true], cart: [2, true], granny: [6, true], bins: 23, claw: [14, true], cook: [12, true], sub: [17, true], pots: '1,6,12,18,21' });
   // стулья и шарик у правой стены зала при сбое упёрлись в край мира — и всё равно встают на свои места
   for (const k of ['bed', 'wardrobe', 'clock', 'fridge', 'tub', 'chairs', 'balloon']) assert.deepEqual(after[k], before[k], `${k} — точно на прежнем месте`);
   for (const k of ['kite', 'mia']) {
@@ -1284,7 +1286,7 @@ test('миры снов: в каждом из семи работает своя
 
   const end = await room((s) => ({ seen: Object.keys(s.flags.dreamSeen).sort().join(), chars: s.objs.filter((o) => o.kind === 'char').length }));
   assert.equal(end.seen, 'candy,clouds,forest,ice,planet,sea,toys');
-  assert.equal(end.chars, 15, 'все куклы на месте'); // пятеро в доме, трое в селе, трое в городе и двое у моря
+  assert.equal(end.chars, 16, 'все куклы на месте'); // пятеро в доме, трое в селе, трое в городе и двое у моря
   const stats = await page.evaluate(() => window.__dev.getStats());
   for (const w of ['forest', 'planet', 'sea', 'clouds', 'candy', 'ice', 'toys']) assert.ok(stats.feats[`w_${w}`] >= 1, `счётчик мира ${w}`);
 });
@@ -1527,7 +1529,7 @@ test('уборка: урна в каждой комнате ест брошен�
       tools: !!s.objs.find((o) => o.rec?.id === 'broom') && s.objs.some((o) => o.rec?.subject === 'leaf rake' && o.beh.sweeper),
     };
   });
-  assert.deepEqual(st, { rooms: '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21', eaten: true, pet: true, swept: { n: 2, tex: 'bin_full', gone: true, pet: true }, back: true, furniture: true, tools: true });
+  assert.deepEqual(st, { rooms: '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22', eaten: true, pet: true, swept: { n: 2, tex: 'bin_full', gone: true, pet: true }, back: true, furniture: true, tools: true });
   // через несколько секунд собранное исчезает насовсем, урна снова пустая
   await waitFor((s) => { const bin = s.objs.find((o) => o.beh?.bin && o.x < 293); return !bin.stash && bin.texture.key === 'bin'; });
   // метла: провели по предмету на полу — он улетел в урну; лопатку и лейку уборка не трогает
@@ -1792,8 +1794,8 @@ test('локации: камера не выходит из своей лока�
     };
   });
   assert.deepEqual(st0, {
-    chars: 15, granny: 5, dad: 8, kid: 7, coop: 5, well: 6, hive: 7, mill: 8, cart: 2, bins: 22,
-    signs: '2>choose,5>choose,9>choose,14>choose,18>choose', cook: 11, claw: 13, place: 'home', range: '0,4', edge: 4, // мест три — остановка предлагает выбор
+    chars: 16, granny: 6, dad: 9, kid: 8, coop: 6, well: 7, hive: 8, mill: 9, cart: 2, bins: 23,
+    signs: '2>choose,6>choose,10>choose,15>choose,19>choose', cook: 12, claw: 14, place: 'home', range: '0,5', edge: 5, // мест три — остановка предлагает выбор
   });
   await waitFor((s) => s.curRoom === 4);
   // занавес зала не заходит во двор села (он справа от зала на ленте)
@@ -1812,13 +1814,13 @@ test('локации: камера не выходит из своей лока�
     s.onMapUi({ mapPlace: 'village' });
     res.village = cards();
     res.view = s.mapUi.place;
-    s.onMapUi({ mapRoom: 7 }); // фруктовый сад — в другой локации: едем
+    s.onMapUi({ mapRoom: window.__dev.R.orchard }); // фруктовый сад — в другой локации: едем
     res.travelling = s.travelling;
     res.closed = !s.mapUi;
     return res;
   });
-  assert.deepEqual(map, { tabs: 5, home: '0,1,2,3,4', village: '5,6,7,8', view: 'village', travelling: true, closed: true });
-  await waitFor((s) => !s.travelling && s.curRoom === 7);
+  assert.deepEqual(map, { tabs: 5, home: '0,1,2,3,4,5', village: '6,7,8,9', view: 'village', travelling: true, closed: true });
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.orchard);
   const st1 = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
     const cart = s.objs.find((o) => o.beh?.cart);
@@ -1834,11 +1836,11 @@ test('локации: камера не выходит из своей лока�
     s.testCart = cart; s.testKid = kid;
     return res;
   });
-  assert.deepEqual(st1, { cam: 7, place: 'village', range: '5,8', cartRoom: 5, tried: true, onCart: true, edge: 5 });
+  assert.deepEqual(st1, { cam: 8, place: 'village', range: '6,9', cartRoom: 6, tried: true, onCart: true, edge: 6 });
   assert.equal(await page.evaluate(() => window.__dev.musicTheme()), 9, 'в саду села — своя мелодия');
   await waitFor((s) => s.testKid.pose === 'sit' && s.testCart.texture.key === 'cart_full');
-  await room((s) => s.goRoom(5));
-  await waitFor((s) => s.curRoom === 5);
+  await room((s) => s.goRoom(window.__dev.R.yard));
+  await waitFor((s) => s.curRoom === window.__dev.R.yard);
   await room((s) => s.portalTap(s.stopHere())); // остановка: облачка с местами — выбираем дом
   assert.equal(await choose('place_home'), 'place_home,place_city,place_sea,place_park');
   await waitFor((s) => !s.travelling && s.placeNow().key === 'home');
@@ -1850,17 +1852,17 @@ test('локации: камера не выходит из своей лока�
   assert.deepEqual(st2, { room: 2, cart: 2, kid: 2, on: true, load: 1, cartStat: true }); // приехали к калитке — в сад у дома
   // в село — и перезагрузка: игра открывается там же, груз и седок на месте
   await room((s) => s.goPlace('village'));
-  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.yard);
   await room((s) => s.saveNow());
   await page.reload();
-  await waitFor((s) => s.objs.length > 10 && s.curRoom === 5);
+  await waitFor((s) => s.objs.length > 10 && s.curRoom === window.__dev.R.yard);
   const st3 = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
     const cart = s.objs.find((o) => o.beh?.cart);
     const kid = s.castChar('kid');
     return { place: s.placeNow().key, cam: s.cameras.main.scrollX / W, cart: Math.floor(cart.x / W), on: kid.restOn === cart, load: cart.contents.length };
   });
-  assert.deepEqual(st3, { place: 'village', cam: 5, cart: 5, on: true, load: 1 });
+  assert.deepEqual(st3, { place: 'village', cam: 6, cart: 6, on: true, load: 1 });
 });
 
 test('дорога: открытка зовёт в село; автобус и остановка; повозка — тапом, с грузом — выбор; кукла просится в дорогу; звёздочка на карте', async () => {
@@ -1880,7 +1882,7 @@ test('дорога: открытка зовёт в село; автобус и �
     return { ...res, closed: !s.cardUi, travelling: s.travelling };
   });
   assert.deepEqual(card, { unseen: 'village', open: 'village', sent: 1, go: 1, closed: true, travelling: true });
-  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.yard);
   await waitFor((s) => s.flags.seen.village && s.unseenPlace()?.key === 'city' && s.mapDot.visible); // в селе побывали, город ещё ждёт
   // съездили — автобус больше не приманка: следующий придёт через три минуты, и тогда уже наверняка
   const calm = await room((s) => {
@@ -1907,7 +1909,7 @@ test('дорога: открытка зовёт в село; автобус и �
   await room((s) => s.tap(s.objs.find((o) => o.beh?.cart)));
   assert.equal(await choose('place_village'), 'place_village,place_city,place_sea,place_park');
   assert.equal(await room((s) => s.travelling), true);
-  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.yard);
   const loaded = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
     const cart = s.objs.find((o) => o.beh?.cart);
@@ -1955,16 +1957,16 @@ test('дорога: открытка зовёт в село; автобус и �
     return { ...res, wish: !!s.wish, travelling: s.travelling };
   });
   assert.deepEqual(ask, { can: true, hint: 'travel', buddy: true, wish: false, travelling: true });
-  await waitFor((s) => !s.travelling && s.curRoom === 5);
-  await waitFor((s) => { const m = s.castChar('mia'); return !m.walking && Math.floor(m.x / Math.ceil(s.sys.game.config.width / s.cameras.main.zoom)) === 5; });
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.yard);
+  await waitFor((s) => { const m = s.castChar('mia'); return !m.walking && Math.floor(m.x / Math.ceil(s.sys.game.config.width / s.cameras.main.zoom)) === window.__dev.R.yard; });
   const feats = await page.evaluate(() => window.__dev.getStats().feats);
   assert.ok(feats.postcard >= 1 && feats.travel >= 5, `счётчики: открытка ${feats.postcard}, поездки ${feats.travel}`);
 });
 
 test('село: курятник, корова и овца, колодец, пугало и вороны, фруктовые деревья, улей, скворечник, гамак, стог, трактор, мельница', async () => {
   await freshRoom();
-  await room((s) => s.goRoom(5));
-  await waitFor((s) => !s.travelling && s.curRoom === 5);
+  await room((s) => s.goRoom(window.__dev.R.yard));
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.yard);
   const count = (sub) => room((s, sub) => s.objs.filter((o) => o.rec?.subject === sub).length, sub);
   // ---- двор
   const yard = await room((s) => {
@@ -1983,11 +1985,11 @@ test('село: курятник, корова и овца, колодец, пу
   await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'glass bottle of milk') && s.flags.tried.farmfood);
   assert.equal(await count('ball of yarn'), 1);
   // ---- огород
-  await room((s) => s.goRoom(6));
-  await waitFor((s) => s.curRoom === 6);
+  await room((s) => s.goRoom(window.__dev.R.veg));
+  await waitFor((s) => s.curRoom === window.__dev.R.veg);
   const dry = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
-    const beds = s.objs.filter((o) => o.beh?.gardenBed && Math.floor(o.x / W) === 6);
+    const beds = s.objs.filter((o) => o.beh?.gardenBed && Math.floor(o.x / W) === window.__dev.R.veg);
     s.testBeds = beds;
     s.wellTap(s.objs.find((o) => o.beh?.well));
     return beds.flatMap((b) => b.plots).filter((p) => p && p.stage < 3 && !p.watered).length;
@@ -2009,8 +2011,8 @@ test('село: курятник, корова и овца, колодец, пу
   assert.deepEqual(veg, { hat: true, gone: true, scare: true });
   await waitFor((s) => s.crows.every((c) => !c.active));
   // ---- фруктовый сад
-  await room((s) => s.goRoom(7));
-  await waitFor((s) => s.curRoom === 7);
+  await room((s) => s.goRoom(window.__dev.R.orchard));
+  await waitFor((s) => s.curRoom === window.__dev.R.orchard);
   const orchard = await room((s) => {
     const trees = s.objs.filter((o) => o.beh?.fruit && !o.beh.palm); // пальмы у моря — тоже «деревья с плодами», но не села
     const fruit0 = s.objs.filter((o) => ['pear', 'pair of cherries', 'plum'].includes(o.rec?.subject)).length;
@@ -2032,8 +2034,8 @@ test('село: курятник, корова и овца, колодец, пу
   await waitFor((s) => s.testKid.sleeping && s.testKid.pose === 'lie' && s.testKid.dreamPicks); // в гамаке спят и видят сны
   await room((s) => { s.startDrag(s.testKid); s.drop(s.testKid, { x: s.testKid.x - 60, y: 90 }); });
   // ---- поле
-  await room((s) => s.goRoom(8));
-  await waitFor((s) => s.curRoom === 8);
+  await room((s) => s.goRoom(window.__dev.R.field));
+  await waitFor((s) => s.curRoom === window.__dev.R.field);
   const field = await room((s) => {
     const hay = s.objs.find((o) => o.beh?.hay);
     const n0 = s.objs.length;
@@ -2090,7 +2092,7 @@ test('село: курятник, корова и овца, колодец, пу
 test('город: магазины на улице, светофор, мороженое, фонтан и монетка; прилавки, касса и пакет, тележка; покупатель; примерочная, манекен, подиум; хваталка, капсулы, подарок', async () => {
   await freshRoom();
   await room((s) => s.goPlace('city'));
-  await waitFor((s) => !s.travelling && s.curRoom === 9);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.street);
   // ---- улица
   const street = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
@@ -2103,16 +2105,16 @@ test('город: магазины на улице, светофор, морож
     s.tap(light);
     const fountain = find((b) => b.fountain);
     s.tap(fountain);
-    const coin = s.objs.find((o) => o.rec?.subject === 'coin' && Math.floor(o.x / W) === 9);
+    const coin = s.objs.find((o) => o.rec?.subject === 'coin' && Math.floor(o.x / W) === window.__dev.R.street);
     s.startDrag(coin);
     s.drop(coin, { x: fountain.x, y: fountain.y - 8 });
-    const doors = s.children.list.filter((o) => 'shopDoor' in o && Math.floor(o.x / W) === 9); // магазины на улице
+    const doors = s.children.list.filter((o) => 'shopDoor' in o && Math.floor(o.x / W) === window.__dev.R.street); // магазины на улице
     return {
       ice, green: light.texture.key, coinGone: !s.objs.includes(coin), tried: ['icecart', 'traffic', 'fountain', 'wishcoin'].every((k) => s.flags.tried[k]),
       stop: s.stopHere()?.portal, doors: doors.map((d) => d.shopDoor).join(), cart: Math.floor(find((b) => b.cart).x / W), music: window.__dev.musicTheme(),
     };
   }, finger.toString());
-  assert.deepEqual(street, { ice: 1, green: 'trafficlight_g', coinGone: true, tried: true, stop: 'choose', doors: '10,11,12,13', cart: 9, music: 10 });
+  assert.deepEqual(street, { ice: 1, green: 'trafficlight_g', coinGone: true, tried: true, stop: 'choose', doors: '11,12,13,14', cart: 10, music: 10 });
   // машины едут на зелёный; тап по машине — сигналит; монетка в фонтане превращается в талисман
   await waitFor((s) => s.cars.length > 0);
   await room((s, mk) => { const f = new Function(`return ${mk}`)(); const c = s.cars[0]; s.onDown(f(1, c.x, c.y - 5), [c]); }, finger.toString());
@@ -2120,28 +2122,28 @@ test('город: магазины на улице, светофор, морож
   // тап по магазину — входим; свайп, начатый на магазине, листает комнаты, как по пустому месту
   const door = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
-    const z = s.children.list.find((o) => o.shopDoor === 10);
+    const z = s.children.list.find((o) => o.shopDoor === window.__dev.R.market);
     s.onDown(f(1, z.x + 20, z.y + 20), [z]);
     const swipe = !!s.press.swipe;
     s.onUp(f(1, z.x + 20, z.y + 20));
     return { swipe, target: s.targetRoom, travelling: s.travelling };
   }, finger.toString());
-  assert.deepEqual(door, { swipe: true, target: 10, travelling: false });
-  await waitFor((s) => s.curRoom === 10);
+  assert.deepEqual(door, { swipe: true, target: 11, travelling: false });
+  await waitFor((s) => s.curRoom === window.__dev.R.market);
   // в каждом магазине — дверь на улицу; из дальнего магазина игрушек она тоже ведёт прямо на улицу
   const exit = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
-    const exits = s.children.list.filter((o) => o.shopDoor === 9).map((o) => Math.floor(o.x / W)).sort((a, b) => a - b).join();
-    const z = s.children.list.find((o) => o.shopDoor === 9 && Math.floor(o.x / W) === 13);
+    const exits = s.children.list.filter((o) => o.shopDoor === window.__dev.R.street).map((o) => Math.floor(o.x / W)).sort((a, b) => a - b).join();
+    const z = s.children.list.find((o) => o.shopDoor === window.__dev.R.street && Math.floor(o.x / W) === window.__dev.R.toyshop);
     s.onDown(f(1, z.x + 6, z.y + 10), [z]);
     s.onUp(f(1, z.x + 6, z.y + 10));
     return { exits, target: s.targetRoom };
   }, finger.toString());
-  assert.deepEqual(exit, { exits: '10,11,12,13', target: 9 });
-  await waitFor((s) => s.curRoom === 9);
-  await room((s) => s.goRoom(10));
-  await waitFor((s) => s.curRoom === 10);
+  assert.deepEqual(exit, { exits: '11,12,13,14', target: 10 });
+  await waitFor((s) => s.curRoom === window.__dev.R.street);
+  await room((s) => s.goRoom(window.__dev.R.market));
+  await waitFor((s) => s.curRoom === window.__dev.R.market);
   // ---- супермаркет
   const market = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
@@ -2150,7 +2152,7 @@ test('город: магазины на улице, светофор, морож
     for (const k of ['fruit', 'bread', 'dairy']) s.tap(find((b) => b.stock === k));
     const popped = s.objs.length - n0;
     const co = find((b) => b.checkout);
-    const apple = s.objs.find((o) => o.rec?.subject === 'apple' && Math.floor(o.x / W) === 10 && o.y > 80);
+    const apple = s.objs.find((o) => o.rec?.subject === 'apple' && Math.floor(o.x / W) === window.__dev.R.market && o.y > 80);
     s.startDrag(apple);
     s.drop(apple, { x: co.x - 8, y: co.y - 10 });
     const bag = s.objs.find((o) => o.beh?.bag);
@@ -2173,8 +2175,8 @@ test('город: магазины на улице, светофор, морож
   await waitFor((s) => !s.testT.rolling && Math.abs(s.testT.x - s.testX0) > 100 && s.testMia.restOn === s.testT && Math.abs(s.testMia.x - s.testT.x) <= 4 && s.testMia.pose === 'sit');
   await room((s) => { s.startDrag(s.testMia); s.drop(s.testMia, { x: s.testT.x - 30, y: 92 }); });
   // ---- кафе: витрина, стойка и покупатель
-  await room((s) => s.goRoom(11));
-  await waitFor((s) => s.curRoom === 11);
+  await room((s) => s.goRoom(window.__dev.R.cafe));
+  await waitFor((s) => s.curRoom === window.__dev.R.cafe);
   const cafe = await room((s) => {
     const find = (pred) => s.objs.find((o) => o.kind === 'item' && pred(o.beh));
     const n0 = s.objs.length;
@@ -2185,7 +2187,7 @@ test('город: магазины на улице, светофор, морож
     const r = Math.random; Math.random = () => 0.99; s.guestAfter = 0; s.guestTick(); Math.random = r;
     return { popped, quiet, guest: s.guest?.room, music: window.__dev.musicTheme() };
   });
-  assert.deepEqual(cafe, { popped: 2, quiet: false, guest: 11, music: 11 });
+  assert.deepEqual(cafe, { popped: 2, quiet: false, guest: 12, music: 11 });
   await waitFor((s) => s.guest?.arrived && s.guest.bubble?.scale === 1);
   const serve = await room((s) => {
     const g = s.guest;
@@ -2203,8 +2205,8 @@ test('город: магазины на улице, светофор, морож
   assert.deepEqual(serve, { asks: true, refused: true, served: true, taken: true, bubble: true, tried: true });
   await waitFor((s) => s.objs.filter((o) => o.rec?.subject === 'coin').length === s.testCoins + 1 && !s.guest); // оставил монетку и ушёл
   // ---- магазин одежды
-  await room((s) => s.goRoom(12));
-  await waitFor((s) => s.curRoom === 12);
+  await room((s) => s.goRoom(window.__dev.R.clothes));
+  await waitFor((s) => s.curRoom === window.__dev.R.clothes);
   const shop = await room((s) => {
     const find = (pred) => s.objs.find((o) => o.kind === 'item' && pred(o.beh));
     const n0 = s.objs.length;
@@ -2241,8 +2243,8 @@ test('город: магазины на улице, светофор, морож
   });
   assert.deepEqual(out, { outfit: true, dress: true, hair: true, tex: true, beside: true });
   // ---- магазин игрушек
-  await room((s) => s.goRoom(13));
-  await waitFor((s) => s.curRoom === 13);
+  await room((s) => s.goRoom(window.__dev.R.toyshop));
+  await waitFor((s) => s.curRoom === window.__dev.R.toyshop);
   const toys = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
     const find = (pred) => s.objs.find((o) => o.kind === 'item' && pred(o.beh));
@@ -2252,7 +2254,7 @@ test('город: магазины на улице, светофор, морож
     const claw = find((b) => b.claw);
     s.tap(claw);
     const gum = find((b) => b.gumball);
-    const coin = s.objs.find((o) => o.rec?.subject === 'coin' && Math.floor(o.x / W) === 13);
+    const coin = s.objs.find((o) => o.rec?.subject === 'coin' && Math.floor(o.x / W) === window.__dev.R.toyshop);
     s.startDrag(coin);
     s.drop(coin, { x: gum.x, y: gum.y - 10 });
     const table = find((b) => b.giftwrap);
@@ -2276,8 +2278,8 @@ test('город: магазины на улице, светофор, морож
   });
   assert.equal(opened, 'rag doll');
   // ---- покупки едут домой: пакет — на повозку, и в сад у дома
-  await room((s) => s.goRoom(9));
-  await waitFor((s) => s.curRoom === 9);
+  await room((s) => s.goRoom(window.__dev.R.street));
+  await waitFor((s) => s.curRoom === window.__dev.R.street);
   await room((s) => {
     const cart = s.objs.find((o) => o.beh?.cart);
     const bag = s.testBag;
@@ -2311,7 +2313,7 @@ test('город: магазины на улице, светофор, морож
 test('море: волна, замок из песка, пальма, кабинка; лодка, удочка, дельфин, бутылка; ракушка, сундук, подлодка, пузыри, хвост; гнездо и клад; котёл в каждой локации', async () => {
   await freshRoom();
   await room((s) => s.goPlace('sea'));
-  await waitFor((s) => !s.travelling && s.curRoom === 14);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.beach);
   // ---- пляж
   const beach = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
@@ -2319,7 +2321,7 @@ test('море: волна, замок из песка, пальма, кабин
     const find = (pred) => s.objs.find((o) => o.kind === 'item' && pred(o.beh));
     const count = (subs) => s.objs.filter((o) => subs.includes(o.rec?.subject)).length;
     const shellSubs = ['seashell', 'conch shell', 'scallop shell', 'spiral shell', 'starfish'];
-    const z = s.children.list.find((o) => o.seaWave === 14);
+    const z = s.children.list.find((o) => o.seaWave === window.__dev.R.beach);
     const shells0 = count(shellSubs);
     s.onDown(f(1, z.x + 100, z.y + 5), [z]); // настоящий тап по морю у горизонта
     const swipe = !!s.press.swipe;
@@ -2342,7 +2344,7 @@ test('море: волна, замок из песка, пальма, кабин
       tried: ['wave', 'sandcastle', 'palm', 'cabin'].every((k) => s.flags.tried[k]),
     };
   }, finger.toString());
-  assert.deepEqual(beach, { swipe: true, shells: 1, stage: 3, crab: 1, nuts: 1, closed: 'cabin_closed', was: 'shorts', stop: 'choose', cart: 14, music: 12, tried: true });
+  assert.deepEqual(beach, { swipe: true, shells: 1, stage: 3, crab: 1, nuts: 1, closed: 'cabin_closed', was: 'shorts', stop: 'choose', cart: 15, music: 12, tried: true });
   await waitFor((s) => s.testSailor.visible && !s.testSailor.busy && s.testCab.texture.key === 'cabin');
   assert.deepEqual(await room((s) => ({ outfit: s.testSailor.look.outfit, wore: s.testSailor.look.wore, castle: s.testCastle.texture.key })), { outfit: 'swimsuit', wore: 'shorts', castle: 'sandcastle_3' });
   await room((s) => { s.startDrag(s.testSailor); s.drop(s.testSailor, { x: s.testCab.x, y: s.testCab.y - 10 }); });
@@ -2350,11 +2352,11 @@ test('море: волна, замок из песка, пальма, кабин
   // замок переживает перезагрузку
   await room((s) => s.saveNow());
   await page.reload();
-  await waitFor((s) => s.objs.length > 10 && s.curRoom === 14);
+  await waitFor((s) => s.objs.length > 10 && s.curRoom === window.__dev.R.beach);
   await waitFor((s) => { const c = s.objs.find((o) => o.beh?.sand); return c.stage === 3 && c.texture.key === 'sandcastle_3'; });
   // ---- в море
-  await room((s) => s.goRoom(15));
-  await waitFor((s) => s.curRoom === 15);
+  await room((s) => s.goRoom(window.__dev.R.waves));
+  await waitFor((s) => s.curRoom === window.__dev.R.waves);
   const waves = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
@@ -2369,11 +2371,11 @@ test('море: волна, замок из песка, пальма, кабин
     s.tap(boat);
     const mia = s.castChar('mia');
     s.startDrag(mia);
-    s.drop(mia, { x: 15 * W + 150, y: 90 }); // куклу — в воду
+    s.drop(mia, { x: window.__dev.R.waves * W + 150, y: 90 }); // куклу — в воду
     s.dolphinJump();
     const d = s.dolphin;
     s.onDown(f(1, d.x, d.y - 6), [d]); // настоящий тап: дельфин — не предмет
-    const bottle = s.spawnItem(s.findRec('message in a bottle'), 15 * W + 200, 88);
+    const bottle = s.spawnItem(s.findRec('message in a bottle'), window.__dev.R.waves * W + 200, 88);
     s.tap(bottle);
     Object.assign(s, { testSailor: sailor, testBoat: boat, testX0: x0, testMia: mia });
     return { aboard, rolling: !!boat.rolling, gave: d.gave, press: !!s.press, uncorked: !s.objs.includes(bottle), map: s.objs.some((o) => o.rec?.subject === 'treasure map') };
@@ -2383,8 +2385,8 @@ test('море: волна, замок из песка, пальма, кабин
   await waitFor((s) => !s.testBoat.rolling && Math.abs(s.testBoat.x - s.testX0) > 80 && s.testSailor.restOn === s.testBoat && Math.abs(s.testSailor.x - s.testBoat.x) <= 13);
   await waitFor((s) => s.testMia.ringImg?.visible && !s.testSailor.ringImg?.visible); // в воде — в круге, в лодке — без него
   // ---- под водой
-  await room((s) => s.goRoom(16));
-  await waitFor((s) => s.curRoom === 16);
+  await room((s) => s.goRoom(window.__dev.R.deep));
+  await waitFor((s) => s.curRoom === window.__dev.R.deep);
   const deep = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
     const find = (pred) => s.objs.find((o) => o.kind === 'item' && pred(o.beh));
@@ -2414,8 +2416,8 @@ test('море: волна, замок из песка, пальма, кабин
   await waitFor((s) => (s.popBubbles?.length || 0) > 0);
   await waitFor((s) => !s.testSub.rolling && Math.abs(s.testSub.x - s.testX0) > 80 && s.testMermaid.restOn === s.testSub && !s.testMermaid.tailImg.visible);
   // ---- остров: гнездо, клад по карте, котелок на костре
-  await room((s) => s.goRoom(17));
-  await waitFor((s) => s.curRoom === 17);
+  await room((s) => s.goRoom(window.__dev.R.island));
+  await waitFor((s) => s.curRoom === window.__dev.R.island);
   const island = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
     const find = (pred) => s.objs.find((o) => o.kind === 'item' && pred(o.beh));
@@ -2426,7 +2428,7 @@ test('море: волна, замок из песка, пальма, кабин
     s.startDrag(map);
     s.drop(map, { x: x.x, y: x.y - 4 });
     // котелок на костре — тот же котёл: ракушка + морская звезда = жемчужина
-    const pot = s.objs.find((o) => o.beh?.cauldron && Math.floor(o.x / W) === 17);
+    const pot = s.objs.find((o) => o.beh?.cauldron && Math.floor(o.x / W) === window.__dev.R.island);
     for (const sub of ['seashell', 'starfish']) { const o = s.spawnItem(s.findRec(sub), pot.x, pot.y - 30); s.startDrag(o); s.drop(o, { x: pot.x, y: pot.y - 12 }); }
     // подсказка рецепта — из того, что лежит в этой локации
     const r = Math.random; Math.random = () => 0; const hint = s.magicPick(); Math.random = r;
@@ -2438,7 +2440,7 @@ test('море: волна, замок из песка, пальма, кабин
       pots: s.objs.filter((o) => o.beh?.cauldron).map((o) => Math.floor(o.x / W)).sort((a, b) => a - b).join(), // кухня, двор села, кафе, остров
     };
   });
-  assert.deepEqual(island, { dug: true, digging: true, inPot: 2, hint: 'sea', places: { home: 20, village: 7, city: 6, sea: 7, park: 7, far: 11 }, pots: '1,5,11,17,20' });
+  assert.deepEqual(island, { dug: true, digging: true, inPot: 2, hint: 'sea', places: { home: 20, village: 7, city: 6, sea: 7, park: 7, far: 11 }, pots: '1,6,12,18,21' });
   await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'sea turtle') && s.objs.some((o) => o.rec?.subject === 'diamond'));
   await waitFor((s) => !s.testX.digging && (s.testX.x !== s.testAt.x || s.testX.y !== s.testAt.y)); // крестик переехал
   await waitFor((s) => !s.testPot.brewing && s.alchemy.found['seashell + starfish']?.result === 'pearl');
@@ -2451,7 +2453,7 @@ test('море: волна, замок из песка, пальма, кабин
       s.brew(pot);
       return pot.rec.id;
     };
-    const ids = [brewIn(5, 'glass bottle of milk', 'egg'), brewIn(11, 'top hat', 'coin')].join();
+    const ids = [brewIn(window.__dev.R.yard, 'glass bottle of milk', 'egg'), brewIn(window.__dev.R.cafe, 'top hat', 'coin')].join();
     const entry = s.alchemy.entries().find((e) => e.key === 'seashell + starfish');
     return { ids, place: entry.place, found: entry.found };
   });
@@ -2477,7 +2479,7 @@ test('море: волна, замок из песка, пальма, кабин
 test('парк: роща и скала, слон, обезьянка; горка, бассейн, плот, фонтанчик, ведро; карусель, гусеница, силомер, ларёк, котёл; ворота, кольцо, батут, пьедестал, скейт', async () => {
   await freshRoom();
   await room((s) => s.goPlace('park'));
-  await waitFor((s) => !s.travelling && s.curRoom === 18);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.zoo);
   // ---- зоопарк
   const zoo = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
@@ -2512,7 +2514,7 @@ test('парк: роща и скала, слон, обезьянка; горка
       tried: ['bamboo', 'icepool', 'elephant', 'monkey', 'zoofeed'].every((k) => s.flags.tried[k]),
     };
   });
-  assert.deepEqual(zoo, { sprayed: 'elephant_b', hat: true, fed: true, cardOf: 'park', map: true, stop: 'choose', cart: 18, keeper: 18, champ: 21, music: 13, tried: true });
+  assert.deepEqual(zoo, { sprayed: 'elephant_b', hat: true, fed: true, cardOf: 'park', map: true, stop: 'choose', cart: 19, keeper: 19, champ: 22, music: 13, tried: true });
   await waitFor((s) => {
     const has = (subs) => s.objs.some((o) => subs.includes(o.rec?.subject));
     return has(['panda', 'red panda', 'koala']) && has(['penguin', 'emperor penguin', 'harp seal']) && has(['banana']);
@@ -2530,11 +2532,11 @@ test('парк: роща и скала, слон, обезьянка; горка
   assert.deepEqual(ride, { aboard: true, rolling: true });
   await waitFor((s) => !s.testEl.rolling && Math.abs(s.testEl.x - s.testX0) > 60 && s.testKeeper.restOn === s.testEl && Math.abs(s.testKeeper.x - s.testEl.x) <= 12 && s.testKeeper.pose === 'sit');
   // ---- аквапарк
-  await room((s) => s.goRoom(19));
-  await waitFor((s) => s.curRoom === 19);
+  await room((s) => s.goRoom(window.__dev.R.aqua));
+  await waitFor((s) => s.curRoom === window.__dev.R.aqua);
   const aqua = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
-    const find = (pred) => s.objs.find((o) => o.kind === 'item' && Math.floor(o.x / W) === 19 && pred(o.beh));
+    const find = (pred) => s.objs.find((o) => o.kind === 'item' && Math.floor(o.x / W) === window.__dev.R.aqua && pred(o.beh));
     const toys = ['rubber duck', 'swim cap', 'bubble wand', 'inflatable flamingo float'];
     const toys0 = s.objs.filter((o) => toys.includes(o.rec?.subject)).length;
     const sl = find((b) => b.slide);
@@ -2558,11 +2560,11 @@ test('парк: роща и скала, слон, обезьянка; горка
   await waitFor((s) => s.objs.filter((o) => s.testToys.includes(o.rec?.subject)).length > s.testToys0);
   await waitFor((s) => !s.testRaft.rolling && Math.abs(s.testRaft.x - s.testX0) > 80 && s.testZoe.restOn === s.testRaft && !s.testZoe.ringImg?.visible);
   // ---- аттракционы
-  await room((s) => s.goRoom(20));
-  await waitFor((s) => s.curRoom === 20);
+  await room((s) => s.goRoom(window.__dev.R.rides));
+  await waitFor((s) => s.curRoom === window.__dev.R.rides);
   const rides = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
-    const find = (pred) => s.objs.find((o) => o.kind === 'item' && Math.floor(o.x / W) === 20 && pred(o.beh));
+    const find = (pred) => s.objs.find((o) => o.kind === 'item' && Math.floor(o.x / W) === window.__dev.R.rides && pred(o.beh));
     const prizes = ['balloon', 'heart balloon', 'balloon dog'];
     const prizes0 = s.objs.filter((o) => prizes.includes(o.rec?.subject)).length;
     const car = find((b) => b.carousel);
@@ -2599,11 +2601,11 @@ test('парк: роща и скала, слон, обезьянка; горка
   await waitFor((s) => !s.testCo.rolling && Math.abs(s.testCo.x - s.testX0) > 80 && s.testCo.y === s.testY0 && s.testMom.restOn === s.testCo && Math.abs(s.testMom.x - s.testCo.x) <= 18);
   await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'cotton candy') && s.alchemy.found['balloon + cotton candy']?.result === 'cloud sheep');
   // ---- спортплощадка
-  await room((s) => s.goRoom(21));
-  await waitFor((s) => s.curRoom === 21);
+  await room((s) => s.goRoom(window.__dev.R.sport));
+  await waitFor((s) => s.curRoom === window.__dev.R.sport);
   const sport = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
-    const find = (pred) => s.objs.find((o) => o.kind === 'item' && Math.floor(o.x / W) === 21 && pred(o.beh));
+    const find = (pred) => s.objs.find((o) => o.kind === 'item' && Math.floor(o.x / W) === window.__dev.R.sport && pred(o.beh));
     s.tap(find((b) => b.goal)); // ближайший мяч — в ворота
     s.tap(find((b) => b.hoop)); // следующий — в кольцо
     const flying = s.objs.filter((o) => o.flyUntil > s.time.now).length;
@@ -2641,6 +2643,144 @@ test('парк: роща и скала, слон, обезьянка; горка
   const feats = await page.evaluate(() => window.__dev.getStats().feats);
   for (const k of ['travel', 'bamboo', 'icepool', 'elephant', 'monkey', 'zoofeed', 'slide', 'raft', 'geyser', 'tipbucket', 'carousel', 'coaster', 'hammer', 'treats',
     'goal', 'hoop', 'trampoline', 'winners', 'wheels', 'brew']) assert.ok(feats[k] >= 1, `счётчик ${k}`);
+});
+
+// ------------------------------------------------------------------ игровая, обои, таймер сна (2026-11-18)
+test('игровая: шестая комната дома; лошадка, шалаш, сухой бассейн, театр; подружка живёт здесь', async () => {
+  await freshRoom();
+  const R = await page.evaluate(() => window.__dev.R);
+  assert.equal(R.playroom, 5, 'игровая сразу за залом');
+  assert.equal(R.yard, 6, 'село сдвинулось на одну комнату');
+  await room((s, R) => s.goRoom(R.playroom), R);
+  await waitFor((s, R) => s.curRoom === R.playroom, R);
+  const st = await room((s, R) => {
+    const here = (o) => Math.floor(o.x / 293) === R.playroom;
+    const find = (pred) => s.objs.find((o) => o.kind === 'item' && here(o) && pred(o.beh));
+    const pip = s.castChar('pip');
+    const pit = find((b) => b.pit); const tent = find((b) => b.tent); const horse = find((b) => b.rocker); const show = find((b) => b.puppets);
+    const bear = s.spawnItem(s.findRec('teddy bear'), horse.x + 30, 100);
+    // кукла — в бассейн, мишка — на лошадку, Мия — в шалаш (обычным броском)
+    s.startDrag(pip); s.drop(pip, { x: pit.x, y: pit.y - 6 });
+    s.startDrag(bear); s.drop(bear, { x: horse.x, y: horse.y - 10 });
+    const mia = s.castChar('mia');
+    mia.x = tent.x + 40; s.startDrag(mia); s.drop(mia, { x: tent.x, y: tent.y - 6 });
+    // тап: бассейн трижды — выныривает игрушка
+    const before = s.objs.length;
+    for (let i = 0; i < 3; i++) { pit.busyUntil = 0; s.pitTap(pit); }
+    s.tap(horse); s.tap(tent); s.tap(show);
+    return {
+      bin: !!find((b) => b.bin), roller: s.objs.some((o) => o.beh?.roller && here(o)),
+      pip: here(pip), inPit: pip.restOn === pit, onHorse: bear.restOn === horse, inTent: mia.restOn === tent,
+      toy: s.objs.length > before, rocking: !!horse.rocking, lights: tent.texture.key, showing: !!show.showing,
+    };
+  }, R);
+  assert.deepEqual(st, { bin: true, roller: true, pip: true, inPit: true, onHorse: true, inTent: true, toy: true, rocking: true, lights: 'tent_b', showing: true });
+  await waitFor((s, R) => { const b = s.objs.find((o) => o.beh?.puppets); const h = s.objs.find((o) => o.beh?.rocker); return !b.showing && !h.rocking && h.angle === 0; }, R);
+  // в шалаше кукла позади его стенки (видна только макушка) — глубина обновляется в кадре
+  await waitFor((s) => { const t = s.objs.find((o) => o.beh?.tent); return s.castChar('mia').depth < t.depth; });
+  const tried = await room((s) => ['rockhorse', 'tent', 'ballpit', 'puppets'].filter((k) => s.flags.tried?.[k]).join());
+  assert.equal(tried, 'rockhorse,tent,ballpit,puppets');
+  // окно игровой меняет день и ночь
+  const night = await room((s, R) => {
+    const p = { worldX: R.playroom * 293 + Math.round(293 * 0.66) + 10, worldY: 15, id: 1, downTime: 0, upTime: 0, x: 0, y: 0, isDown: true };
+    s.press = null; s.onDown(p, []); s.onUp(p);
+    return s.night;
+  }, R);
+  assert.equal(night, true);
+  await room((s) => s.applyNight(false));
+});
+
+test('старый дом без игровой: всё правее зала сдвигается на комнату, игровая обставляется, комната на экране та же', async () => {
+  await freshRoom();
+  const R = await page.evaluate(() => window.__dev.R);
+  await room((s, R) => { s.goRoom(R.yard); }, R);
+  await waitFor((s, R) => s.curRoom === R.yard && !s.travelling, R);
+  const was = await room((s) => {
+    const at = (pred) => { const o = s.objs.find(pred); return [Math.round(o.x), Math.round(o.y)]; };
+    s.flags.prints = [[s.objs.find((o) => o.beh?.coop).x - 10, 100]];
+    return { coop: at((o) => o.beh?.coop), elephant: at((o) => o.beh?.elephant), granny: at((o) => o.cast === 'granny'), print: s.flags.prints[0][0] };
+  });
+  // так выглядело сохранение до игровой: ленты на комнату короче, отметок о вставке нет
+  await reloadWith(new Function('st', `
+    const W = st.W, at = ${R.playroom} * W;
+    const inPlay = (o) => o.x >= at && o.x < at + W;
+    st.objs = st.objs.filter((o) => !inPlay(o));
+    st.chars = st.chars.filter((o) => !inPlay(o));
+    for (const o of [...st.objs, ...st.chars]) if (o.x >= at + W) o.x -= W;
+    for (const p of st.flags.prints) p[0] -= W;
+    st.room -= 1;
+    delete st.flags.inserted; delete st.flags.playroom; delete st.flags.cast7;
+  `));
+  const now = await room((s) => {
+    const at = (pred) => { const o = s.objs.find(pred); return [Math.round(o.x), Math.round(o.y)]; };
+    return {
+      coop: at((o) => o.beh?.coop), elephant: at((o) => o.beh?.elephant), granny: at((o) => o.cast === 'granny'), print: s.flags.prints[0][0],
+      room: s.curRoom, inserted: s.flags.inserted.join(), pip: !!s.castChar('pip'), tent: s.objs.some((o) => o.beh?.tent),
+    };
+  });
+  assert.deepEqual(now, { ...was, room: R.yard, inserted: 'playroom', pip: true, tent: true });
+});
+
+test('обои и пол: валик на стену — новые обои, на пол — новый пол, по кругу; в саду не красит; после перезагрузки на месте', async () => {
+  await freshRoom();
+  const R = await page.evaluate(() => window.__dev.R);
+  const st = await room((s, R) => {
+    const roller = s.objs.find((o) => o.beh?.roller);
+    // свободное место на стене (у самого потолка) или на полу — где нет мебели
+    const free = (room, y) => {
+      for (let x = room * 293 + 20; x < (room + 1) * 293 - 20; x += 7) if (!s.objAt(x, y, (o) => o.kind === 'item' && o.beh.furniture && !o.beh.flat)) return { x, y };
+      return null;
+    };
+    const wall = (room) => free(room, 3);
+    const floor = (room) => free(room, s.overlay.height - 2);
+    s.startDrag(roller); s.drop(roller, wall(R.bedroom));
+    const one = [...s.flags.decor.bedroom];
+    s.startDrag(roller); s.drop(roller, floor(R.bedroom));
+    const two = [...s.flags.decor.bedroom];
+    for (let i = 0; i < 6; i++) { s.startDrag(roller); s.drop(roller, wall(R.kitchen)); } // 6 обоев + «как было»
+    const kitchen = [...s.flags.decor.kitchen];
+    s.startDrag(roller); s.drop(roller, wall(R.garden));
+    return { one, two, kitchen, garden: !s.flags.decor.garden, img: !!s.decorImgs.bedroom?.active, kimg: !!s.decorImgs.kitchen, tried: !!s.flags.tried?.decor };
+  }, R);
+  assert.deepEqual(st, { one: [1, 0], two: [1, 1], kitchen: [6, 0], garden: true, img: true, kimg: true, tried: true });
+  await room((s) => s.saveNow());
+  await page.reload();
+  await waitFor((s) => s.objs.length > 10);
+  assert.deepEqual(await room((s) => ({ bed: s.flags.decor.bedroom, img: s.decorImgs.bedroom?.texture.key })), { bed: [1, 1], img: 'decor_bedroom' });
+});
+
+test('таймер сна: время вышло — ночь, домой в спальню, кукла в кровати, без облачков снов и автобуса; утро — всё как обычно; настройка в родительской зоне', async () => {
+  await freshRoom();
+  const R = await page.evaluate(() => window.__dev.R);
+  await room((s, R) => { s.buddy = s.castChar('mia').uid; s.goRoom(R.street); }, R);
+  await waitFor((s, R) => s.curRoom === R.street && !s.travelling, R);
+  await room((s) => s.startBedtime());
+  await waitFor((s, R) => s.bedtime && s.curRoom === R.bedroom && s.night && s.objs.some((o) => o.kind === 'char' && o.sleeping), R);
+  const st = await room((s) => {
+    s.sleepTick(); s.wishTick();
+    const sleepers = s.objs.filter((o) => o.kind === 'char' && o.sleeping);
+    return { clouds: sleepers.some((c) => c.dreamPicks), wish: !!s.wish, bus: s.bus === null || !s.bus };
+  });
+  assert.deepEqual(st, { clouds: false, wish: false, bus: true });
+  await room((s) => s.applyNight(false, true));
+  assert.equal(await room((s) => s.bedtime), false);
+  // родительская зона: выбор таймера и место в хранилище
+  await room((s) => { s.press = { id: 1, ui: { gear: true }, t0: performance.now() - 2100 }; }); // палец держит шестерёнку 2 с
+  await page.waitForSelector('#parent-zone');
+  const pz = await page.evaluate(() => {
+    const sel = document.querySelector('#pz-bedtime select');
+    sel.value = '20'; sel.dispatchEvent(new Event('input', { bubbles: true }));
+    const r = { saved: localStorage.getItem('pixel-house-bedtime'), text: document.querySelector('#pz-bedtime small').textContent, storage: document.querySelector('#pz-storage .val').textContent };
+    const sel2 = document.querySelector('#pz-bedtime select'); // после выбора блок перерисован
+    sel2.value = '0'; sel2.dispatchEvent(new Event('input', { bubbles: true }));
+    r.off = localStorage.getItem('pixel-house-bedtime');
+    document.querySelector('#parent-zone [data-act=close]').click();
+    return r;
+  });
+  assert.equal(pz.saved, '20');
+  assert.match(pz.text, /Осталось примерно 20 мин/);
+  assert.match(pz.storage, /КБ|МБ/);
+  assert.equal(pz.off, null);
 });
 
 test('нет ошибок в консоли', () => {

@@ -6,12 +6,20 @@
 // Причина устранена в main.js (раскладка всегда альбомная; сохранение — до смены раскладки),
 // а этот файл возвращает на места то, что уже успело уехать.
 import Phaser from 'phaser';
-import { placeByKey } from './places.js';
+import { R } from './places.js';
 
 const SNAP_KEY = 'pixel-house-snapshots'; // { метка: строка сохранения } — последние снимки дома
 
 export function readSnapshots() {
   try { return JSON.parse(localStorage.getItem(SNAP_KEY)) || {}; } catch { return {}; }
+}
+
+/** Оставить только keep последних снимков (родительская зона: «освободить место»). */
+export function pruneSnapshots(keep) {
+  const all = readSnapshots();
+  const keys = Object.keys(all);
+  while (keys.length > keep) delete all[keys.shift()];
+  try { localStorage.setItem(SNAP_KEY, JSON.stringify(all)); } catch { /* ignore */ }
 }
 
 /** Сохранить снимок дома под меткой (дата или 'repair-дата'); храним четыре последних. */
@@ -37,7 +45,7 @@ export function installRepair(Room, { L }) {
       try {
         this.defaultRoom(); this.ensureKitchen(); this.ensureGarden(); this.ensureBath(); this.ensureParty();
         this.ensureHall(); this.ensurePetBed(); this.ensureKitchen2(); this.ensureBath2(); this.ensureHall2();
-        this.ensureBedroom2(); this.ensureGarden2(); this.ensureTidy(); this.ensureClean(); this.ensureVillage(); this.ensureCity(); this.ensureSea(); this.ensurePark(); this.ensurePots();
+        this.ensureBedroom2(); this.ensureGarden2(); this.ensurePlayroom(); this.ensureTidy(); this.ensureClean(); this.ensureVillage(); this.ensureCity(); this.ensureSea(); this.ensurePark(); this.ensurePots();
         for (const o of this.objs) if (o.kind === 'item') (spots[o.rec.id] ||= []).push({ x: o.x, y: o.y });
       } finally {
         for (const o of this.objs) { o.glow?.destroy(); o.destroy(); }
@@ -54,7 +62,7 @@ export function installRepair(Room, { L }) {
     repairLayout() {
       const { FLOOR_TOP, ROOM_H } = L;
       // сбой случался, когда мир состоял из одного дома: «край мира», в который упирались вещи, — правый край дома
-      const WORLD = (placeByKey('home').last + 1) * L.W;
+      const WORLD = (R.hall + 1) * L.W; // пять комнат дома (игровая появилась позже)
       const items = this.objs.filter((o) => o.kind === 'item');
       const wallish = (o) => o.kind === 'item' && (o.beh.wall || o.beh.shelf);
       const heavy = items.filter((o) => o.rec.tex?.startsWith('big_') && o.beh.furniture && !wallish(o) && !o.beh.flat && !o.beh.album && !o.restOn && !o.owner);

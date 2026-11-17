@@ -38,10 +38,11 @@ function tent(g, x, base, w, h, c1, c2) {
 export const PARK_SCENERY = {
   // ===== зоопарк: трава, песчаная дорожка; у горизонта — забор вольера, за ним жираф и лев на камне
   zoo: {
-    bg(g, x0, { L }) {
+    bg(g, x0, { L, winter }) {
       const { W, ROOM_H, FLOOR_TOP } = L;
-      g.fillStyle(0x9ad873).fillRect(x0, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
-      g.fillStyle(0x7fc45a);
+      // зимой трава под снегом (как в саду у дома), дорожка расчищена, цветов нет
+      g.fillStyle(winter ? 0xf4f9ff : 0x9ad873).fillRect(x0, FLOOR_TOP, W, ROOM_H - FLOOR_TOP);
+      g.fillStyle(winter ? 0xd9e8f5 : 0x7fc45a);
       for (let y = FLOOR_TOP + 3, r = 0; y < ROOM_H; y += 5, r++) for (let x = (r % 2) * 7; x < W; x += 14) { g.fillRect(x0 + x, y, 1, 2); g.fillRect(x0 + x + 2, y + 1, 1, 1); }
       // дорожка
       const py = FLOOR_TOP + Math.round((ROOM_H - FLOOR_TOP) * 0.52);
@@ -51,6 +52,7 @@ export const PARK_SCENERY = {
       g.fillStyle(0xf6e6b8).fillRect(x0, py, W, 1);
       g.fillStyle(0xc8ad6a).fillRect(x0, py + 10, W, 1);
       // цветы
+      if (winter) return;
       for (let i = 0; i < 12; i++) {
         const fx = x0 + ((i * 53 + 17) % (W - 6));
         const fy = FLOOR_TOP + 4 + ((i * 29) % Math.max(4, py - FLOOR_TOP - 8));

@@ -77,7 +77,7 @@ export function installDream(Room, ENV) {
 
     /** Спящей кукле снятся миры (раз в полторы секунды, пока спит). */
     dream(c) {
-      if (this.dreaming) return;
+      if (this.dreaming || this.bedtime) return; // «спокойной ночи» (bedtime.js): просто спят, без облачков
       if (!c.dreamPicks) {
         const held = c.slots.hand?.rec.subject || '';
         c.dreamTheme = DREAM_THEMES.find((t) => held && t.match.test(held)) || null;

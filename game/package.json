@@ -7,7 +7,8 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "test:e2e": "node --test --test-concurrency=1 tests/*.mjs"
+    "test:e2e": "node --test --test-concurrency=1 tests/*.mjs",
+    "test:smoke": "node --test --test-concurrency=1 --test-name-pattern=\"^(комната загружается|еда по кусочку|котёл: яблоко|переход на кухню|второй палец|поворот телефона|дом, уехавший|локации: камера|родительская зона|нет ошибок)\" tests/e2e.mjs"
   },
   "dependencies": {
     "phaser": "3.90.0"
