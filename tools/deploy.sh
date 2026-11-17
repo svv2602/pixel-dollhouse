@@ -6,6 +6,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REMOTE="$(git -C "$ROOT" remote get-url origin)"
 
+# Справка для родителей не должна отставать от игры: механика без строки в справке не выкладывается
+node "$ROOT/.claude/skills/gamepixel-release-check/scripts/check_help.mjs"
+
 cd "$ROOT/game"
 npm run build
 
