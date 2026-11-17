@@ -6,6 +6,7 @@ import Phaser from 'phaser';
 import { ANCHOR } from './character.js';
 import { WORLDS, WORLD_KEYS, makeDreamTextures } from './dreamworlds.js';
 import { DREAM_MUSIC, setMusicTheme } from './sfx.js';
+import { roomAt } from './places.js';
 import { installDreamPlay } from './dreamplay.js';
 
 let E = null; // общие помощники из main.js (L, rnd, pick, sfx, …)
@@ -256,7 +257,7 @@ export function installDream(Room, ENV) {
       // первый кадр после пробуждения: часы сцены снова идут
       this.events.once('update', () => {
         this.dreaming = null;
-        setMusicTheme(this.night ? 0 : (this.curRoom || 0));
+        setMusicTheme(this.night ? 0 : roomAt(this.curRoom || 0).music);
         this.cameras.main.fadeIn(450, 255, 255, 255);
         (list || []).forEach(({ uid, rec }, i) => {
           const c = this.objs.find((o) => o.kind === 'char' && o.uid === uid);
@@ -346,7 +347,7 @@ export function installDream(Room, ENV) {
       this.game.scene.stop('dream');
       if (this.scene.isSleeping()) this.game.scene.wake('room');
       this.cameras.main.resetFX();
-      setMusicTheme(this.night ? 0 : (this.curRoom || 0));
+      setMusicTheme(this.night ? 0 : roomAt(this.curRoom || 0).music);
     },
   });
 }

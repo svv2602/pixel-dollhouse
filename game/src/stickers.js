@@ -1,5 +1,6 @@
 import { ROOMS } from './places.js';
 import { FARM_STICKERS } from './village.js';
+import { CITY_STICKERS } from './city.js';
 // Альбом наклеек на весь дом: кроме открытий котла — блюда с плиты, урожай, клады и сувениры из снов.
 // Наклейка появляется, когда ребёнок впервые получил предмет; страницы подсказывают, где искать остальные.
 
@@ -48,6 +49,11 @@ export function installStickers(Room, { COOK, GROW, TREASURE, DREAMS, DREAM_THEM
             key: 'farm', icon: 'place_village',
             list: FARM_STICKERS.map(([sub, a, b]) => ({ a: this.farmPic(a), b: this.farmPic(b), result: this.findRec(sub) })).filter((e) => e.result),
           },
+          // город: мороженое, монетка покупателя, талисманы из фонтана, пакет с кассы, подарок, плюшевые игрушки, капсулы
+          {
+            key: 'city', icon: 'place_city',
+            list: CITY_STICKERS.map(([sub, a, b]) => ({ a: this.farmPic(a), b: this.farmPic(b), result: this.byId.get(sub) || this.findRec(sub) })).filter((e) => e.result),
+          },
           { key: 'dream', icon: 'wish_sleep', list: recs([...DREAMS, ...DREAM_THEMES.flatMap((t) => [...t.items, ...(t.rare || [])])]).map((result) => ({ a: 'big_bed_icon', b: 'wish_sleep', result })) },
         ];
       }
@@ -59,7 +65,7 @@ export function installStickers(Room, { COOK, GROW, TREASURE, DREAMS, DREAM_THEM
       }));
     },
 
-    /** Картинка-подсказка для страницы «село»: предмет каталога (по id или названию) или текстура. */
+    /** Картинка-подсказка для страниц «село» и «город»: предмет каталога (по id или названию) или текстура. */
     farmPic(x) {
       const rec = this.byId.get(x) || this.findRec(x);
       return rec ? (rec.tex ? `${rec.tex}_icon` : rec) : x;

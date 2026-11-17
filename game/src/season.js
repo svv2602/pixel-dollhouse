@@ -121,6 +121,7 @@ export function installSeason(Room, { L, rnd, sfx }) {
         this.snow = fall(R.garden, R.garden + 1);
         const farm = placeByKey('village');
         fall(farm.first, farm.last + 1);
+        fall(R.street, R.street + 1); // в городе на улице — только первая комната
       }
     },
 

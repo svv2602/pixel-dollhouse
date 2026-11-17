@@ -6,6 +6,7 @@
 // Рисунок пишется в координатах мира (x0 — левый край комнаты); при запекании он сдвигается к нулю.
 import { ROOMS, R } from './places.js';
 import { VILLAGE_SCENERY } from './villagescene.js';
+import { CITY_SCENERY } from './cityscene.js';
 
 const HOME_SCENERY = {
   // ===== спальня: обои в полоску с точками, пол — доски
@@ -143,7 +144,7 @@ const HOME_SCENERY = {
   },
 };
 
-const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY };
+const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY, ...CITY_SCENERY };
 
 /** Белая рама окна с переплётом. */
 function windowFrame(f, { x, y, w, h }) {

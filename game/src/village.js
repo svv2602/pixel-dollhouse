@@ -25,7 +25,7 @@ const BREAD = ['loaf of bread', 'round bread loaf', 'rye bread loaf'];
 
 // Подсказки-облачка, приманки и страница альбома — дописываются к общим спискам в main.js и stickers.js
 export const VILLAGE_HINTS = {
-  travel: { room: 'home', seq: () => ['tex:busstop_icon', 'tex:place_village'] }, // просят в любой комнате дома
+  travel: { room: 'home', seq: (s) => ['tex:busstop_icon', `tex:${(s.unseenPlace() || s.destinations()[Math.floor(Math.random() * s.destinations().length)]).icon}`] }, // просят в любой комнате дома; сначала — туда, где ещё не были
   coop: { room: R.yard, seq: () => ['coop', 'egg'] },
   farmfood: { room: R.yard, seq: () => ['ear of corn', 'farm-cow', 'glass bottle of milk'] },
   wool: { room: R.yard, seq: () => ['pet-brush', 'farm-sheep', 'ball of yarn'] },

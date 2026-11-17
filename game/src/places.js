@@ -1,11 +1,11 @@
 // Реестр локаций и комнат. Мир — одна лента комнат шириной в экран; локация — её отрезок.
-// Камера ходит только внутри своей локации, между локациями — карта, указатель у калитки или повозка.
+// Камера ходит только внутри своей локации, между локациями — карта, автобусная остановка у калитки или повозка.
 //
 // Комнаты только ДОПИСЫВАЮТСЯ в конец (и новые локации тоже): координаты вещей в сохранении — это место на ленте.
 //
 // Поля комнаты:
 //   key     — имя (R.garden — номер комнаты на ленте);
-//   stat    — ячейка времени в статистике родительской зоны (5 занята снами — исторически);
+//   stat    — ячейка времени в статистике родительской зоны (5 занята снами — исторически; подписи — ROOMS в parent.js);
 //   music   — номер мелодии в sfx.js;
 //   outdoor — на улице: небо во всю стену, солнце/луна (тап меняет день и ночь), зимой снег;
 //   icon    — картинка комнаты на карте, colors — [стена или небо, пол] для её карточки;
@@ -33,6 +33,18 @@ export const PLACES = [
       { key: 'veg', stat: 7, music: 8, outdoor: true, icon: 'scarecrow_icon', colors: [0x9fdcff, 0x8fd16a], clean: 'scarecrow' },
       { key: 'orchard', stat: 8, music: 9, outdoor: true, icon: 'peartree_icon', colors: [0x9fdcff, 0x9ad873], clean: 'peartree' },
       { key: 'field', stat: 9, music: 9, outdoor: true, icon: 'tractor_icon', colors: [0x9fdcff, 0xe8c860], clean: 'tractor' },
+    ],
+  },
+  {
+    // город: улица с остановкой (дома стоят слева, справа — сквер: там и солнце, и остановка) и четыре магазина
+    key: 'city', icon: 'place_city', gate: 'street', stop: 0.89, cart: 0.7,
+    card: { who: 'cook', pics: ['icecart', 'trafficlight', 'car_0'] },
+    rooms: [
+      { key: 'street', stat: 10, music: 10, outdoor: true, clouds: [[40, 6], [150, 4]], icon: 'trafficlight_icon', colors: [0x9fdcff, 0xc9cede], clean: 'icecart' },
+      { key: 'market', stat: 11, music: 11, icon: 'shopcart_icon', colors: [0xfff3d6, 0xd8e6f0], clean: 'checkout' },
+      { key: 'cafe', stat: 12, music: 11, icon: 'drinkbar_icon', colors: [0xffe3d0, 0xc98a52], clean: 'showcase' },
+      { key: 'clothes', stat: 13, music: 11, icon: 'hatrack_icon', colors: [0xf3e2ff, 0xe8c9d8], clean: 'fitting' },
+      { key: 'toyshop', stat: 14, music: 10, icon: 'claw_icon', colors: [0xd6f0ff, 0xf2c94c], clean: 'toystand' },
     ],
   },
 ];
