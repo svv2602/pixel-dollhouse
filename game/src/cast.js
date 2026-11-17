@@ -14,7 +14,7 @@ export const CAST = [
   { id: 'star', home: 4, look: { hair: '#b46ad9', skin: SKIN[2], dress: '#ef5a6f', hairStyle: 'ponytail', outfit: 'princess' } },
   { id: 'kid', look: { hair: '#e8b04a', skin: SKIN[3], dress: '#f2c94c', hairStyle: 'curly', outfit: 'shorts' } },
 ];
-const HOME_X = { 1: 0.72, 3: 0.5, 4: 0.3 }; // где встаёт жилец комнаты (доля ширины)
+const HOME_X = { 1: 0.72, 3: 0.5, 4: 0.5 }; // где встаёт жилец комнаты (доля ширины)
 
 export function installCast(Room, { L, rnd, sfx, statHit }) {
   Object.assign(Room.prototype, {

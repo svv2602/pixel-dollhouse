@@ -827,6 +827,77 @@ test('новый день: посылка и подросшие грядки; з
 });
 
 
+// ------------------------------------------------------------------ раскладка и поворот экрана (сбой 2026-11-17)
+const spots = () => room((s) => {
+  const at = (sub) => { const o = s.objs.find((x) => x.rec?.subject === sub); return o ? [Math.round(o.x), Math.round(o.y)] : null; };
+  const ch = s.castChar('mia');
+  return { bed: at('bed'), wardrobe: at('wardrobe'), clock: at('cuckoo clock'), fridge: at('refrigerator'), tub: at('clawfoot bathtub'),
+    chairs: s.objs.filter((x) => x.rec?.subject === 'chair').map((x) => Math.round(x.x)).sort((a, b) => a - b),
+    balloon: at('balloon'), kite: at('kite'), mia: [Math.round(ch.x), Math.round(ch.y)], roomH: s.overlay.height, repaired: s.flags.repaired || 0 };
+});
+/** Перезагрузить игру с подменённым сохранением (текущая страница ничего не дописывает при выгрузке). */
+async function reloadWith(mutate) {
+  await page.evaluate((src) => {
+    const s = window.__game.scene.getScene('room');
+    s.saveNow();
+    s.noSave = true;
+    const st = JSON.parse(localStorage.getItem('pixel-house-v3'));
+    new Function('st', `(${src})(st)`)(st);
+    localStorage.setItem('pixel-house-v3', JSON.stringify(st));
+  }, mutate.toString());
+  await page.reload();
+  await waitFor((s) => s.objs.length > 10);
+}
+
+test('поворот телефона не меняет раскладку; сохранение со старой ошибкой поворота загружается как было', async () => {
+  await freshRoom();
+  await room((s) => {
+    const ch = s.castChar('mia');
+    ch.x = 140; ch.y = 88;                                             // свои перестановки: кукла и новая игрушка
+    s.spawnItem(s.findRec('kite'), 210, 81);
+  });
+  const before = await spots();
+  await page.setViewportSize({ width: 360, height: 780 });             // телефон повернули вертикально
+  await page.waitForTimeout(1200);
+  assert.deepEqual(await spots(), before, 'в портрете раскладка и координаты те же');
+  await page.setViewportSize({ width: 780, height: 360 });
+  await page.waitForTimeout(1200);
+  assert.deepEqual(await spots(), before);
+  // сохранение, записанное старой версией при повороте: размеры портретные, координаты альбомные
+  await reloadWith((st) => { st.W = 270; st.ROOM_H = 545; st.FLOOR_TOP = 455; });
+  assert.deepEqual(await spots(), before, 'размерам не верим — вещи на своих местах, починка не нужна');
+});
+
+test('дом, уехавший под потолок, сам возвращается на место; снимок «до починки» сохраняется', async () => {
+  const before = await spots();
+  // то, что сделала старая ошибка: всё растянуто по ширине и сжато к потолку — и уже сохранено
+  await reloadWith((st) => {
+    for (const o of [...st.objs, ...st.chars]) {
+      o.x = Math.round(Math.max(6, Math.min(5 * 293 - 6, o.x * 293 / 270)));
+      o.y = Math.round(Math.max(4, Math.min(94, o.y * 55 / 455)));
+    }
+  });
+  const after = await spots();
+  assert.equal(after.repaired, 1);
+  // стулья и шарик у правой стены зала при сбое упёрлись в край мира — и всё равно встают на свои места
+  for (const k of ['bed', 'wardrobe', 'clock', 'fridge', 'tub', 'chairs', 'balloon']) assert.deepEqual(after[k], before[k], `${k} — точно на прежнем месте`);
+  for (const k of ['kite', 'mia']) {
+    assert.ok(Math.abs(after[k][0] - before[k][0]) <= 2, `${k}: по горизонтали почти точно (${after[k][0]} / ${before[k][0]})`);
+    assert.ok(Math.abs(after[k][1] - before[k][1]) <= 6, `${k}: по высоте — на полу рядом с прежним местом (${after[k][1]} / ${before[k][1]})`);
+  }
+  const snaps = await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('pixel-house-snapshots') || '{}')));
+  assert.ok(snaps.some((k) => k.startsWith('repair-')), 'снимок до починки есть');
+  // второй вариант сбоя: всё на нижней кромке пола, включая полки
+  await reloadWith((st) => { for (const o of [...st.objs, ...st.chars]) { o.x = Math.round(o.x * 270 / 293); o.y = 94; } });
+  const again = await spots();
+  assert.equal(again.repaired, 2);
+  for (const k of ['bed', 'wardrobe', 'clock', 'fridge', 'tub']) assert.deepEqual(again[k], before[k], `${k} — снова на месте`);
+  // обычный дом починка не трогает
+  await reloadWith(() => {});
+  assert.equal((await spots()).repaired, 2);
+});
+
+
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);
 });

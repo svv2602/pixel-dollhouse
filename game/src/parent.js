@@ -1,6 +1,7 @@
 // Родительская зона: обычная HTML-панель поверх игры (здесь текст можно — это для взрослых).
 // Громкость, локальная статистика «во что играет», голоса семьи, копия сохранения, сброс дома.
 // Всё хранится только на устройстве; в сеть ничего не уходит.
+import { readSnapshots } from './repair.js';
 import { getVolume, setVolume, setMusic, musicPlaying, VOICES, hasVoice, setVoice, say, unlockAudio } from './sfx.js';
 
 // ---------------------------------------------------------------- статистика
@@ -94,6 +95,13 @@ function voicesHtml() {
     <button class="sec" data-act="del" ${hasVoice(v) ? '' : 'disabled style="opacity:.4"'}>✕</button></div>`).join('');
 }
 
+function snapsHtml() {
+  const keys = Object.keys(readSnapshots()).reverse();
+  if (!keys.length) return '<small>Снимков пока нет — первый появится завтра.</small>';
+  const label = (k) => (k.startsWith('repair-') ? `до починки ${k.slice(15)}.${k.slice(12, 14)}` : `утро ${k.slice(8)}.${k.slice(5, 7)}`);
+  return keys.map((k) => `<button class="sec" data-snap="${esc(k)}">${label(k)}</button>`).join('');
+}
+
 function download(name, text) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
@@ -117,7 +125,7 @@ export function exportData() {
 export function importData(obj) {
   if (!obj || obj.app !== 'pixel-dollhouse' || typeof obj.data !== 'object') throw new Error('not a backup');
   const entries = Object.entries(obj.data).filter(([k, v]) => k.startsWith('pixel-house') && typeof v === 'string');
-  if (!entries.some(([k]) => k.startsWith('pixel-house-v'))) throw new Error('no house in backup');
+  if (!entries.some(([k]) => /^pixel-house-v\d+$/.test(k))) throw new Error('no house in backup');
   frozen = true;
   for (let i = localStorage.length - 1; i >= 0; i--) {
     const k = localStorage.key(i);
@@ -168,6 +176,9 @@ export function openParent(scene) {
       <small>Файл со всем домом, альбомами, фото и голосами. Пригодится при смене телефона или перед сбросом.</small>
       <div class="row"><button data-act="export">Сохранить в файл</button><button class="sec" data-act="import">Восстановить из файла</button>
         <input type="file" accept="application/json,.json" hidden><span id="pz-msg"></span></div>
+      <h2 style="margin-top:10px">Вернуть дом, каким он был</h2>
+      <small>Игра сама хранит несколько последних снимков: на начало каждого дня и перед автоматической починкой.</small>
+      <div class="row" id="pz-snaps">${snapsHtml()}</div>
       <h2 style="margin-top:10px">Сброс</h2>
       <small>Комнаты вернутся к начальному виду. Альбом, наклейки и статистика сохранятся.</small>
       <div class="row"><button class="danger" data-act="reset"><i></i><span style="position:relative">Удерживайте 3 секунды, чтобы сбросить дом</span></button></div>
@@ -195,6 +206,14 @@ export function openParent(scene) {
     if (act === 'statreset') { stats = fresh(); dirty = true; flushStats(); $('#pz-stats').innerHTML = statsHtml(); }
     if (act === 'export') { download(`pixel-house-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(exportData())); msg('Файл сохранён в «Загрузки».'); }
     if (act === 'import') $('input[type=file]').click();
+    if (btn.dataset.snap) {
+      const raw = readSnapshots()[btn.dataset.snap];
+      if (raw && window.confirm(`Вернуть дом из снимка «${btn.textContent}»? Сегодняшние перестановки пропадут.`)) {
+        scene.noSave = true;
+        localStorage.setItem('pixel-house-v3', raw);
+        window.location.reload();
+      }
+    }
     if (voice && act === 'rec') { unlockAudio(); record(voice, btn, refreshVoices); }
     if (voice && act === 'play') { unlockAudio(); say(voice); }
     if (voice && act === 'del') setVoice(voice, null).then(refreshVoices);

@@ -14,6 +14,7 @@ import { installNav } from './nav.js';
 import { makeSeason, installSeason, today, isWinter } from './season.js';
 import { Stickers, installStickers } from './stickers.js';
 import { openParent, statHit, statTime, flushStats, getStats, exportData } from './parent.js';
+import { installRepair } from './repair.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -24,10 +25,17 @@ import { openParent, statHit, statTime, flushStats, getStats, exportData } from 
 const L = {};
 const DRAWER_H = 40;
 
-function computeLayout() {
+/** Размер канваса в физических пикселях. Игра всегда альбомная: в портрете экран закрыт просьбой
+ *  повернуть телефон, а раскладку считаем сразу как для повёрнутого — координаты вещей не зависят от поворота. */
+function screenSize() {
   const dpr = window.devicePixelRatio || 1;
-  const dw = Math.round(window.innerWidth * dpr);
-  const dh = Math.round(window.innerHeight * dpr);
+  const w = Math.max(window.innerWidth, window.innerHeight);
+  const h = Math.min(window.innerWidth, window.innerHeight);
+  return { dpr, dw: Math.round(w * dpr), dh: Math.round(h * dpr), h };
+}
+
+function computeLayout() {
+  const { dpr, dw, dh } = screenSize();
   let P = Math.max(2, Math.round(dh / 135));   // ~135 арт-пикселей по высоте
   while (P > 2 && dh / P < 120) P--;
   while (P > 2 && dw / P < 260) P--;            // чтобы влезли вкладки ящика
@@ -371,6 +379,7 @@ class Room extends Phaser.Scene {
     const pool = [...(this.byCat.magic || []), ...(this.byCat.toy || []), ...(this.byCat.food || []).filter((r) => favFood.has(r.subject))];
     this.alchemy = new Alchemy((subj) => this.findRec(subj), pool);
     if (!this.loadState()) this.defaultRoom();
+    else this.repairLayout(); // дом, пострадавший от старой ошибки поворота экрана, возвращается на место
     this.ensureKitchen();
     this.ensureGarden();
     this.ensureBath();
@@ -1523,7 +1532,8 @@ class Room extends Phaser.Scene {
     this.time.delayedCall(1500, () => {
       if (!ch.rainbow && !ch.ice) ch.clearTint();
       const milk = this.findRec('glass of milk');
-      if (milk && !this.wish) this.showWish(ch, 'food', milk);
+      // «дайте молока!» важнее чужого случайного желания (как и остальные потребности)
+      if (milk && !this.wish?.need) { this.showWish(ch, 'food', milk); this.wish.need = true; }
     });
   }
 
@@ -4129,9 +4139,14 @@ class Room extends Phaser.Scene {
 
   loadState() {
     let st;
-    try { st = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return false; }
+    this.rawSave = null;
+    try { this.rawSave = localStorage.getItem(SAVE_KEY); st = JSON.parse(this.rawSave); } catch { return false; }
     if (!st || st.v !== 2) return false;
-    // экран мог поменяться (поворот, полноэкранный режим) — переносим координаты в новую раскладку
+    // Старая ошибка поворота экрана могла записать размеры портретной раскладки рядом с координатами альбомной.
+    // Признак: по записанным размерам до пола не достаёт ни одна вещь. Тогда размерам не верим — координаты уже наши.
+    const ys = [...st.objs.filter((o) => !o.owner), ...st.chars].map((o) => o.y);
+    if (ys.length >= 6 && Math.max(...ys) < (st.FLOOR_TOP || 0) * 0.6) { st.W = L.W; st.ROOM_H = L.ROOM_H; st.FLOOR_TOP = L.FLOOR_TOP; }
+    // экран мог поменяться (полноэкранный режим, другое устройство) — переносим координаты в новую раскладку
     const fx = (x) => Math.round(Phaser.Math.Clamp(x * L.W / (st.W || L.W), 6, L.WORLD - 6));
     this.roomIdx = Phaser.Math.Clamp(st.room || 0, 0, L.ROOMS - 1);
     this.flags = st.flags || {};
@@ -4185,6 +4200,7 @@ installLife(Room, ENV);
 installNav(Room, ENV);
 installSeason(Room, ENV);
 installStickers(Room, ENV);
+installRepair(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)
@@ -4212,20 +4228,28 @@ const game = new Phaser.Game({
   scene: [Boot, Room],
 });
 
-// Поворот / смена размера окна: пересчитать целый масштаб и перестроить комнату (состояние сохраняется)
+// Смена размера окна (полный экран, адресная строка): пересчитать целый масштаб и перестроить комнату.
+// Порядок важен: сначала сохранить дом в СТАРОЙ раскладке, потом сменить раскладку — тогда загрузка
+// правильно перенесёт координаты. (Раньше было наоборот, и после поворота вещи могли уехать под потолок.)
 let resizeT;
-window.addEventListener('resize', () => {
+function relayout() {
   clearTimeout(resizeT);
   resizeT = setTimeout(() => {
-    const prev = `${L.dw}x${L.dh}`;
+    // свёрнутое приложение получает случайные размеры (экран блокировки, сплит) — не реагируем
+    if (document.hidden) return;
+    const next = screenSize();
+    if (next.h < 150 || (next.dw === L.dw && next.dh === L.dh)) return;
+    const room = game.scene.getScene('room');
+    const live = room?.scene.isActive();
+    if (live) room.saveNow();
     computeLayout();
-    if (prev === `${L.dw}x${L.dh}`) return;
     game.scale.resize(L.dw, L.dh);
     game.scale.setZoom(1 / L.dpr);
-    const room = game.scene.getScene('room');
-    if (room?.scene.isActive()) { room.saveNow(); room.scene.restart(); }
+    if (live) room.scene.restart();
   }, 200);
-});
+}
+window.addEventListener('resize', relayout);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) relayout(); });
 
 // Приложение свернули или закрыли: дописать сохранение и статистику сразу, не дожидаясь задержки
 const flushAll = () => { game.scene.getScene('room')?.saveNow?.(); flushStats(); };

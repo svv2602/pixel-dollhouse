@@ -1,6 +1,7 @@
 // Повод вернуться: раз в день — посылка-сюрприз и подросшие за ночь грядки;
 // зимой (1 декабря – 14 января) — ёлка с огоньками в спальне и снег в саду.
 import { canvasFor } from './furniture.js';
+import { writeSnapshot } from './repair.js';
 
 /** Сегодняшняя дата 'ГГГГ-ММ-ДД' по часам устройства (в dev-сборке подменяется ключом pixel-house-date — для тестов). */
 export function today() {
@@ -56,6 +57,7 @@ export function installSeason(Room, { L, rnd, sfx }) {
       const d = today();
       if (this.flags.day === d) return;
       const first = !this.flags.day;
+      writeSnapshot(d, this.rawSave); // дом, каким он был в начале дня, — можно вернуть из родительской зоны
       this.flags.day = d;
       this.flags.visits = (this.flags.visits || 0) + 1;
       if (!first) {
