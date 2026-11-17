@@ -15,6 +15,7 @@ import { makeSeason, installSeason, today, isWinter } from './season.js';
 import { Stickers, installStickers } from './stickers.js';
 import { openParent, statHit, statTime, flushStats, getStats, exportData } from './parent.js';
 import { installRepair } from './repair.js';
+import { installDream, Dream } from './dream.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -141,6 +142,11 @@ const HINTS = {
   swing: { room: 2, seq: () => ['big_swing'] },
   butterfly: { room: 2, seq: () => ['butterfly'] },
   dig: { room: 2, seq: () => ['shovel', 'tex:dig_x'] },
+  // сны и мечты: облачко-дверь над спящей куклой, качелями, ванной и холодильником
+  dream: { room: 0, seq: () => ['big_bed', 'tex:dream_cloud_icon', 'unicorn'] },
+  dreamsky: { room: 2, seq: () => ['big_swing', 'tex:dream_cloud_icon', 'rainbow'] },
+  dreamsea: { room: 3, seq: () => ['big_tub', 'tex:dream_cloud_icon', 'goldfish'] },
+  dreamcandy: { room: 1, seq: () => ['big_fridge', 'tex:dream_cloud_icon', 'cupcake'] },
   mic: { room: 4, seq: () => ['microphone'] },
   audience: { room: 4, seq: () => ['chair', 'teddy bear'] },
   curtain: { room: 4, seq: () => ['tex:curtain_icon'] },
@@ -162,16 +168,19 @@ const TREASURE = ['seashell', 'pearl', 'diamond', 'ruby', 'emerald', 'amethyst',
 // Любимые игрушки питомцев (у каждого своя — по номеру)
 const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
-// Темы снов: что персонаж держит в руке, засыпая, — о том и сон; утром — сувенир из сна
+// Темы снов: что персонаж держит в руке, засыпая, — тот мир и снится первым (world — ключ мира в dreamworlds.js);
+// items — сувениры этого мира: их приносят из сна, они же — страница альбома наклеек
 const DREAM_THEMES = [
-  { match: /fish|shell|whale|octopus|starfish|seahorse|boat|duck|crab|dolphin|jellyfish/, items: ['goldfish', 'whale', 'octopus', 'seashell', 'starfish', 'seahorse', 'dolphin', 'pearl'] },
-  { match: /star|moon|wand|rocket|comet|planet|orb/, items: ['star', 'crescent moon', 'shooting star', 'toy rocket', 'crystal ball', 'snowflake'] },
-  { match: /book|crown|tiara|fairy|castle|unicorn|potion|album/, items: ['unicorn', 'fairy', 'crown', 'toy castle', 'magic wand', 'tiara'] },
-  { match: /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron/, items: ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'] },
-  { match: /teddy|plush|kitten|puppy|cat|dog|rabbit|bunny|pony|panda|hamster|owl/, items: ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear'] },
+  { world: 'sea', match: /fish|shell|whale|octopus|starfish|seahorse|boat|duck|crab|dolphin|jellyfish|pearl/, items: ['goldfish', 'whale', 'octopus', 'seashell', 'starfish', 'seahorse', 'dolphin', 'pearl'] },
+  { world: 'planet', match: /star|moon|wand|rocket|comet|planet|orb|saucer|robot/, items: ['star', 'crescent moon', 'shooting star', 'toy rocket', 'crystal ball', 'flying saucer', 'moon rabbit', 'jar of stardust'] },
+  { world: 'forest', match: /book|crown|tiara|fairy|castle|unicorn|potion|album|mushroom|flower/, items: ['unicorn', 'fairy', 'crown', 'toy castle', 'magic wand', 'tiara', 'glowcap mushroom'] },
+  { world: 'candy', match: /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron/, items: ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'] },
+  { world: 'toys', match: /teddy|plush|kitten|puppy|cat|dog|rabbit|bunny|pony|panda|hamster|owl|doll|toy|ball/, items: ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear', 'toy robot', 'toy train engine'] },
+  { world: 'ice', match: /snow|\bice\b|penguin|polar|sled|mitten|scarf|frost/, items: ['snowflake', 'penguin', 'snow globe', 'ice crystal', 'sled', 'polar bear'] },
+  { world: 'clouds', match: /cloud|kite|balloon|bird|rainbow|feather|\bsun\b|airplane|pinwheel/, items: ['rainbow', 'cloud sheep', 'bluebird', 'kite', 'sun', 'hot air balloon'] },
 ];
 
-// Что снится спящим в тёмной комнате
+// Утренний сувенир, если заснули без предмета в руке
 const DREAMS = ['unicorn', 'rainbow', 'star', 'cupcake', 'kitten', 'crown', 'shooting star', 'teddy bear', 'butterfly'];
 
 // Неаппетитное и странное для 6–7 лет — в ящике не показываем
@@ -367,6 +376,7 @@ class Room extends Phaser.Scene {
     makeFurnitureTextures(this);
     this.drawRoom();
     this.makeParticles();
+    this.initDreams();
 
     this.overlay = this.add.rectangle(0, 0, L.WORLD, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
 
@@ -1384,6 +1394,7 @@ class Room extends Phaser.Scene {
     sfx.chestOut();
     fr.setTexture('big_fridgeOpen');
     this.hintDone('fridge');
+    this.fridgeDream(fr);
     this.time.delayedCall(650, () => { if (fr.active) fr.setTexture('big_fridge'); });
     if (fr.contents.length) { this.spill(fr); return; }
     const room = Math.floor(fr.x / L.W);
@@ -2124,6 +2135,7 @@ class Room extends Phaser.Scene {
     sfx.whee();
     const rider = this.objs.find((o) => o.restOn === sw);
     if (rider?.kind === 'char') { sfx.giggle(); this.fxHearts.explode(1, rider.x, rider.y - rider.displayHeight); }
+    this.swingDream(sw);
   }
 
   /** Качели: сиденье на верёвках — маятник; седок качается вместе с ним. */
@@ -2519,12 +2531,14 @@ class Room extends Phaser.Scene {
       if (pref !== '0' && !musicPlaying() && !over[0]?.ui?.music) { setMusic(true); this.drawMusicIcon(); }
     }
     goFullscreen();
+    if (this.dreaming) return; // уже улетаем в сон
     const q = this.pt(p);
     const top = over[0];
     // второй палец (ладонь, палец держащей руки): начатое перетаскивание/свайп не трогаем;
     // а «лежащий» без дела первый палец уступает новому касанию
     if (this.press && this.press.id !== p.id && (this.press.moved || this.press.scrolling)) return;
     this.press = { id: p.id, p, sx: q.x, sy: q.y, t: p.downTime, moved: false };
+    if (top?.dreamPick) { this.pickDream(top.dreamPick); this.press = null; return; }
     if (top?.bubble) { this.popBubble(top); this.press = null; return; }
     if (top?.curtain) { this.toggleCurtain(); this.press = null; return; }
     if (top?.raincloud) { this.rain(); this.press = null; return; }
@@ -2653,6 +2667,8 @@ class Room extends Phaser.Scene {
     o.setDepth(5000);
     if (o.walkTween) { o.walkTween.stop(); o.walkTween = null; o.walking = false; }
     this.tweens.killTweensOf(o);
+    // прыжки радости оборвались вместе с анимацией — иначе кукла навсегда осталась бы «занятой» (не спит, не просит)
+    if (o.hopBusy) { o.hopBusy = false; o.busy = false; }
     o.setScale(o.kind === 'char' ? o.mul : 1); // масштаб только целый — без «поднятия» ×1.15
     if (o.kind === 'char') { o.sleeping = false; o.setFlipX(false); o.setTexture(o.key + '_open'); this.buddy = o.uid; }
   }
@@ -2885,10 +2901,11 @@ class Room extends Phaser.Scene {
       }
       sfx.giggle();
       o.busy = true;
+      o.hopBusy = true;
       o.setTexture(o.key + '_blink');
       this.tweens.add({
         targets: o, y: o.y - 7, duration: 160, yoyo: true, ease: 'Quad.easeOut',
-        onComplete: () => { o.busy = false; o.setTexture(o.key); },
+        onComplete: () => { o.busy = false; o.hopBusy = false; o.setTexture(o.key); },
       });
       this.fxHearts.explode(2, o.x, o.y - o.displayHeight);
       return;
@@ -3100,7 +3117,7 @@ class Room extends Phaser.Scene {
       if (this.time.now > this.wish.until || !this.wish.ch.active) this.clearWish(false);
       return;
     }
-    const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && this.visible(c));
+    const chars = this.objs.filter((c) => c.kind === 'char' && !c.busy && !c.dragging && !c.sleeping && this.visible(c) && !this.hasDoor(c));
     if (!chars.length) return;
     for (const c of chars) if (c.needs?.has('dryer') && !(c.wetUntil > this.time.now)) c.needs.delete('dryer'); // высохла сама
     const needy = chars.filter((c) => c.needs?.size);
@@ -3177,6 +3194,7 @@ class Room extends Phaser.Scene {
   }
 
   showHint(ch, name) {
+    if (this.hasDoor(ch)) return; // над ней облачко сна — два облачка друг на друге не читаются
     const seq = HINTS[name].seq(this).map((e) => this.hintIcon(e)).filter(Boolean);
     if (!seq.length) return;
     this.showWish(ch, 'hint', null, null, seq);
@@ -3262,6 +3280,7 @@ class Room extends Phaser.Scene {
     if (!ch.active) return;
     if (ch.busy) { this.time.delayedCall(250, () => this.celebrate(ch, hops)); return; }
     ch.busy = true;
+    ch.hopBusy = true; // занята только прыжками: взяли в руки — прыжки обрываются, и она свободна
     ch.sleeping = false;
     ch.setTexture(ch.key + '_blink');
     let n = 0;
@@ -3269,7 +3288,7 @@ class Room extends Phaser.Scene {
     this.tweens.add({
       targets: ch, y: y0 - 6, duration: 150, yoyo: true, repeat: hops - 1, ease: 'Quad.easeOut',
       onYoyo: () => { ch.setFlipX(!ch.flipX); if (n++ % 2 === 0) sfx.giggle(); },
-      onComplete: () => { ch.y = y0; ch.setFlipX(false); ch.busy = false; ch.setTexture(ch.key); },
+      onComplete: () => { ch.y = y0; ch.setFlipX(false); ch.busy = false; ch.hopBusy = false; ch.setTexture(ch.key); },
     });
   }
 
@@ -3290,41 +3309,9 @@ class Room extends Phaser.Scene {
         c.setTexture(c.key + '_blink');
         this.fxZ.explode(1, c.x + 6, c.y - c.displayHeight + 4);
       }
-      // сладкий сон: ночь + в комнате погашен свет -> облачко сна с меняющимися картинками
-      const dreaming = c.sleeping && this.night && this.roomDark(c.x);
-      if (dreaming) this.dream(c); else if (c.dreamBubble) this.endDream(c);
+      // спящей снятся миры: над ней облачка — тап переносит в сон (см. dream.js)
+      if (c.sleeping) this.dream(c); else if (c.dreamPicks) this.endDream(c);
     }
-  }
-
-  roomDark(x) {
-    const room = Math.floor(x / L.W);
-    return !this.objs.some((o) => o.kind === 'item' && o.beh.light && o.lit && Math.floor(o.x / L.W) === room);
-  }
-
-  dream(c) {
-    if (!c.dreamBubble) {
-      // тема сна — по предмету в руке
-      const held = c.slots.hand?.rec.subject || '';
-      c.dreamTheme = DREAM_THEMES.find((t) => held && t.match.test(held)) || null;
-      c.dreamBubble = this.add.image(c.x, c.y, 'bubble').setOrigin(0.2, 1).setDepth(10003).setAlpha(0);
-      c.dreamIcon = this.add.image(0, 0, 'px').setDepth(10004).setAlpha(0);
-      this.tweens.add({ targets: [c.dreamBubble, c.dreamIcon], alpha: 0.9, duration: 600 });
-      c.dreamStep = 0;
-    }
-    if (c.dreamStep++ % 2 === 0) {
-      const pool = c.dreamTheme ? c.dreamTheme.items : DREAMS;
-      const rec = this.findRec(pick(pool));
-      if (rec) c.dreamIcon.setTexture(rec.cat, rec.frame);
-      this.fxSparks.explode(2, c.dreamBubble.x + 9, c.dreamBubble.y - 14);
-    }
-  }
-
-  endDream(c) {
-    const b = c.dreamBubble;
-    const i = c.dreamIcon;
-    c.dreamBubble = null;
-    c.dreamIcon = null;
-    this.tweens.add({ targets: [b, i], alpha: 0, duration: 400, onComplete: () => { b.destroy(); i.destroy(); } });
   }
 
   // ---------------------------------------------------------------- готовка и оркестр
@@ -3922,20 +3909,11 @@ class Room extends Phaser.Scene {
         const pool = c.dreamTheme ? c.dreamTheme.items : DREAMS;
         c.sleeping = false;
         c.awakeUntil = this.time.now + 12000;
-        if (c.dreamBubble) this.endDream(c);
+        this.endDream(c);
         c.dreamStep = 0;
         this.time.delayedCall(300 + Math.random() * 400, () => {
-          // сувенир из сна: появляется прямо в руке, в искорках
-          if (dreamed) {
-            const rec = this.findRec(pick(pool.filter((sub) => this.findRec(sub))));
-            if (rec) {
-              const it = this.spawnItem(rec, c.x, c.y - 20);
-              this.wear(c, 'hand', it);
-              this.sticker('dream', rec, c.x, c.y - 20);
-              this.fxSparks.explode(16, c.x, c.y - c.displayHeight / 2);
-              sfx.sparkle();
-            }
-          }
+          // проспала до утра, не заходя в сон, — сувенир всё равно появляется в руке
+          if (dreamed) this.giveSouvenir(c, this.findRec(pick(pool.filter((sub) => this.findRec(sub)))));
           this.celebrate(c, 2);
         });
         c.dreamTheme = null;
@@ -4013,13 +3991,7 @@ class Room extends Phaser.Scene {
         if (drop) { drop.x = px; drop.y = Math.round(py - (img ? img.displayHeight : 3) - 4 + Math.sin(time / 250) * 1.5); drop.setDepth(bed.depth + 0.45); }
       });
     }
-    for (const c of this.objs) {
-      if (c.kind !== 'char' || !c.dreamBubble) continue;
-      c.dreamBubble.x = Math.round(c.x + 3 * c.scaleY);
-      c.dreamBubble.y = Math.round(c.y - c.displayHeight + 3 * c.scaleY);
-      c.dreamIcon.x = c.dreamBubble.x + 9;
-      c.dreamIcon.y = c.dreamBubble.y - 14;
-    }
+    this.updateDreams(time);
     const plain = !this.dress && !this.albumUi && !this.mapUi; // нет открытых экранов поверх комнаты
     if (this.nav) {
       this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && plain));
@@ -4194,13 +4166,14 @@ class Room extends Phaser.Scene {
 }
 
 // Крупные блоки вынесены в отдельные файлы и подключаются как методы сцены
-const ENV = { L, rnd, pick, pixelMap, sfx, statHit, COOK, GROW, TREASURE, DREAMS, DREAM_THEMES };
+const ENV = { L, rnd, pick, pixelMap, sfx, statHit, statTime, today, COOK, GROW, TREASURE, DREAMS, DREAM_THEMES };
 installCast(Room, ENV);
 installLife(Room, ENV);
 installNav(Room, ENV);
 installSeason(Room, ENV);
 installStickers(Room, ENV);
 installRepair(Room, ENV);
+installDream(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)
@@ -4225,7 +4198,7 @@ const game = new Phaser.Game({
   roundPixels: true,
   scale: { mode: Phaser.Scale.NONE, zoom: 1 / L.dpr },
   input: { activePointers: 2 },
-  scene: [Boot, Room],
+  scene: [Boot, Room, Dream],
 });
 
 // Смена размера окна (полный экран, адресная строка): пересчитать целый масштаб и перестроить комнату.
@@ -4240,6 +4213,7 @@ function relayout() {
     const next = screenSize();
     if (next.h < 150 || (next.dw === L.dw && next.dh === L.dh)) return;
     const room = game.scene.getScene('room');
+    room?.abortDream?.(); // сон не переживает смену раскладки: кукла просто просыпается дома
     const live = room?.scene.isActive();
     if (live) room.saveNow();
     computeLayout();

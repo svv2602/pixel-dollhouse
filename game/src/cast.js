@@ -78,7 +78,7 @@ export function installCast(Room, { L, rnd, sfx, statHit }) {
         ch.sleeping = false;
         ch.restOn = null;
         ch.inTub = null;
-        if (ch.dreamBubble) this.endDream(ch);
+        this.endDream(ch);
         ch.setTexture(ch.key);
       }
       this.buddy = ch.uid;

@@ -184,7 +184,7 @@ test('оркестр: два инструмента в комнате играю
   assert.ok(n >= 2, 'в спальне есть пианино и барабан');
 });
 
-test('сон в темноте: ночь + свет выключен -> снится сон', async () => {
+test('сон ночью: над спящей появляются облачка снов, утро будит', async () => {
   await room((s) => {
     s.applyNight(true);
     for (const o of s.objs) if (o.beh?.light) o.lit = false;
@@ -192,9 +192,9 @@ test('сон в темноте: ночь + свет выключен -> снит
     const bed = s.objs.find((o) => o.rec?.subject === 'bed');
     s.drop(c, { x: bed.x, y: bed.y - 8 });
   });
-  await waitFor((s) => !!s.objs.find((o) => o.kind === 'char').dreamBubble);
+  await waitFor((s) => !!s.objs.find((o) => o.kind === 'char').dreamPicks);
   await room((s) => s.applyNight(false, true)); // утро будит
-  await waitFor((s) => !s.objs.find((o) => o.kind === 'char').sleeping);
+  await waitFor((s) => { const c = s.objs.find((o) => o.kind === 'char'); return !c.sleeping && !c.dreamPicks && !s.dreamGroups.length; });
 });
 
 test('волшебное желание: подсказка рецепта исполняется варкой', async () => {
@@ -294,7 +294,7 @@ test('сны: с мишкой снятся зверята, утром — сув
   await room((s) => s.applyNight(false, true));
   await waitFor((s) => {
     const h = s.objs.find((o) => o.kind === 'char').slots.hand;
-    return h && ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear'].includes(h.rec.subject) && h.rec.subject !== undefined;
+    return h && ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear', 'toy robot', 'toy train engine'].includes(h.rec.subject);
   });
 });
 
@@ -458,8 +458,8 @@ test('подсказки: в ванной просит щётку — почис
     s.testCh3 = c;
     return { bathHints, kitchenHints, shown: s.wish?.hint };
   });
-  assert.equal(st.bathHints, 'bubbles,makeup,teeth,toilet');
-  assert.equal(st.kitchenHints, 'cook,fridge,smoothie');
+  assert.equal(st.bathHints, 'bubbles,dreamsea,makeup,teeth,toilet');
+  assert.equal(st.kitchenHints, 'cook,dreamcandy,fridge,smoothie');
   assert.equal(st.shown, 'teeth');
   await waitFor((s) => !s.testCh3.busy);
   await room((s) => s.brushTeeth(s.testCh3));
@@ -897,6 +897,303 @@ test('дом, уехавший под потолок, сам возвращае�
   assert.equal((await spots()).repaired, 2);
 });
 
+
+// ---------------------------------------------------------------- сны и мечты
+/** Выполнить функцию в сцене сна: fn(dream) -> значение. */
+const dream = (fn, arg) => page.evaluate(([src, a]) => {
+  const d = window.__game.scene.getScene('dream');
+  return new Function('d', 'a', `return (${src})(d, a);`)(d, a);
+}, [fn.toString(), arg]);
+
+/** Ждать, пока сцена сна активна и fn(dream) истинно. */
+const waitDream = (fn, arg, timeout = 120000) => page.waitForFunction(([src, a]) => {
+  const g = window.__game;
+  const d = g?.scene?.getScene('dream');
+  return d && g.scene.isActive('dream') && d.actors?.length && new Function('d', 'a', `return (${src})(d, a);`)(d, a);
+}, [fn.toString(), arg], { timeout, polling: 250 });
+
+/** Ждать возвращения домой: сцена сна остановлена, дом проснулся. */
+const waitHome = () => page.waitForFunction(() => {
+  const g = window.__game;
+  const s = g.scene.getScene('room');
+  return g.scene.isActive('room') && !g.scene.isActive('dream') && !s.dreaming;
+}, null, { timeout: 120000, polling: 250 });
+
+/** Солнышко: проснуться; вернуть, что кукла принесла из сна. */
+async function wakeUp(uid) {
+  const sub = await dream((d) => { d.leave(); return d.brought?.subject; });
+  await waitHome();
+  await waitFor((s, a) => s.objs.find((o) => o.uid === a.uid)?.slots.hand?.rec.subject === a.sub, { uid, sub });
+  return sub;
+}
+
+test('сон: над спящей — три облачка миров; тап по облачку переносит в сон, солнышко будит с сувениром', async () => {
+  await freshRoom();
+  const uid = await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    s.wear(c, 'hand', s.spawnItem(s.findRec('seashell'), c.x, 40), true); // с ракушкой снится море
+    const bed = s.objs.find((o) => o.rec?.subject === 'bed');
+    s.drop(c, { x: bed.x, y: bed.y - 8 });
+    return c.uid;
+  });
+  await waitFor((s, id) => s.objs.find((o) => o.uid === id).dreamPicks?.picks.every((p) => p.bubble.scale === 1), uid);
+  const st = await room((s, id) => {
+    const g = s.objs.find((o) => o.uid === id).dreamPicks;
+    const b = g.picks[1].bubble;
+    const k = s.cameras.main.zoom / window.devicePixelRatio;
+    return { night: s.night, worlds: g.picks.map((p) => p.world), xs: g.picks.map((p) => p.bubble.x), tap: { x: b.x * k, y: (b.y - 10) * k } };
+  }, uid);
+  assert.equal(st.night, false, 'облачка появляются и днём');
+  assert.equal(st.worlds.length, 3);
+  assert.equal(new Set(st.worlds).size, 3, 'три разных мира');
+  assert.equal(st.worlds[1], 'sea', 'мир по предмету в руке — в середине');
+  assert.ok(st.xs.every((x) => x - 14 >= 20 && x + 14 <= 293), `облачка не залезают на кнопку-домик и за край: ${st.xs}`);
+  await page.mouse.click(st.tap.x, st.tap.y); // настоящее касание
+  await waitDream((d) => d.key === 'sea' && d.dolls.length === 1);
+  const inside = await dream((d) => ({ tail: !!d.dolls[0].tail, exit: !!d.exitBtn, roomAsleep: window.__game.scene.isSleeping('room') }));
+  assert.deepEqual(inside, { tail: true, exit: true, roomAsleep: true });
+  // ракушка на дне открывается — подарок можно дать кукле в руку и унести домой
+  const gift = await dream((d) => {
+    d.actors.find((a) => a.texture.key === 'dw_clam').tap();
+    const it = d.gifts.at(-1);
+    d.startDrag(it);
+    const doll = d.dolls[0];
+    it.x = doll.x; it.y = doll.y - 10;
+    d.drop(it, { x: doll.x, y: doll.y - 10 });
+    return { held: doll.hand === it, sub: it.rec.subject };
+  });
+  assert.ok(gift.held, 'подарок у куклы в руке');
+  const brought = await wakeUp(uid);
+  assert.equal(brought, gift.sub, 'домой приносят то, что держали во сне');
+  const after = await room((s, a) => {
+    const c = s.objs.find((o) => o.uid === a.uid);
+    return { sleeping: c.sleeping, sticker: s.stickers.has('dream', a.sub), seen: s.flags.dreamSeen.sea, tried: s.flags.tried.dream, picks: !!c.dreamPicks };
+  }, { uid, sub: brought });
+  assert.deepEqual(after, { sleeping: false, sticker: true, seen: true, tried: true, picks: false });
+});
+
+test('миры снов: в каждом из семи работает своя механика, из каждого возвращаются с сувениром', async () => {
+  const uid = await room((s) => s.objs.find((o) => o.kind === 'char').uid);
+  const enter = async (w) => {
+    assert.ok(await room((s, a) => s.enterDream(s.objs.find((o) => o.uid === a.uid), a.w, 'bed'), { uid, w }), `вход в ${w}`);
+    await waitDream((d, k) => d.key === k && d.dolls.length > 0, w);
+  };
+  const giftsOf = () => dream((d) => d.gifts.length);
+
+  // лес: фея поднимает куклу в воздух; четыре гриба зажжены — подарок; единорог катает с радужным следом
+  await enter('forest');
+  await dream((d) => { d.y0 = d.dolls[0].y; d.tap(d.actors.find((a) => a.rec?.subject === 'fairy')); });
+  await waitDream((d) => d.dolls[0].y < d.y0 - 12);
+  await dream((d) => { d.halt(d.dolls[0]); d.dolls[0].y = d.y0; for (const m of d.mush) m.tap(); });
+  assert.equal(await giftsOf(), 1, 'все грибы зажжены — подарок');
+  await dream((d) => d.mount(d.dolls[0], d.uni));
+  await waitDream((d) => d.trail.length > 3 && d.dolls[0].mount === d.uni && Math.abs(d.dolls[0].x - d.uni.x) < 2);
+  await wakeUp(uid);
+
+  // планета: кратер дарит подарок; инопланетяне повторяют прыжок; тарелка поднимает лучом; ракета взлетает
+  await enter('planet');
+  await dream((d) => { d.actors.find((a) => a.texture.key === 'dw_crater').tap(); d.tap(d.dolls[0]); });
+  assert.equal(await giftsOf(), 1);
+  await waitDream((d) => d.aliens.some((a) => a.jumping));
+  await waitDream((d) => !d.dolls[0].jumping);
+  await dream((d) => { d.y0 = d.dolls[0].y; d.ufo.tap(); });
+  await waitDream((d) => d.ufo.lift && d.dolls[0].y < d.y0 - 6);
+  await dream((d) => { d.ufo.cancel(); d.dolls[0].y = d.y0; d.rocket.tap(d.rocket); });
+  await waitDream((d) => d.rocket.flying && d.rocket.y < d.GY - 10);
+  await wakeUp(uid);
+
+  // море: рыбки плывут за пальцем; кит катает
+  await enter('sea');
+  await dream((d) => { d.fx0 = d.fish.map((f) => f.x); d.def.skyDown(d, { x: 30, y: 40 }); });
+  await waitDream((d) => d.fish.every((f) => Math.abs(f.x - 30) < 30));
+  await dream((d) => d.mount(d.dolls[0], d.actors.find((a) => a.rec?.subject === 'whale')));
+  await waitDream((d) => d.dolls[0].mount && Math.abs(d.dolls[0].y - (d.dolls[0].mount.y - 13)) < 2);
+  await wakeUp(uid);
+
+  // облака: кукла стоит на облаке; облако-батут подбрасывает; звезда падает подарком; пальцем рисуется радуга
+  await enter('clouds');
+  const cl = await dream((d) => {
+    const doll = d.dolls[0];
+    const on = doll.plat === d.plats[0];
+    d.plats[0].tap();
+    const jumped = doll.jumping;
+    d.actors.find((a) => a.rec?.subject === 'star').tap();
+    d.def.skyDown(d, { x: 100, y: 30 });
+    d.def.skyMove(d, { x: 140, y: 36 });
+    return { on, jumped, gifts: d.gifts.length, trail: d.trail.length };
+  });
+  assert.ok(cl.on && cl.jumped, 'кукла на облаке и прыгает вместе с ним');
+  assert.equal(cl.gifts, 1);
+  assert.ok(cl.trail >= 10, 'радуга нарисована');
+  await waitDream((d) => !d.dolls[0].jumping);
+  // отпустили куклу в небе над другим облаком — она приземляется на него
+  await dream((d) => { const doll = d.dolls[0]; const p = d.plats[2]; d.startDrag(doll); doll.x = p.x; doll.y = p.y - 30; d.drop(doll, { x: 5, y: 5 }); });
+  await waitDream((d) => d.dolls[0].plat === d.plats[2] && !d.dolls[0].jumping);
+  await wakeUp(uid);
+
+  // конфеты: от домика откусывают; сладость съедают — её же и приносят домой; тучка сыплет конфеты
+  await enter('candy');
+  const cd = await dream((d) => {
+    const house = d.actors.find((a) => a.texture.key === 'dw_house_0');
+    house.tap();
+    const it = d.gifts.at(-1);
+    const doll = d.dolls[0];
+    d.startDrag(it);
+    it.x = doll.x; it.y = doll.y - 12;
+    d.drop(it, { x: doll.x, y: doll.y - 12 });
+    return { bites: house.bites, tex: house.texture.key, edible: it.edible, ate: doll.lastAte?.subject, sub: it.rec.subject };
+  });
+  assert.deepEqual({ bites: cd.bites, tex: cd.tex, edible: cd.edible }, { bites: 1, tex: 'dw_house_1', edible: true });
+  assert.equal(cd.ate, cd.sub);
+  await waitDream((d) => !d.dolls[0].busy);
+  await dream((d) => d.actors.find((a) => a.texture.key === 'dw_cloud').tap());
+  await waitDream((d) => d.gifts.length >= 4);
+  assert.equal(await wakeUp(uid), cd.sub, 'съеденное во сне лакомство — утром в руке');
+
+  // лёд: снеговик собирается по порядку; на катке скользят
+  await enter('ice');
+  const ice = await dream((d) => {
+    const { base, mid, head } = d.snow;
+    const put = (b) => { d.startDrag(b); b.x = base.x; b.y = base.y - 10; d.drop(b, { x: base.x, y: base.y - 10 }); };
+    put(head);
+    const early = { level: base.level, bounced: head.active && !head.above };
+    put(mid);
+    const two = base.level;
+    put(head);
+    return { early, two, man: !!d.snowman, balls: [base, mid, head].some((b) => b.active) };
+  });
+  assert.deepEqual(ice, { early: { level: 1, bounced: true }, two: 2, man: true, balls: false });
+  await waitDream((d) => d.gifts.length >= 1);
+  await dream((d) => { const doll = d.dolls[0]; const p = d.pond; d.startDrag(doll); doll.x = p.cx - p.rx * 0.6; doll.y = p.cy; d.x0 = doll.x; d.drop(doll, { x: 5, y: 5 }); });
+  await waitDream((d) => d.dolls[0].x > d.x0 + 30);
+  await wakeUp(uid);
+
+  // игрушки: сундук дарит подарок; паровозик везёт куклу
+  await enter('toys');
+  const ty = await dream((d) => {
+    d.actors.find((a) => a.texture.key === 'big_chest').tap();
+    d.x0 = d.train[1].x;
+    d.mount(d.dolls[0], d.train[1]);
+    return { gifts: d.gifts.length, run: d.trainRun };
+  });
+  assert.deepEqual(ty, { gifts: 1, run: true });
+  await waitDream((d) => d.train[1].x < d.x0 - 20 && Math.abs(d.dolls[0].x - d.train[1].x) < 2);
+  await wakeUp(uid);
+
+  const end = await room((s) => ({ seen: Object.keys(s.flags.dreamSeen).sort().join(), chars: s.objs.filter((o) => o.kind === 'char').length }));
+  assert.equal(end.seen, 'candy,clouds,forest,ice,planet,sea,toys');
+  assert.equal(end.chars, 5, 'все куклы на месте');
+  const stats = await page.evaluate(() => window.__dev.getStats());
+  for (const w of ['forest', 'planet', 'sea', 'clouds', 'candy', 'ice', 'toys']) assert.ok(stats.feats[`w_${w}`] >= 1, `счётчик мира ${w}`);
+});
+
+test('куклу взяли в руки посреди прыжков радости — она не остаётся «занятой» и засыпает на кровати', async () => {
+  await freshRoom();
+  await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    s.celebrate(c, 4);
+    if (!c.busy) throw new Error('кукла должна прыгать');
+    s.startDrag(c);
+    const bed = s.objs.find((o) => o.rec?.subject === 'bed');
+    s.drop(c, { x: bed.x, y: bed.y - 8 });
+    if (c.busy) throw new Error('осталась занятой');
+  });
+  await waitFor((s) => { const c = s.objs.find((o) => o.kind === 'char'); return c.sleeping && !!c.dreamPicks; });
+});
+
+test('двери-мечты: качели ведут в облака, ванна — в море, холодильник — в конфетную страну; друзья попадают в сон вместе', async () => {
+  await freshRoom();
+  // качели: три толчка подряд — облачко над качелями
+  const uid = await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    const sw = s.objs.find((o) => o.beh?.swing);
+    s.goRoom(2);
+    c.x = sw.x; c.y = sw.y;
+    s.sitOn(c, sw, true);
+    s.pushSwing(sw); s.pushSwing(sw);
+    const two = s.dreamGroups.length;
+    s.pushSwing(sw);
+    if (two !== 0) throw new Error('облачко появилось раньше третьего толчка');
+    return c.uid;
+  });
+  // облачко-желание над той же куклой не мешает: его убирают и новых не показывают
+  const clash = await room((s, id) => {
+    const c = s.objs.find((o) => o.uid === id);
+    s.showHint(c, 'swing');
+    s.addNeed(c, 'dryer', 0);
+    return { door: s.hasDoor(c), wish: s.wish?.ch === c };
+  }, uid);
+  assert.deepEqual(clash, { door: true, wish: false });
+  const sky = await room((s) => { const g = s.dreamGroups.find((x) => x.kind === 'swing'); s.pickDream(g.picks[0].bubble.dreamPick); return { world: g.picks[0].world, to: s.dreaming?.world }; });
+  assert.deepEqual(sky, { world: 'clouds', to: 'clouds' });
+  await waitDream((d) => d.key === 'clouds' && d.dolls.length === 1);
+  await wakeUp(uid);
+  assert.ok(await room((s, id) => !!s.objs.find((o) => o.uid === id).restOn?.beh.swing && s.flags.tried.dreamsky, uid), 'кукла вернулась на качели');
+
+  // ванна: кукла посидела в воде с уточкой — облачко над ней; уточка плывёт в море вместе с ней
+  await room((s, id) => {
+    const c = s.objs.find((o) => o.uid === id);
+    const tub = s.objs.find((o) => o.beh?.tub);
+    s.goRoom(3);
+    s.startDrag(c); c.dragging = false;
+    s.bathe(c, tub, tub.x - 6);
+    const duck = s.spawnItem(s.findRec('rubber duck'), tub.x, tub.y);
+    s.bathe(duck, tub, tub.x + 8);
+  }, uid);
+  await waitFor((s) => s.dreamGroups.some((g) => g.kind === 'tub'));
+  await room((s) => s.pickDream(s.dreamGroups.find((g) => g.kind === 'tub').picks[0].bubble.dreamPick));
+  await waitDream((d) => d.key === 'sea' && d.dolls.length === 1);
+  assert.ok(await dream((d) => d.actors.some((a) => a.alive && a.rec?.subject === 'rubber duck')), 'уточка из ванны — во сне, живая');
+  await wakeUp(uid);
+  assert.ok(await room((s, id) => !!s.objs.find((o) => o.uid === id).inTub, uid), 'кукла снова в ванне');
+
+  // холодильник: открыли при кукле — облачко над ним; в конфетную страну идёт кукла из кухни
+  const mom = await room((s) => {
+    s.goRoom(1);
+    const fr = s.objs.find((o) => o.beh?.fridge);
+    s.openFridge(fr);
+    const g = s.dreamGroups.find((x) => x.kind === 'fridge');
+    const who = s.dreamerOf(g);
+    s.pickDream(g.picks[0].bubble.dreamPick);
+    return { uid: who.uid, room: Math.floor(who.x / 293), to: s.dreaming?.world };
+  });
+  assert.deepEqual({ room: mom.room, to: mom.to }, { room: 1, to: 'candy' });
+  await waitDream((d) => d.key === 'candy');
+  await wakeUp(mom.uid);
+
+  // сон вдвоём: вторая кукла спит на той же кровати — во сне они обе
+  await room((s) => {
+    s.goRoom(0);
+    const bed = s.objs.find((o) => o.rec?.subject === 'bed');
+    const [a, b] = s.objs.filter((o) => o.kind === 'char' && !o.inTub);
+    for (const [c, dx] of [[a, -8], [b, 8]]) { s.startDrag(c); c.awakeUntil = 0; s.drop(c, { x: bed.x + dx, y: bed.y - 8 }); }
+  });
+  await waitFor((s) => s.objs.filter((o) => o.kind === 'char' && o.sleeping && o.dreamPicks).length >= 2);
+  const two = await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char' && o.dreamPicks);
+    s.pickDream(c.dreamPicks.picks[0].bubble.dreamPick);
+    return c.uid;
+  });
+  await waitDream((d) => d.dolls.length === 2);
+  await wakeUp(two);
+});
+
+test('сон и смена размера экрана: кукла просто просыпается дома, дом цел', async () => {
+  await freshRoom();
+  const before = await room((s) => s.objs.length);
+  await room((s) => s.enterDream(s.objs.find((o) => o.kind === 'char'), 'forest', 'bed'));
+  await waitDream((d) => d.key === 'forest');
+  await page.setViewportSize({ width: 700, height: 330 });
+  await waitHome();
+  await waitFor((s, n) => s.objs.length === n && s.scene.isActive(), before);
+  await page.setViewportSize({ width: 780, height: 360 });
+  await page.waitForTimeout(1200);
+  await waitFor((s, n) => s.objs.length === n && s.cameras.main.zoom === 8, before);
+  // после этого сон снова открывается и закрывается как обычно
+  const uid = await room((s) => { const c = s.objs.find((o) => o.kind === 'char'); s.enterDream(c, 'toys', 'bed'); return c.uid; });
+  await waitDream((d) => d.key === 'toys');
+  await wakeUp(uid);
+});
 
 test('нет ошибок в консоли', () => {
   assert.deepEqual(errors, []);

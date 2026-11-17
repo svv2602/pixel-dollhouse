@@ -213,6 +213,14 @@ export const sfx = {
   step: () => noise(0.03, { freq: 900, vol: 0.05 }),
   jingle: () => [7, 5, 7, 5, 4].forEach((n, i) => { tone(PENTA[n] * 2, 0.22, { type: 'sine', vol: 0.06, delay: i * 0.09 }); tone(PENTA[n], 0.12, { type: 'triangle', vol: 0.04, delay: i * 0.09 }); }),
   boom: () => { noise(0.45, { freq: 500, vol: 0.28 }); tone(90, 0.4, { slide: -40, vol: 0.2 }); },
+  // миры снов
+  dreamIn: () => [0, 2, 4, 5, 7].forEach((n, i) => tone(PENTA[n] * 2, 0.5, { type: 'sine', vol: 0.06, delay: i * 0.09, slide: 30 })),
+  dreamOut: () => [7, 5, 4, 2, 0].forEach((n, i) => tone(PENTA[n], 0.4, { type: 'triangle', vol: 0.07, delay: i * 0.1 })),
+  toot: () => { tone(620, 0.18, { type: 'square', vol: 0.06 }); tone(780, 0.32, { type: 'square', vol: 0.06, delay: 0.2 }); },
+  whale: () => { tone(220, 0.9, { type: 'sine', slide: 180, vol: 0.1 }); tone(330, 0.7, { type: 'sine', slide: -120, vol: 0.07, delay: 0.7 }); },
+  beam: () => { for (let i = 0; i < 6; i++) tone(500 + i * 120, 0.12, { type: 'sine', vol: 0.06, delay: i * 0.09 }); },
+  baa: () => { tone(430, 0.14, { type: 'sawtooth', vol: 0.035, slide: -40 }); tone(410, 0.22, { type: 'sawtooth', vol: 0.035, slide: -70, delay: 0.14 }); },
+  rocket: () => { noise(1.1, { freq: 900, vol: 0.14 }); tone(160, 1.1, { type: 'sawtooth', slide: 500, vol: 0.05 }); },
 };
 
 // ---------------------------------------------------------------- фоновая музыка
@@ -241,7 +249,21 @@ const THEMES = [
     step: 0.3, type: 'triangle', vol: 0.03, len: 0.4, bass: [0, 3, 4, 3], bassEvery: 6,
     melody: [4, -1, -1, 5, 4, 2, 4, -1, -1, 7, 5, 4, 5, -1, -1, 4, 2, 1, 0, -1, -1, 2, -1, -1],
   },
+  // ---- миры снов (5…7): та же пентатоника, но выше/ниже и с «плывущими» нотами
+  { // сказочный: лес, облака, игрушки — перезвон с подъездом
+    step: 0.36, type: 'sine', vol: 0.035, len: 0.8, slide: 12, mul: 2, bass: [0, 4, 3, 4],
+    melody: [0, 4, 7, 4, 5, -1, 4, 2, 0, 2, 4, -1, 2, -1, -1, -1, 1, 4, 6, 4, 7, -1, 5, 4, 2, 4, 1, -1, 0, -1, -1, -1],
+  },
+  { // глубокий: космос и море — редкие долгие ноты
+    step: 0.46, type: 'triangle', vol: 0.03, len: 1.3, slide: -8, bass: [0, 0, 3, 2], bassEvery: 4,
+    melody: [4, -1, -1, 7, -1, 5, -1, -1, 2, -1, 4, -1, -1, -1, 0, -1, 5, -1, -1, 4, -1, 2, -1, -1, 1, -1, 2, -1, 0, -1, -1, -1],
+  },
+  { // музыкальная шкатулка: конфеты и лёд
+    step: 0.27, type: 'sine', vol: 0.03, len: 0.3, mul: 2, bass: [0, 3, 4, 3],
+    melody: [4, 5, 7, 5, 4, 2, 4, -1, 5, 4, 2, 0, 2, -1, -1, -1, 4, 5, 7, 5, 7, 5, 4, -1, 2, 4, 2, 1, 0, -1, 0, -1],
+  },
 ];
+export const DREAM_MUSIC = 5; // номер первой мелодии снов
 let musicOn = false;
 let theme = 0;
 let step = 0;
@@ -251,7 +273,7 @@ let pump = null;
 function musicStep(delay) {
   const th = THEMES[theme];
   const n = th.melody[step % th.melody.length];
-  if (n >= 0) tone(SCALE[n], th.len, { type: th.type, vol: th.vol, slide: th.slide || 0, delay });
+  if (n >= 0) tone(SCALE[n] * (th.mul || 1), th.len, { type: th.type, vol: th.vol, slide: th.slide || 0, delay });
   const every = th.bassEvery || 8;
   if (step % every === 0) tone(SCALE[th.bass[(step / every) % th.bass.length]] / 2, th.step * 4, { type: 'sine', vol: 0.035, delay });
   step++;

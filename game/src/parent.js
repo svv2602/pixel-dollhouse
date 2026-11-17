@@ -6,7 +6,7 @@ import { getVolume, setVolume, setMusic, musicPlaying, VOICES, hasVoice, setVoic
 
 // ---------------------------------------------------------------- статистика
 const STATS_KEY = 'pixel-house-stats';
-const ROOMS = ['Спальня', 'Кухня', 'Сад', 'Ванная', 'Зал'];
+const ROOMS = ['Спальня', 'Кухня', 'Сад', 'Ванная', 'Зал', 'Сны (все миры)'];
 const FEATS = {
   feed: 'Кормление', potion: 'Зелья', wear: 'Наряды и вещи в руки', brew: 'Котёл', dressup: 'Гардероб', jam: 'Музыка',
   plant: 'Посадка', harvest: 'Урожай', bathe: 'Купание', gift: 'Подарки', album: 'Альбом', sticker: 'Новые наклейки',
@@ -15,6 +15,9 @@ const FEATS = {
   bubbles: 'Пузыри в ванне', toilet: 'Унитаз', potty: 'Горшок', dryer: 'Фен', bounce: 'Прыжки на кровати',
   chest: 'Сундук', photo: 'Фотоаппарат', stars: 'Ночник', rain: 'Тучка', swing: 'Качели', butterfly: 'Бабочки',
   dig: 'Клад', mic: 'Микрофон', audience: 'Зрители', curtain: 'Занавес', disco: 'Диско-шар',
+  dream: 'Сон: вошла из кровати', dreamsky: 'Мечта на качелях', dreamsea: 'Нырнула из ванны', dreamcandy: 'Мечта у холодильника',
+  w_forest: 'Мир: сказочный лес', w_planet: 'Мир: другая планета', w_sea: 'Мир: подводное царство', w_clouds: 'Мир: облачная страна',
+  w_candy: 'Мир: конфетная страна', w_ice: 'Мир: ледяной дворец', w_toys: 'Мир: игрушечный мир',
 };
 const fresh = () => ({ v: 1, since: null, rooms: [0, 0, 0, 0, 0], feats: {}, days: {} });
 let stats = fresh();
