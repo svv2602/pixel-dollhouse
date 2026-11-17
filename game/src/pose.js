@@ -45,7 +45,9 @@ export function installPose(Room, { L, sfx, RX }) {
     /** Какая поза сейчас положена кукле. */
     poseOf(ch) {
       const on = ch.restOn;
-      if (ch.dragging || ch.walking || !on || !on.active) return 'stand';
+      if (ch.dragging || ch.walking) return 'stand';
+      if (ch.sliding) return 'sit'; // едет с горки в аквапарке (park.js)
+      if (!on || !on.active) return 'stand';
       if (isBed(on)) return ch.sleeping ? 'lie' : 'sit';
       return on.beh?.seat || on.beh?.swing || on.beh?.toilet || (on.beh?.perch && !on.beh.perch.stand) ? 'sit' : 'stand'; // perch — стог, трактор, повозка; на подиуме стоят
     },

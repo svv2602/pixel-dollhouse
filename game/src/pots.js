@@ -1,5 +1,6 @@
 // Котёл в каждой локации. Это тот же волшебный котёл, что на кухне дома: те же рецепты, тот же альбом —
-// только свой вид: чугунок на печке у бабушки во дворе, большая кастрюля в кафе, котелок на костре на острове.
+// только свой вид: чугунок на печке у бабушки во дворе, большая кастрюля в кафе, котелок на костре на острове,
+// медный таз на полосатой тележке среди аттракционов парка.
 // Новой механики здесь нет — ребёнок узнаёт знакомую вещь и сразу знает, что делать.
 // Рецепты (alchemy.js) помечены местом: подсказка-облачко над куклой выбирает рецепт из того,
 // что можно достать там, где она стоит, а альбом котла сгруппирован по местам.
@@ -11,6 +12,7 @@ export const POTS = {
   village: { id: 'ironpot', room: 'yard', fx: 0.44, dy: 12 }, // между сараем и курятником
   city: { id: 'cafepot', room: 'cafe', fx: 0.54, dy: 10 }, // рядом со стойкой
   sea: { id: 'campot', room: 'island', fx: 0.5, dy: 14 },
+  park: { id: 'fairpot', room: 'rides', fx: 0.41, dy: 10 }, // между каруселью и силомером
 };
 /** Значки групп в альбоме котла: локации, «привези издалека» и свои открытия. */
 export const RECIPE_GROUPS = [...PLACES.map((p) => [p.key, p.icon]), ['far', 'busstop_icon'], ['own', 'big_cauldron_icon']];
@@ -50,6 +52,16 @@ const camPot = (alt) => canvasFor(26, 30, (r) => {
   for (const [x, y, w, h] of f) { r(x, y, w, h, '#f2955a'); r(x + 1, y + 2, 1, h - 2, '#ffd84a'); }
 });
 
+/** Медный таз на полосатой тележке со сладостями (alt — второй кадр огня). */
+const fairPot = (alt) => canvasFor(26, 30, (r) => {
+  r(2, 17, 22, 9, '#ef5a6f'); for (let x = 5; x < 24; x += 6) r(x, 17, 3, 9, '#ffffff'); r(2, 17, 22, 1, '#ffd0d8'); r(2, 25, 22, 1, '#b8342c'); // тележка
+  r(4, 26, 5, 4, '#3a3040'); r(17, 26, 5, 4, '#3a3040'); r(6, 27, 1, 2, '#8f96b0'); r(19, 27, 1, 2, '#8f96b0');
+  r(8, 14, 10, 3, '#5a5068'); r(alt ? 10 : 9, 15, 3, 1, '#f2955a'); r(alt ? 13 : 14, 15, 3, 1, '#f2955a'); // горелка
+  r(4, 5, 18, 2, '#e0a971'); r(5, 7, 16, 6, '#c98a52'); r(6, 13, 14, 1, '#a8693c'); r(5, 7, 1, 5, '#e0a971'); r(1, 6, 3, 2, '#a8693c'); r(22, 6, 3, 2, '#a8693c'); // таз
+  r(6, 4, 14, 1, '#9ff5b8'); r(9, 3, 2, 1, '#c8ffd8'); r(15, 2, 1, 1, '#c8ffd8');
+  r(alt ? 11 : 12, 0, 3, 2, '#ffd0e4'); // сладкий пар
+});
+
 export function makePots(scene) {
   const T = scene.textures;
   const add = (key, canvas, icon = true) => {
@@ -59,7 +71,7 @@ export function makePots(scene) {
   };
   const big = (id, subject, order) => ({ id, subject, cat: 'furniture', tags: ['furniture'], tex: id, bbox: [0, 0, 15, 15], order, beh: { cauldron: true, firepot: true } });
   const recs = [];
-  for (const [id, draw, subject, order] of [['ironpot', ironPot, 'granny cauldron', 63], ['cafepot', cafePot, 'cafe cauldron', 91], ['campot', camPot, 'campfire cauldron', 109]]) {
+  for (const [id, draw, subject, order] of [['ironpot', ironPot, 'granny cauldron', 63], ['cafepot', cafePot, 'cafe cauldron', 91], ['campot', camPot, 'campfire cauldron', 109], ['fairpot', fairPot, 'fairground cauldron', 136]]) {
     add(id, draw(false));
     add(`${id}_b`, draw(true), false);
     recs.push(big(id, subject, order));

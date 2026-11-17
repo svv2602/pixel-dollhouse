@@ -28,7 +28,7 @@ export const SEA_HINTS = {
   wave: { room: [R.beach, R.island], seq: () => ['tex:water_drop', 'seashell'] },
   sandcastle: { room: R.beach, seq: () => ['sandcastle', 'tex:sandcastle_3_icon'] },
   palm: { room: [R.beach, R.island], seq: () => ['palm', 'coconut'] },
-  cabin: { room: R.beach, seq: () => ['cabin'] },
+  cabin: { room: [R.beach, R.aqua], seq: () => ['cabin'] },
   boat: { room: R.waves, seq: () => ['boat'] },
   fishing: { room: R.waves, seq: () => ['pier', 'goldfish'] },
   dolphin: { room: R.waves, seq: () => ['dolphin'] },
@@ -138,7 +138,7 @@ export function installSea(Room, { L, rnd, pick, sfx }) {
         if (o.kind !== 'char') continue;
         const room = roomOf(o);
         const free = !o.dragging && !o.restOn && !o.inTub && o.visible && o.pose !== 'lie';
-        this.seaWear(o, 'ringImg', 'swimring', free && room === R.waves, 1, 0.12);
+        this.seaWear(o, 'ringImg', 'swimring', free && (room === R.waves || this.inPool(o)), 1, 0.12); // в море и в бассейне аквапарка
         this.seaWear(o, 'tailImg', 'dw_tail', free && room === R.deep && !o.dmark?.tail, 3, 0.1);
       }
     },

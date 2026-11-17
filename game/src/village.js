@@ -223,7 +223,7 @@ export function installVillage(Room, { L, rnd, pick, sfx }) {
     },
 
     /** То, что стоит или сидит на предмете, рисуется поверх него; в повозке и за рулём трактора — позади борта. */
-    restLayer(base) { return base.beh?.perch?.behind ? -0.5 : 0.5; },
+    restLayer(base, rider = null) { return rider?.rideBack ? -0.4 : base.beh?.perch?.behind ? -0.5 : 0.5; }, // rideBack — на дальней лошадке карусели (park.js)
 
     /** Сесть на стог, за руль трактора или в повозку. */
     perchOn(o, p, x) {

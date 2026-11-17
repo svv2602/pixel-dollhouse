@@ -26,6 +26,7 @@ import { installTravel } from './travel.js';
 import { makeVillage, installVillage, VILLAGE_HINTS, VILLAGE_LURES } from './village.js';
 import { makeCity, installCity, CITY_HINTS, CITY_LURES } from './city.js';
 import { makeSea, installSea, SEA_HINTS, SEA_LURES } from './sea.js';
+import { makePark, installPark, PARK_HINTS, PARK_LURES } from './park.js';
 import { makePots, installPots, RECIPE_GROUPS } from './pots.js';
 
 // =====================================================================
@@ -167,7 +168,7 @@ const HINTS = {
   potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
   dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
 };
-Object.assign(HINTS, VILLAGE_HINTS, CITY_HINTS, SEA_HINTS); // подсказки села, города и моря — рядом с их механиками
+Object.assign(HINTS, VILLAGE_HINTS, CITY_HINTS, SEA_HINTS, PARK_HINTS); // подсказки села, города, моря и парка — рядом с их механиками
 // Облачка с кроватью («хочу спать», сон, прыжки на кровати) — после показа берут паузу, см. noteBed()
 const BED_HINTS = new Set(['dream', 'bounce']);
 const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
@@ -175,7 +176,7 @@ const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|maca
 const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
   ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco],
   ['robot', (b) => b.robot], ['wash', (b) => b.washer], ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
-LURES.push(...VILLAGE_LURES, ...CITY_LURES, ...SEA_LURES);
+LURES.push(...VILLAGE_LURES, ...CITY_LURES, ...SEA_LURES, ...PARK_LURES);
 // Сундук с сюрпризами: что выскакивает по тапу
 const TOYBOX = ['teddy bear', 'beach ball', 'rubber duck', 'kite', 'yo-yo', 'spinning top', 'toy robot', 'rag doll', 'nesting doll',
   'jack-in-the-box', 'toy castle', 'soccer ball', 'pinwheel', 'toy car', 'balloon', 'toy train engine', 'toy sailboat'];
@@ -348,7 +349,7 @@ class Room extends Phaser.Scene {
     for (const r of village) this.byId.set(r.id, r);
     const city = makeCity(this); // прилавки, касса, автоматы города — в мебели
     for (const r of city) this.byId.set(r.id, r);
-    const sea = [...makeSea(this), ...makePots(this)]; // пальма, лодка, сундук моря и котлы локаций — в мебели
+    const sea = [...makeSea(this), ...makePark(this), ...makePots(this)]; // пальма, лодка, сундук моря, слон и карусель парка, котлы локаций — в мебели
     for (const r of sea) this.byId.set(r.id, r);
     this.winter = isWinter(today());
     const season = makeSeason(this); // ёлка — во вкладке мебели, только зимой
@@ -442,6 +443,8 @@ class Room extends Phaser.Scene {
     this.initCity();
     this.ensureSea();
     this.initSea();
+    this.ensurePark();
+    this.initPark();
     this.ensurePots();
     this.initPots();
     this.initTravel();
@@ -590,7 +593,7 @@ class Room extends Phaser.Scene {
       plots: beh.gardenBed ? (extra.plots || [null, null, null]) : null,
       deco: beh.cake ? (extra.deco || {}) : null,
       stage: beh.sand ? (extra.stage || 0) : undefined, // замок из песка: сколько уже построено
-      slots: beh.pet || beh.scarecrow || beh.mannequin ? { pethat: null } : undefined, // шапка на питомце, пугале или манекене
+      slots: beh.pet || beh.scarecrow || beh.mannequin || beh.hatter ? { pethat: null } : undefined, // шапка на питомце, пугале, манекене или обезьянке
     });
     this.uidSeq = Math.max(this.uidSeq, o.uid + 1);
     // накладки (слои торта, пятна, пена, свечение) исчезают вместе с предметом, как бы он ни был уничтожен
@@ -2242,6 +2245,8 @@ class Room extends Phaser.Scene {
     if (this.cityDrop(o, q)) { this.save(); return; }
     // море: карта сокровищ или лопатка — на крестик
     if (this.seaDrop(o, q)) { this.save(); return; }
+    // парк: горка, пьедестал, мяч в ворота и в кольцо, угощение слону и обезьянке
+    if (this.parkDrop(o, q)) { this.save(); return; }
     // село: стог, трактор, повозка, пугало, мельница
     if (this.villageDrop(o, q)) { this.save(); return; }
     if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
@@ -2490,6 +2495,7 @@ class Room extends Phaser.Scene {
     if (this.villageTap(o)) return;
     if (this.cityTap(o)) return;
     if (this.seaTap(o)) return;
+    if (this.parkTap(o)) return;
     if (b.disco) { this.toggleDisco(o); return; }
     if (b.bin) { this.binTap(o); return; }
     if (b.robot) { this.robotTap(o); return; }
@@ -3635,6 +3641,7 @@ class Room extends Phaser.Scene {
     this.updateVillage(); // повозка с грузом, седоки трактора
     this.updateCity(); // тележка и пакет с покупками, облачко покупателя
     this.updateSea(); // замок из песка, круг на кукле в воде, хвост под водой
+    this.updatePark(time, delta); // карусель, седоки слона, плота, гусеницы и самокатов
     const plain = !this.dress && !this.albumUi && !this.mapUi && !this.cardUi; // нет открытых экранов поверх комнаты
     const [camLo, camHi] = this.camRange(); // стрелки ведут только по комнатам своей локации
     if (this.nav) {
@@ -3675,12 +3682,12 @@ class Room extends Phaser.Scene {
     }
     for (const o of this.objs) {
       if (o.kind === 'char' || o.dragging || o.owner) continue;
-      o.setDepth(o.beh.flat ? -5 : o.restOn ? o.restOn.depth + this.restLayer(o.restOn) : o.y); // ковёр всегда снизу
+      o.setDepth(o.beh.flat ? -5 : o.restOn ? o.restOn.depth + this.restLayer(o.restOn, o) : o.y); // ковёр всегда снизу
       if (o.beh.pet) this.updateNest(o);
     }
     for (const ch of this.objs) {
       if (ch.kind !== 'char') continue;
-      if (!ch.dragging) ch.setDepth(ch.restOn ? ch.restOn.depth + this.restLayer(ch.restOn) : ch.y);
+      if (!ch.dragging) ch.setDepth(ch.restOn ? ch.restOn.depth + this.restLayer(ch.restOn, ch) : ch.y);
       this.updatePose(ch); // стоит, сидит или лежит под одеялом
       const s = ch.mul;
       for (const [slot, it] of Object.entries(ch.slots)) {
@@ -3833,6 +3840,7 @@ installTravel(Room, ENV);
 installVillage(Room, ENV);
 installCity(Room, ENV);
 installSea(Room, ENV);
+installPark(Room, ENV);
 installPots(Room, ENV);
 
 // =====================================================================

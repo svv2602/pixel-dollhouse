@@ -411,14 +411,15 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
 
     /**
      * Тележка, лодка, подводная лодка: едет (плывёт) к другому краю комнаты вместе с седоками. false — уже в пути.
-     * turn — разворачивается носом по ходу; tick — что делать каждые 200 мс пути (брызги, пузыри).
+     * turn — разворачивается носом по ходу; tick — что делать каждые 200 мс пути (брызги, пузыри);
+     * padR — сколько не доезжать до правого края (слон не должен загораживать остановку).
      */
-    rollAcross(t, { ms = 9, turn = false, tick = null } = {}) {
+    rollAcross(t, { ms = 9, turn = false, tick = null, padR = 26 } = {}) {
       if (t.rolling && this.tweens.isTweening(t)) return false; // флаг один не годится: её могли унести посреди пути
       const riders = this.objs.filter((r) => r.restOn === t && !r.dragging);
       const room = roomOf(t);
       const lo = room * L.W + 26;
-      const hi = (room + 1) * L.W - 26;
+      const hi = (room + 1) * L.W - padR;
       const tx = t.x < (lo + hi) / 2 ? hi : lo;
       if (turn && t.flipX !== tx < t.x) {
         t.setFlipX(tx < t.x);

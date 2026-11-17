@@ -58,6 +58,17 @@ export const PLACES = [
       { key: 'island', stat: 18, music: 12, outdoor: true, clouds: [[30, 9], [150, 6]], icon: 'palm_icon', colors: [0x9fdcff, 0xf2dca0], clean: 'campot' },
     ],
   },
+  {
+    // парк развлечений: зоопарк с остановкой, аквапарк (нижняя половина пола — бассейн), аттракционы и спортплощадка
+    key: 'park', icon: 'place_park', gate: 'zoo', stop: 0.9, cart: 0.77,
+    card: { who: 'keeper', pics: ['elephant', 'bamboo', 'carohorse_1'] },
+    rooms: [
+      { key: 'zoo', stat: 19, music: 13, outdoor: true, clouds: [[36, 5], [150, 3]], icon: 'elephant_icon', colors: [0x9fdcff, 0x9ad873], clean: 'elephant' },
+      { key: 'aqua', stat: 20, music: 13, outdoor: true, clouds: [[60, 4], [170, 7]], icon: 'slide_icon', colors: [0x9fdcff, 0x4fc4e8], clean: 'slide' },
+      { key: 'rides', stat: 21, music: 14, outdoor: true, clouds: [[120, 3], [200, 6]], icon: 'carousel_icon', colors: [0x9fdcff, 0xe8c9a0], clean: 'carousel' },
+      { key: 'sport', stat: 22, music: 13, outdoor: true, clouds: [[30, 4], [140, 6]], icon: 'goal_icon', colors: [0x9fdcff, 0xd9764a], clean: 'goal' },
+    ],
+  },
 ];
 
 /** Все комнаты по порядку на ленте: { key, idx, place, … }. */
