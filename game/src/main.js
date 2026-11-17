@@ -2690,6 +2690,7 @@ class Room extends Phaser.Scene {
 
   startDrag(o) {
     sfx.pick();
+    o.tookBy = null; // вещь, снятую куклой перед сном, унесли — проснувшись, она её уже не наденет
     if (o.inTub) {
       if (o.beh?.pet) o.wetUntil = this.time.now + 7000; // с питомца капает
       if (o.kind === 'char') {
@@ -4187,7 +4188,7 @@ class Room extends Phaser.Scene {
       flags: this.flags, buddy: this.buddy || undefined,
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
-        dirty: o.dirty || undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
+        dirty: o.dirty || undefined, took: o.tookBy ? [o.tookBy, o.tookSlot] : undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
         stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
         color: o.color, photoId: o.photoId,
       })),
@@ -4237,6 +4238,7 @@ class Room extends Phaser.Scene {
       if (s.restOn && byUid.get(s.restOn)) o.restOn = byUid.get(s.restOn);
       if (s.stain) this.stain(o, s.stain, true);
       if (s.dirty && o.kind === 'item') { o.dirty = true; o.setTint(0x9a7a5a); }
+      if (s.took && o.kind === 'item') { o.tookBy = s.took[0]; o.tookSlot = s.took[1]; }
       if (s.foam) { o.foam = s.foam; this.renderFoam(o); }
       if (s.inTub && byUid.get(s.inTub)) { o.inTub = byUid.get(s.inTub); o.tubDx = s.tubDx || 0; }
       if (s.owner && byUid.get(s.owner)) {

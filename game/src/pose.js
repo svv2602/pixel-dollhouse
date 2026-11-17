@@ -2,7 +2,8 @@
 //  • сидит: на стуле, качелях, унитазе и на кровати, пока не уснула, — рисунок без голеней (туфли сразу под подолом).
 //    Голова и руки остаются на месте, поэтому шапки, очки и вещи в руке не сдвигаются;
 //  • лежит: уснула на кровати или диване — голова на подушке, остальное под одеялом. Перед сном раздевается:
-//    шапка, очки и вещь из руки ложатся у кровати (игрушка или питомец — в ногах, на кровати, и идут с ней в сон);
+//    шапка, очки и вещь из руки ложатся у кровати (игрушка или питомец — в ногах, на кровати, и идут с ней в сон).
+//    Проснувшись, надевает всё обратно — кроме того, что за это время унесли;
 //  • питомец, уснувший на лежанке, утопает в ней;
 //  • куклу можно отпустить из дома: открыть вкладку «люди» и утащить куклу вниз, в ящик. Её вид запоминается,
 //    тап по портрету возвращает её.
@@ -28,10 +29,17 @@ export function makePose(scene) {
 export function installPose(Room, { L, sfx, RX }) {
   const isBed = (o) => !!o && RX.bedLike.test(o.rec?.subject || '');
   Object.assign(Room.prototype, {
-    /** Текстуры куклы в обеих позах: стоя (baseKey) и сидя (baseKey + 's'). После вызова рисунку нужен setTexture(). */
+    /**
+     * Текстуры куклы в обеих позах: стоя (baseKey) и сидя (baseKey + 's').
+     * Старые текстуры при этом удаляются, поэтому рисунок куклы тут же привязывается к новым (с той же гримасой):
+     * картинка, оставшаяся на удалённой текстуре, роняет отрисовку. Раньше перепривязку делал вызывающий код —
+     * и пропускал её, если кукла была «занята» (вернулась из конфетной страны посреди прыжков радости).
+     */
     charTex(ch) {
+      const key = ch.texture?.key;
       makeCharTextures(this, ch.baseKey, ch.look);
       makeCharTextures(this, `${ch.baseKey}s`, ch.look, false, 'sit');
+      if (key && ch.setTexture) ch.setTexture(this.textures.exists(key) ? key : ch.key);
     },
 
     /** Какая поза сейчас положена кукле. */
@@ -100,13 +108,41 @@ export function installPose(Room, { L, sfx, RX }) {
       ch.setCrop();
       ch.setOrigin(0.5, 1);
       if (ch.stainImg) { ch.stainImg.setCrop(); ch.stainImg.setOrigin(0.5, 1); }
+      this.redress(ch);
     },
 
-    /** Перед сном (и уходя из дома) кукла снимает всё с себя: вещи ложатся рядом. bed — кровать, если есть. */
+    /**
+     * Проснулась — надевает то, что сняла перед сном. Вещь «помнит» хозяйку (tookBy, tookSlot — они же в сохранении),
+     * пока её не тронули: унесли, надели на другую, убрали — значит, распорядились иначе, и кукла её не берёт.
+     */
+    redress(ch) {
+      const mine = this.objs.filter((o) => o.kind === 'item' && o.tookBy === ch.uid);
+      let n = 0;
+      for (const it of mine) {
+        const slot = it.tookSlot;
+        it.tookBy = null;
+        it.tookSlot = null;
+        if (it.owner || it.dragging || ch.slots[slot]) continue;
+        it.restOn = null;
+        it.sleeping = false;
+        this.wear(ch, slot, it, true);
+        n++;
+      }
+      if (!n || !this.visible(ch)) return n;
+      sfx.wear();
+      this.fxSparks.explode(6, ch.x, ch.y - ch.displayHeight * 0.6);
+      return n;
+    },
+
+    /**
+     * Перед сном (и уходя из дома) кукла снимает всё с себя: вещи ложатся рядом. bed — кровать, если есть:
+     * тогда вещи запоминают хозяйку, и, проснувшись, она наденет их снова (см. redress).
+     */
     undress(ch, bed = null) {
       const items = ['head', 'face', 'hand'].map((slot) => ch.slots[slot]).filter(Boolean);
       const room = Math.floor(ch.x / L.W);
       items.forEach((it, i) => {
+        if (bed) { it.tookBy = ch.uid; it.tookSlot = it.slot; }
         ch.slots[it.slot] = null;
         it.owner = null;
         it.slot = null;

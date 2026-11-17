@@ -1677,7 +1677,24 @@ test('позы: на стуле кукла сидит, в кровати раз�
     // разбудили тапом — садится, одеяло пропадает
     s.tap(a);
     s.updatePose(a);
-    const woke = { pose: a.pose, cropped: a.isCropped, blanket: blanket.active, origin: `${a.originX},${a.originY}` };
+    const woke = {
+      pose: a.pose, cropped: a.isCropped, blanket: blanket.active, origin: `${a.originX},${a.originY}`,
+      // проснулась — снова в короне и с мишкой в руке
+      dressed: a.slots.head === crown && a.slots.hand === teddy && crown.owner === a && !teddy.restOn,
+    };
+    // снова уснула; пока спит, корону унесли — проснувшись, наденет только то, что осталось (мишку)
+    s.tweens.killTweensOf(a); a.busy = false; a.hopBusy = false; // прыжок от тапа уже не мешает уснуть
+    a.awakeUntil = s.time.now - 1;
+    s.dozeTick();
+    s.updatePose(a);
+    const asleep = a.pose === 'lie' && !a.slots.head && !a.slots.hand;
+    s.saveNow();
+    const saved = JSON.parse(localStorage.getItem('pixel-house-v3')).objs.filter((o) => o.took).map((o) => o.took[1]).sort().join();
+    s.startDrag(crown); crown.x = 200; crown.y = 110;
+    s.drop(crown, { x: 200, y: 110 });
+    s.tap(a);
+    s.updatePose(a);
+    const again = { asleep, saved, crown: !crown.owner && !a.slots.head, teddy: a.slots.hand === teddy };
     // питомец на лежанке: уснул — утопает в ней; взяли в руки — снова целиком
     const pb = s.objs.find((o) => o.rec?.id === 'big_petbed');
     const k = s.spawnItem(s.findRec('kitten'), pb.x, pb.y - 20);
@@ -1699,16 +1716,27 @@ test('позы: на стуле кукла сидит, в кровати раз�
     const gone = !s.objs.includes(b) && !s.castChar(cast);
     s.callCast(cast);
     const back = s.castChar(cast);
-    return { sit, up, onBed, lie, woke, nest, out, leave: { bounced, gone, back: !!back, look: JSON.stringify(back?.look) === look } };
+    return { sit, up, onBed, lie, woke, again, nest, out, leave: { bounced, gone, back: !!back, look: JSON.stringify(back?.look) === look } };
   });
   assert.deepEqual(st.sit, { pose: 'sit', key: true, on: true });
   assert.deepEqual(st.up, { pose: 'stand', face: true });
   assert.deepEqual(st.onBed, { pose: 'sit', dressed: true });
   assert.deepEqual(st.lie, { pose: 'lie', naked: true, cropped: true, blanket: true, crown: true, teddy: true, theme: 'toys', clouds: true, stays: true, head: true });
-  assert.deepEqual(st.woke, { pose: 'sit', cropped: false, blanket: false, origin: '0.5,1' });
+  assert.deepEqual(st.woke, { pose: 'sit', cropped: false, blanket: false, origin: '0.5,1', dressed: true });
+  assert.deepEqual(st.again, { asleep: true, saved: 'hand,head', crown: true, teddy: true });
   assert.deepEqual(st.nest, { on: true, nest: true, cropped: true });
   assert.deepEqual(st.out, { nest: false, cropped: false, origin: '0.5,1' });
   assert.deepEqual(st.leave, { bounced: true, gone: true, back: true, look: true });
+  // рисунок куклы пересоздали, пока она «занята» (шоколадные усы после конфетной страны посреди прыжков) — картинка не остаётся на удалённой текстуре
+  const tex = await room((s) => {
+    const c = s.objs.find((o) => o.kind === 'char');
+    s.tweens.killTweensOf(c); c.busy = false; c.hopBusy = false;
+    s.celebrate(c, 4);
+    const face = c.texture.key;
+    s.dreamMark(c, 'candy');
+    return { busy: c.busy, face: c.texture.key === face, alive: !!c.frame?.glTexture || !!c.frame?.source, h: c.displayHeight > 0, mustache: !!c.look.mustache };
+  });
+  assert.deepEqual(tex, { busy: true, face: true, alive: true, h: true, mustache: true });
   // во сне верхом кукла тоже сидит
   const uid = await room((s) => { const c = s.objs.find((o) => o.kind === 'char'); s.startDrag(c); c.dragging = false; s.enterDream(c, 'forest', 'bed'); return c.uid; });
   await waitDream((d) => d.key === 'forest' && d.dolls.length > 0);
