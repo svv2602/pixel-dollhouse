@@ -243,14 +243,14 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       return true;
     },
 
-    /** В окошке видно, что лежит в барабане. */
+    /** В окошке видно, что лежит в барабане. Картинка привязана к машине: её место каждый кадр задаёт updateClean. */
     washerPeek(w) {
       const rec = this.recOf(w.contents[0]);
       w.peek?.destroy();
       w.peek = null;
       if (!rec || rec.tex) return;
-      w.peek = this.add.image(w.x, w.y - 12, rec.cat, rec.frame).setAlpha(0.85).setDepth(w.y + 0.1);
-      w.once('destroy', () => w.peek?.destroy());
+      w.peek = this.add.image(w.x, w.y - 12, rec.cat, rec.frame).setAlpha(0.85).setDepth(w.depth + 0.1);
+      if (!w.peekBound) { w.peekBound = true; w.once('destroy', () => w.peek?.destroy()); }
     },
 
     washerTap(w) {
@@ -259,14 +259,17 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       w.washing = true;
       this.hintDone('wash');
       if (!w.peek) this.washerPeek(w);
-      const x0 = w.x;
+      // машину трясёт сдвигом на пиксель относительно того, где она стоит сейчас: её можно двигать и во время стирки
+      w.shake = 0;
       let n = 0;
       const spin = this.time.addEvent({
         delay: 160, loop: true, callback: () => {
           if (!w.active) { spin.remove(); return; }
           n++;
           w.setTexture(n % 2 ? 'washer_b' : 'washer');
-          w.x = x0 + (n % 2 ? 1 : 0);
+          const d = w.dragging ? 0 : n % 2;
+          if (!w.dragging) w.x += d - w.shake;
+          w.shake = d;
           w.peek?.setFlipX(n % 2 === 1).setFlipY(n % 4 >= 2);
           if (n % 3 === 0) { sfx.scrub(); this.fxCrumbs.setParticleTint(0xffffff); this.fxCrumbs.explode(3, w.x + rnd(-8, 8), w.y - w.displayHeight); }
         },
@@ -275,7 +278,8 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
         spin.remove();
         if (!w.active) return;
         w.washing = false;
-        w.x = x0;
+        if (!w.dragging) w.x -= w.shake;
+        w.shake = 0;
         w.setTexture('washer');
         w.peek?.destroy();
         w.peek = null;
@@ -426,6 +430,12 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
     /** Каждый кадр: седоки робота едут с ним; испачканная кукла оставляет следы. */
     updateClean() {
       for (const o of this.objs) {
+        if (o.beh?.washer) {
+          // вещь в окошке едет вместе с машиной (и появляется после перезапуска, если барабан не пуст)
+          if (o.contents.length && !o.peek) this.washerPeek(o);
+          if (o.peek) o.peek.setPosition(o.x, o.y - 12).setDepth(o.depth + 0.1);
+          continue;
+        }
         const r = o.restOn;
         if (r?.beh?.robot && !o.dragging) {
           if (!r.active) { o.restOn = null; continue; }
