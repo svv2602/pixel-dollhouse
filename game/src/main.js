@@ -16,6 +16,8 @@ import { Stickers, installStickers } from './stickers.js';
 import { openParent, statHit, statTime, flushStats, getStats, exportData } from './parent.js';
 import { installRepair } from './repair.js';
 import { installDream, Dream } from './dream.js';
+import { makeTidy, installTidy, RAKES } from './tidy.js';
+import { makeClean, installClean } from './clean.js';
 
 // =====================================================================
 // Геометрия: мир измеряется в «арт-пикселях» (1 = один пиксель спрайта).
@@ -142,11 +144,17 @@ const HINTS = {
   swing: { room: 2, seq: () => ['big_swing'] },
   butterfly: { room: 2, seq: () => ['butterfly'] },
   dig: { room: 2, seq: () => ['shovel', 'tex:dig_x'] },
-  // сны и мечты: облачко-дверь над спящей куклой, качелями, ванной и холодильником
+  // сны и мечты: облачко-дверь над спящей куклой, качелями, ванной, холодильником, сундуком, яблоней и диско-шаром
   dream: { room: 0, seq: () => ['big_bed', 'tex:dream_cloud_icon', 'unicorn'] },
   dreamsky: { room: 2, seq: () => ['big_swing', 'tex:dream_cloud_icon', 'rainbow'] },
   dreamsea: { room: 3, seq: () => ['big_tub', 'tex:dream_cloud_icon', 'goldfish'] },
-  dreamcandy: { room: 1, seq: () => ['big_fridge', 'tex:dream_cloud_icon', 'cupcake'] },
+  dreamcandy: { room: 1, seq: () => ['big_fridge', 'tex:dream_cloud_icon', pick(['cupcake', 'penguin'])] },
+  dreamtoys: { room: 0, seq: () => ['big_chest', 'tex:dream_cloud_icon', 'teddy bear'] },
+  dreamforest: { room: 2, seq: () => ['big_tree', 'tex:dream_cloud_icon', 'unicorn'] },
+  dreamspace: { room: 4, seq: () => ['disco-ball', 'tex:dream_cloud_icon', 'flying saucer'] },
+  // уборка: робот-пылесос в спальне, стиральная машина в ванной
+  robot: { room: 0, seq: () => ['robo-vac'] },
+  wash: { room: 3, seq: () => [pick(['teddy bear', 'sock', 'rag doll']), 'washer'] },
   mic: { room: 4, seq: () => ['microphone'] },
   audience: { room: 4, seq: () => ['chair', 'teddy bear'] },
   curtain: { room: 4, seq: () => ['tex:curtain_icon'] },
@@ -154,11 +162,13 @@ const HINTS = {
   potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
   dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
 };
+// Облачка с кроватью («хочу спать», сон, прыжки на кровати) — после показа берут паузу, см. noteBed()
+const BED_HINTS = new Set(['dream', 'bounce']);
 const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
 // Что подпрыгивает с искорками, пока его ни разу не трогали (ключ — как в HINTS)
 const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
   ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco],
-  ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
+  ['robot', (b) => b.robot], ['wash', (b) => b.washer], ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
 // Сундук с сюрпризами: что выскакивает по тапу
 const TOYBOX = ['teddy bear', 'beach ball', 'rubber duck', 'kite', 'yo-yo', 'spinning top', 'toy robot', 'rag doll', 'nesting doll',
   'jack-in-the-box', 'toy castle', 'soccer ball', 'pinwheel', 'toy car', 'balloon', 'toy train engine', 'toy sailboat'];
@@ -169,15 +179,16 @@ const TREASURE = ['seashell', 'pearl', 'diamond', 'ruby', 'emerald', 'amethyst',
 const PET_TOYS = ['beach ball', 'ball of yarn', 'rubber duck', 'teddy bear', 'soccer ball', 'balloon'];
 
 // Темы снов: что персонаж держит в руке, засыпая, — тот мир и снится первым (world — ключ мира в dreamworlds.js);
-// items — сувениры этого мира: их приносят из сна, они же — страница альбома наклеек
+// items — сувениры этого мира: их приносят из сна, они же — страница альбома наклеек;
+// rare — редкие сувениры: их дарит только житель мира, чьё желание исполнили
 const DREAM_THEMES = [
-  { world: 'sea', match: /fish|shell|whale|octopus|starfish|seahorse|boat|duck|crab|dolphin|jellyfish|pearl/, items: ['goldfish', 'whale', 'octopus', 'seashell', 'starfish', 'seahorse', 'dolphin', 'pearl'] },
-  { world: 'planet', match: /star|moon|wand|rocket|comet|planet|orb|saucer|robot/, items: ['star', 'crescent moon', 'shooting star', 'toy rocket', 'crystal ball', 'flying saucer', 'moon rabbit', 'jar of stardust'] },
-  { world: 'forest', match: /book|crown|tiara|fairy|castle|unicorn|potion|album|mushroom|flower/, items: ['unicorn', 'fairy', 'crown', 'toy castle', 'magic wand', 'tiara', 'glowcap mushroom'] },
-  { world: 'candy', match: /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron/, items: ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'] },
-  { world: 'toys', match: /teddy|plush|kitten|puppy|cat|dog|rabbit|bunny|pony|panda|hamster|owl|doll|toy|ball/, items: ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear', 'toy robot', 'toy train engine'] },
-  { world: 'ice', match: /snow|\bice\b|penguin|polar|sled|mitten|scarf|frost/, items: ['snowflake', 'penguin', 'snow globe', 'ice crystal', 'sled', 'polar bear'] },
-  { world: 'clouds', match: /cloud|kite|balloon|bird|rainbow|feather|\bsun\b|airplane|pinwheel/, items: ['rainbow', 'cloud sheep', 'bluebird', 'kite', 'sun', 'hot air balloon'] },
+  { world: 'sea', match: /fish|shell|whale|octopus|starfish|seahorse|boat|duck|crab|dolphin|jellyfish|pearl/, items: ['goldfish', 'whale', 'octopus', 'seashell', 'starfish', 'seahorse', 'dolphin', 'pearl'], rare: ['black pearl', 'crystal turtle', 'sea turtle'] },
+  { world: 'planet', match: /star|moon|wand|rocket|comet|planet|orb|saucer|robot/, items: ['star', 'crescent moon', 'shooting star', 'toy rocket', 'crystal ball', 'flying saucer', 'moon rabbit', 'jar of stardust'], rare: ['star crystal', 'star-shaped medal', 'morning star'] },
+  { world: 'forest', match: /book|crown|tiara|fairy|castle|unicorn|potion|album|mushroom|flower/, items: ['unicorn', 'fairy', 'crown', 'toy castle', 'magic wand', 'tiara', 'glowcap mushroom'], rare: ['golden acorn', 'fairy queen', 'flower crown'] },
+  { world: 'candy', match: /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron/, items: ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'], rare: ['candy necklace', 'ice cream sundae', 'golden apple'] },
+  { world: 'toys', match: /teddy|plush|kitten|puppy|cat|dog|rabbit|bunny|pony|panda|hamster|owl|doll|toy|ball/, items: ['kitten', 'puppy', 'rabbit', 'panda', 'pony', 'teddy bear', 'toy robot', 'toy train engine'], rare: ['puzzle cube', 'medal on ribbon', 'balloon dog'] },
+  { world: 'ice', match: /snow|\bice\b|penguin|polar|sled|mitten|scarf|frost/, items: ['snowflake', 'penguin', 'snow globe', 'ice crystal', 'sled', 'polar bear'], rare: ['snowy owl', 'arctic fox', 'snowflake ornament'] },
+  { world: 'clouds', match: /cloud|kite|balloon|bird|rainbow|feather|\bsun\b|airplane|pinwheel/, items: ['rainbow', 'cloud sheep', 'bluebird', 'kite', 'sun', 'hot air balloon'], rare: ['pot of gold', 'winged bunny', 'sky jellyfish'] },
 ];
 
 // Утренний сувенир, если заснули без предмета в руке
@@ -255,6 +266,9 @@ function behaviorOf(rec) {
     shovel: s === 'shovel',
     lamp: RX.light.test(s) && /lamp/.test(s),
     nyTree: !!rec.nyTree,
+    bin: !!rec.bin,
+    sweeper: !!rec.sweeper || RAKES.test(s),
+    robot: !!rec.robot, mop: !!rec.mop, washer: !!rec.washer, compost: !!rec.compost, fertilizer: !!rec.fertilizer,
   };
 }
 
@@ -320,14 +334,19 @@ class Room extends Phaser.Scene {
     for (const r of salon) this.byId.set(r.id, r);
     const play = makePlay(this); // фотоаппарат — в игрушках; фото на стене — только из фотоаппарата
     for (const r of play) this.byId.set(r.id, r);
+    const tidy = makeTidy(this); // урна и метла — в игрушках
+    for (const r of tidy) this.byId.set(r.id, r);
+    const clean = makeClean(this); // робот и швабра — в игрушках, стиральная машина — в мебели, компост — в саду
+    for (const r of clean) this.byId.set(r.id, r);
     this.winter = isWinter(today());
     const season = makeSeason(this); // ёлка — во вкладке мебели, только зимой
     for (const r of season) this.byId.set(r.id, r);
     this.byCat = {
-      furniture: [...Object.values(this.big), ...(this.winter ? season : [])], magic: potions.slice(),
+      furniture: [...Object.values(this.big), ...clean.filter((r) => r.cat === 'furniture'), ...(this.winter ? season : [])], magic: potions.slice(),
+      garden: clean.filter((r) => r.cat === 'garden' && !r.hidden),
       kitchen: salon.filter((r) => r.cat === 'kitchen'),
       food: party.filter((r) => r.cat === 'food'),
-      toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden)],
+      toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden), ...tidy, ...clean.filter((r) => r.cat === 'toy')],
       animal: bath.filter((r) => r.cat === 'animal'),
     };
     for (const r of this.items) {
@@ -377,6 +396,7 @@ class Room extends Phaser.Scene {
     this.drawRoom();
     this.makeParticles();
     this.initDreams();
+    this.initTidy();
 
     this.overlay = this.add.rectangle(0, 0, L.WORLD, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
 
@@ -401,6 +421,9 @@ class Room extends Phaser.Scene {
     this.ensureHall2();
     this.ensureBedroom2();
     this.ensureGarden2();
+    this.ensureTidy();
+    this.ensureClean();
+    this.initClean();
     this.ensureCast();
     this.dailyVisit();
     this.ensureWinter();
@@ -426,8 +449,10 @@ class Room extends Phaser.Scene {
 
     // жизнь персонажей: желания, сон, танцы под музыку
     this.wish = null;
+    this.bedTalkN = 0; this.bedTalkUntil = 0;
     this.time.addEvent({ delay: 4000, loop: true, callback: () => this.wishTick() });
     this.time.addEvent({ delay: 1500, loop: true, callback: () => this.sleepTick() });
+    this.time.addEvent({ delay: 250, loop: true, callback: () => this.dozeTick() });
     this.time.addEvent({ delay: 6000, loop: true, callback: () => this.danceTick() });
     this.time.addEvent({ delay: 2600, loop: true, callback: () => this.potIdle() });
     this.time.addEvent({ delay: 4200, loop: true, callback: () => this.idleTick() });
@@ -746,9 +771,11 @@ class Room extends Phaser.Scene {
     return o;
   }
 
-  removeObj(o) {
-    this.fxPoof.explode(8, o.x, o.y - o.displayHeight / 2);
-    sfx.poof();
+  removeObj(o, quiet = false) {
+    if (!quiet) {
+      this.fxPoof.explode(8, o.x, o.y - o.displayHeight / 2);
+      sfx.poof();
+    }
     this.objs = this.objs.filter((x) => x !== o);
     for (const x of this.objs) if (x.restOn === o) x.restOn = null;
     if (o.owner) o.owner.slots[o.slot] = null;
@@ -977,6 +1004,8 @@ class Room extends Phaser.Scene {
   shakeTree(tree) {
     const x0 = tree.x;
     this.tweens.add({ targets: tree, x: x0 + 1, duration: 60, yoyo: true, repeat: 3, onComplete: () => { tree.x = x0; } });
+    this.itemDream('tree', tree, 'forest');
+    this.leafFall(tree);
     const rec = this.findRec('apple');
     if (!rec) return;
     const o = this.spawnItem(rec, Math.round(tree.x + rnd(-10, 10)), Math.round(tree.y - tree.displayHeight * 0.55));
@@ -1180,7 +1209,9 @@ class Room extends Phaser.Scene {
     if (style === 'hop') { this.celebrate(ch, 2); return; }
     ch.busy = true;
     ch.setTexture(ch.key + '_blink');
-    const done = () => { ch.busy = false; ch.setFlipX(false); ch.setTexture(ch.key); };
+    const done = () => { ch.busy = false; ch.hopBusy = false; ch.setFlipX(false); ch.setTexture(ch.key); };
+    // покачивание — твин: взяли куклу в руки, и он обрывается без onComplete; hopBusy снимает «занятость» в startDrag
+    if (style !== 'spin') ch.hopBusy = true;
     if (style === 'spin') {
       let n = 0;
       this.time.addEvent({ delay: 110, repeat: 5, callback: () => { ch.setFlipX(!ch.flipX); if (++n === 6) done(); } });
@@ -1284,6 +1315,7 @@ class Room extends Phaser.Scene {
   }
 
   clean(o) {
+    this.clearMark?.(o, true);
     o.stain = null;
     o.stainImg?.destroy();
     o.stainImg = null;
@@ -1877,6 +1909,7 @@ class Room extends Phaser.Scene {
     if (this.discoBall) { this.discoOff(); sfx.click(); return; }
     this.discoBall = ball;
     this.hintDone('disco');
+    this.itemDream('disco', ball, 'planet', 14000);
     sfx.sparkle();
     const room = Math.floor(ball.x / L.W);
     this.discoDim = this.add.rectangle(room * L.W, 0, L.W, L.ROOM_H, 0x140c38, 0).setOrigin(0).setDepth(10000);
@@ -1963,6 +1996,7 @@ class Room extends Phaser.Scene {
     box.setTexture('big_chestOpen');
     this.time.delayedCall(650, () => { if (box.active) box.setTexture('big_chest'); });
     this.hintDone('chest');
+    this.itemDream('chest', box, 'toys');
     if (box.contents.length) { this.spill(box); return; }
     const room = Math.floor(box.x / L.W);
     const loose = this.objs.filter((x) => x.kind === 'item' && !x.beh.furniture && Math.floor(x.x / L.W) === room).length;
@@ -2580,6 +2614,9 @@ class Room extends Phaser.Scene {
     const o = pr.obj;
     o.x = Phaser.Math.Clamp(q.x + pr.offX, 4, L.WORLD - 4);
     o.y = Phaser.Math.Clamp(q.y + pr.offY, o.displayHeight * 0.6, L.H + 10);
+    // метла и грабли: что задели на полу — летит в урну
+    if (o.kind === 'item' && o.beh.sweeper) this.sweepAt(o);
+    if (o.kind === 'item' && o.beh.mop) this.mopAt(o);
     // щётка над питомцем — расчёсывание
     if (o.kind === 'item' && o.rec.id === 'pet-brush') {
       const pet = this.objAt(q.x, q.y + 4, (x) => x !== o && x.beh?.pet);
@@ -2678,6 +2715,13 @@ class Room extends Phaser.Scene {
     if (o.kind === 'char') o.setTexture(o.key);
     for (const c of this.objs) if (c.kind === 'char' && !c.busy && !c.sleeping) c.setTexture(c.key);
 
+    // в урну: предмет исчезает (питомец выскакивает обратно)
+    if (o.kind === 'item' && q.y <= L.ROOM_H) {
+      const bin = this.objAt(q.x, q.y, (x) => x.kind === 'item' && x.beh.bin && x !== o);
+      if (bin && this.binEat(bin, o)) { this.save(); return; }
+    }
+    // робот, стиральная машина, компост, удобрение, лужа для вещей
+    if (this.cleanDrop(o, q)) { this.save(); return; }
     if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {
       const seat = this.objAt(q.x, q.y, (x) => x.kind === 'item' && (x.beh.seat || x.beh.swing) && x !== o);
       if (seat) { this.sitOn(o, seat); this.save(); return; }
@@ -2718,11 +2762,13 @@ class Room extends Phaser.Scene {
       if (stage) { this.onStage(o, stage, q.x); this.save(); return; }
       const bed = this.objAt(q.x, q.y, (x) => x.kind === 'item' && RX.bedLike.test(x.rec.subject));
       if (bed) {
-        // сесть/лечь на кровать: персонаж на матрасе, через пару секунд засыпает
+        // сесть/лечь на кровать: персонаж на матрасе и почти сразу засыпает
         o.x = Math.round(Phaser.Math.Clamp(q.x, bed.x - bed.displayWidth / 2 + 8, bed.x + bed.displayWidth / 2 - 8));
         o.y = Math.round(bed.y - bed.displayHeight * 0.3);
         o.restOn = bed;
-        o.awakeUntil = this.time.now + 1500;
+        // засыпает через полсекунды (и сразу видит сны) — см. dozeTick
+        o.awakeUntil = this.time.now + 450;
+        this.noteBed(true); // уложили — про кровать больше не напоминаем
         sfx.drop();
         this.checkWish(o, 'sleep');
         this.save();
@@ -2918,6 +2964,9 @@ class Room extends Phaser.Scene {
       if (b.mic) { this.sing(o.owner); return; }
     }
     if (b.disco) { this.toggleDisco(o); return; }
+    if (b.bin) { this.binTap(o); return; }
+    if (b.robot) { this.robotTap(o); return; }
+    if (b.washer) { this.washerTap(o); return; }
     if (b.fridge) { this.openFridge(o); return; }
     if (b.blender) { this.blend(o); return; }
     if (b.tub) { this.blowBubbles(o); return; }
@@ -3123,16 +3172,20 @@ class Room extends Phaser.Scene {
     const needy = chars.filter((c) => c.needs?.size);
     if (needy.length && Math.random() < 0.5) { const c = pick(needy); this.showHint(c, pick([...c.needs])); return; }
     const tried = (this.flags.tried ||= {});
-    const fresh = (c) => this.hintsFor(c).filter((h) => !tried[h]);
+    // про кровать недавно уже напоминали — пока молчим о ней (и подсказки, и «хочу спать»)
+    const quiet = this.bedQuiet();
+    const hintsOf = (c) => this.hintsFor(c).filter((h) => !(quiet && BED_HINTS.has(h)));
+    const fresh = (c) => hintsOf(c).filter((h) => !tried[h]);
     // есть чему научить — облачка появляются чаще
     if (Math.random() > (chars.some((c) => fresh(c).length) ? 0.5 : 0.22)) return;
     const ch = pick(chars);
-    const hs = this.hintsFor(ch);
+    const hs = hintsOf(ch);
     const fr = fresh(ch);
     if (hs.length && Math.random() < (fr.length ? 0.75 : 0.2)) { this.showHint(ch, pick(fr.length ? fr : hs)); return; }
     const r = Math.random();
     const kinds = this.night ? ['sleep', 'sleep', 'food', 'music', 'magic'] : ['food', 'food', 'wear', 'pet', 'music', 'food', 'wear', 'sleep', 'magic', 'magic', 'party'];
     const type = kinds[Math.floor(r * kinds.length)];
+    if (type === 'sleep') { if (quiet) return; this.noteBed(); }
     if (type === 'magic') {
       // подсказка неоткрытого рецепта: ингредиент → ингредиент → котёл
       const open = [...this.alchemy.recipes.entries()].filter(([k]) => !this.alchemy.found[k]);
@@ -3147,6 +3200,18 @@ class Room extends Phaser.Scene {
     if (type === 'pet') rec = this.findRec(pick(WISH_PET));
     if ((type === 'food' || type === 'wear' || type === 'pet') && !rec) return;
     this.showWish(ch, type, rec);
+  }
+
+  /** Про кровать недавно напоминали? */
+  bedQuiet() { return this.time.now < (this.bedTalkUntil || 0); }
+
+  /**
+   * Показали облачко с кроватью (или послушались его — done): следующее такое — не раньше чем через 2 минуты;
+   * если не слушают, пауза растёт: 2, 4, 6, 8 минут.
+   */
+  noteBed(done = false) {
+    this.bedTalkN = done ? 0 : (this.bedTalkN || 0) + 1;
+    this.bedTalkUntil = this.time.now + Phaser.Math.Clamp(this.bedTalkN, 1, 4) * 120000;
   }
 
   /** Подсказки для персонажа: «усы» — всегда щётка; иначе — то, что есть в его комнате. */
@@ -3199,6 +3264,7 @@ class Room extends Phaser.Scene {
     if (!seq.length) return;
     this.showWish(ch, 'hint', null, null, seq);
     this.wish.hint = name;
+    if (BED_HINTS.has(name)) this.noteBed();
   }
 
   /** Фичу попробовали: запоминаем; если именно о ней просили — желание исполнено. */
@@ -3210,6 +3276,7 @@ class Room extends Phaser.Scene {
     ch?.needs?.delete(name);
     const tried = (this.flags.tried ||= {});
     if (!tried[name]) { tried[name] = true; this.save(); }
+    if (BED_HINTS.has(name)) this.noteBed(true);
     const w = this.wish;
     if (!w || w.type !== 'hint' || w.hint !== name || (ch && ch !== w.ch)) return;
     this.clearWish(true);
@@ -3290,6 +3357,20 @@ class Room extends Phaser.Scene {
       onYoyo: () => { ch.setFlipX(!ch.flipX); if (n++ % 2 === 0) sfx.giggle(); },
       onComplete: () => { ch.y = y0; ch.setFlipX(false); ch.busy = false; ch.hopBusy = false; ch.setTexture(ch.key); },
     });
+  }
+
+  /**
+   * Кто лежит на кровати и уже может уснуть — засыпает, и над ней сразу облачка снов.
+   * Проверяется часто: sleepTick идёт раз в полторы секунды, а ждать облачков ребёнку не нужно.
+   */
+  dozeTick() {
+    for (const c of this.objs) {
+      if (c.kind !== 'char' || c.dragging || c.sleeping || c.busy) continue;
+      if (!c.restOn || !RX.bedLike.test(c.restOn.rec?.subject || '') || this.time.now <= (c.awakeUntil || 0)) continue;
+      c.sleeping = true;
+      c.setTexture(c.key + '_blink');
+      this.dream(c);
+    }
   }
 
   sleepTick() {
@@ -3550,7 +3631,8 @@ class Room extends Phaser.Scene {
 
   spill(box) {
     sfx.chestOut();
-    const ids = box.contents.splice(0);
+    // не больше восьми за раз: робот-пылесос складывает сюда всё подряд, и разом вернулся бы тот же беспорядок
+    const ids = box.contents.splice(-8);
     ids.forEach((id, i) => {
       const rec = this.recOf(id);
       if (!rec) return;
@@ -3992,6 +4074,7 @@ class Room extends Phaser.Scene {
       });
     }
     this.updateDreams(time);
+    this.updateClean(); // седоки робота-пылесоса и следы испачканной куклы
     const plain = !this.dress && !this.albumUi && !this.mapUi; // нет открытых экранов поверх комнаты
     if (this.nav) {
       this.nav[0].forEach((o) => o.setVisible(cam.scrollX > 2 && plain));
@@ -4097,7 +4180,7 @@ class Room extends Phaser.Scene {
       flags: this.flags, buddy: this.buddy || undefined,
       objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
         uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
-        contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
+        dirty: o.dirty || undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
         stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
         color: o.color, photoId: o.photoId,
       })),
@@ -4146,6 +4229,7 @@ class Room extends Phaser.Scene {
       if (!o) continue;
       if (s.restOn && byUid.get(s.restOn)) o.restOn = byUid.get(s.restOn);
       if (s.stain) this.stain(o, s.stain, true);
+      if (s.dirty && o.kind === 'item') { o.dirty = true; o.setTint(0x9a7a5a); }
       if (s.foam) { o.foam = s.foam; this.renderFoam(o); }
       if (s.inTub && byUid.get(s.inTub)) { o.inTub = byUid.get(s.inTub); o.tubDx = s.tubDx || 0; }
       if (s.owner && byUid.get(s.owner)) {
@@ -4174,6 +4258,8 @@ installSeason(Room, ENV);
 installStickers(Room, ENV);
 installRepair(Room, ENV);
 installDream(Room, ENV);
+installTidy(Room, ENV);
+installClean(Room, ENV);
 
 // =====================================================================
 // Полноэкранный режим и альбомная ориентация на телефоне (по первому касанию)

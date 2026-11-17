@@ -44,6 +44,43 @@ function stars(g, W, h, n, col = 0xffffff) {
   }
 }
 
+/** Копия спрайта каталога в другом цвете (тон 0…360; dark < 1 — темнее): мишка становится цвета съеденного. */
+function hueTex(scene, rec, hue, dark = 1) {
+  const key = `dw_hue_${rec.id}_${hue}_${dark}`;
+  if (scene.textures.exists(key)) return key;
+  const fr = scene.textures.getFrame(rec.cat, rec.frame);
+  const c = document.createElement('canvas');
+  c.width = fr.width;
+  c.height = fr.height;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(fr.source.image, fr.cutX, fr.cutY, fr.width, fr.height, 0, 0, fr.width, fr.height);
+  const im = g.getImageData(0, 0, c.width, c.height);
+  const d = im.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (!d[i + 3]) continue;
+    const mx = Math.max(d[i], d[i + 1], d[i + 2]);
+    const mn = Math.min(d[i], d[i + 1], d[i + 2]);
+    const sat = mx ? (mx - mn) / mx : 0;
+    if (sat < 0.12 || mx < 60) continue; // контур и блики не трогаем
+    const v = mx * dark;
+    const h = (((hue % 360) + 360) % 360) / 60;
+    const x = v * (1 - sat * Math.abs((h % 2) - 1));
+    const m = v * (1 - sat);
+    const [r, gg, b] = h < 1 ? [v, x, m] : h < 2 ? [x, v, m] : h < 3 ? [m, v, x] : h < 4 ? [m, x, v] : h < 5 ? [x, m, v] : [v, m, x];
+    d[i] = r; d[i + 1] = gg; d[i + 2] = b;
+  }
+  g.putImageData(im, 0, 0);
+  scene.textures.addCanvas(key, c);
+  return key;
+}
+
+const SWEETS = ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'];
+// в какой цвет красит мишку сладость (тон; шоколад — ещё и темнее)
+const SWEET_HUE = { cupcake: 285, lollipop: 0, 'cotton candy': 200, 'candy cane': 350, macaron: 140, 'glazed donut': 32, 'heart shaped cookie': 48, 'sugar cookie': 48, 'chocolate bar': 24 };
+const BERRIES = ['strawberry', 'blueberry', 'pair of cherries'];
+const RB_LIFE = 12000; // сколько живёт радуга, нарисованная пальцем
+const BLOCK_COLS = [['#ff7a8a', '#ffa8b4', '#d85a6a'], ['#7ac8f2', '#a8dcf8', '#5aa8d8'], ['#ffd84a', '#ffe88a', '#d8b030'], ['#8ad9a8', '#b0e8c4', '#62b888'], ['#c48ff2', '#dcb8f8', '#a06fd0']];
+
 // гингерный домик: откуда откусывают (по порядку)
 const BITES = [[3, 19, 5], [41, 30, 5], [33, 7, 5], [5, 38, 4], [40, 17, 4]];
 
@@ -154,6 +191,40 @@ export function makeDreamTextures(scene) {
   add('dw_earth', canvasFor(14, 14, (r) => {
     disc(r, 7, 7, 7, 7, '#5ac4f2'); r(3, 3, 4, 3, '#7ad98a'); r(8, 7, 4, 4, '#7ad98a'); r(4, 9, 2, 2, '#7ad98a'); r(6, 2, 4, 1, '#ffffff'); r(2, 7, 3, 1, '#ffffff');
   }));
+  // след сна дома: снежная шапка и облачко под ногами
+  add('dm_snow', canvasFor(14, 6, (r) => { disc(r, 7, 4, 7, 2.5, '#ffffff'); disc(r, 5, 2.5, 4, 2.5, '#ffffff'); disc(r, 9.5, 3, 3.5, 2, '#ffffff'); r(3, 5, 9, 1, '#cfe0f2'); }));
+  add('dm_cloud', canvasFor(22, 8, (r) => { disc(r, 11, 5, 11, 3, '#ffffff'); disc(r, 7, 3.5, 4, 3, '#ffffff'); disc(r, 14, 3, 5, 3, '#ffffff'); r(4, 7, 14, 1, '#dfe6fb'); }));
+  // воздушный шар с корзиной, в которую можно сесть: шар — за куклой, передняя стенка корзины — перед ней
+  add('dw_balloon', canvasFor(34, 70, (r) => {
+    disc(r, 17, 15, 17, 15, '#ef5a6f'); disc(r, 17, 15, 10, 15, '#ffd84a'); disc(r, 17, 15, 4, 15, '#ff9a5a');
+    disc(r, 10, 9, 3, 4, '#ff8a9a');
+    for (let y = 27; y < 37; y++) { const h = Math.round(13 - (y - 27) * 0.9); r(17 - h, y, h * 2, 1, '#ef5a6f'); r(17 - Math.round(h * 0.55), y, Math.round(h * 0.55) * 2, 1, '#ffd84a'); r(16, y, 2, 1, '#ff9a5a'); }
+    r(12, 37, 10, 2, '#8d5a3b');
+    for (let y = 39; y < 58; y++) { const k = (y - 39) / 19; r(Math.round(12 - k * 4), y, 1, 1, '#8d5a3b'); r(Math.round(21 + k * 4), y, 1, 1, '#8d5a3b'); }
+    r(7, 57, 20, 13, '#a8682f'); r(7, 57, 20, 1, '#8d5a3b');
+  }));
+  add('dw_basket', canvasFor(20, 11, (r) => {
+    r(0, 0, 20, 11, '#c8843f'); r(0, 0, 20, 2, '#8d5a3b'); r(0, 9, 20, 2, '#a8682f');
+    for (let y = 3; y < 9; y += 2) for (let x = (y % 4 === 3 ? 1 : 3); x < 20; x += 4) r(x, y, 2, 1, '#e0a860');
+  }));
+  // шоколадный фонтан
+  add('dw_fountain', canvasFor(28, 34, (r) => {
+    disc(r, 14, 4, 2.5, 3, '#7a4a2a');
+    disc(r, 14, 9, 5, 2.4, '#f2c94c'); disc(r, 14, 8.2, 3.6, 1.3, '#7a4a2a'); r(13, 10, 2, 8, '#d8b030');
+    disc(r, 14, 19, 9, 3, '#f2c94c'); disc(r, 14, 18, 7.4, 1.7, '#7a4a2a'); r(12, 21, 4, 9, '#d8b030');
+    disc(r, 14, 30, 14, 4, '#f2c94c'); disc(r, 14, 29, 12, 2.4, '#7a4a2a'); r(3, 32, 22, 1, '#d8b030');
+    for (const [x, y, h] of [[10, 9, 8], [17, 9, 8], [6, 19, 9], [21, 19, 9], [14, 11, 6]]) r(x, y, 1, h, '#7a4a2a');
+    r(9, 28, 3, 1, '#a8703f'); r(17, 29, 4, 1, '#a8703f');
+  }));
+  // дверь ледяного дворца и лунка во льду
+  add('dw_door', canvasFor(10, 16, (r) => { r(0, 2, 10, 14, '#2e4486'); r(1, 1, 8, 1, '#2e4486'); r(2, 0, 6, 1, '#2e4486'); r(1, 3, 8, 13, '#3c5aa0'); r(3, 4, 4, 4, '#ffe9a8'); r(7, 10, 1, 1, '#ffd84a'); }));
+  add('dw_door_open', canvasFor(10, 16, (r) => { r(0, 2, 10, 14, '#2e4486'); r(1, 1, 8, 1, '#2e4486'); r(2, 0, 6, 1, '#2e4486'); r(1, 3, 8, 13, '#fff4c0'); r(2, 5, 6, 11, '#ffe9a8'); }));
+  add('dw_hole', canvasFor(24, 9, (r) => { disc(r, 12, 4.5, 12, 4.5, '#ffffff'); disc(r, 12, 5, 10, 3.2, '#2c6ab0'); disc(r, 12, 5.6, 8, 2, '#1f4f8c'); r(6, 3, 5, 1, '#7fc4ee'); }));
+  // кубики: из них строят башню
+  BLOCK_COLS.forEach(([col, hi, lo], i) => add(`dw_block_${i}`, canvasFor(14, 14, (r) => {
+    r(0, 0, 14, 14, col); r(0, 0, 14, 2, hi); r(0, 0, 2, 14, hi); r(0, 12, 14, 2, lo); r(12, 0, 2, 14, lo);
+    if (i % 2) { r(5, 4, 4, 6, '#ffffff'); r(4, 5, 6, 4, '#ffffff'); } else { r(6, 3, 2, 8, '#ffffff'); r(3, 6, 8, 2, '#ffffff'); }
+  })));
 }
 
 /** Тап по жителю: подпрыгнул, сердечко и свой звук. */
@@ -164,6 +235,19 @@ export const WORLDS = {
   // ------------------------------------------------------------------ сказочный лес
   forest: {
     icon: 'unicorn', ground: 0.62, gravity: 'ground', music: 0,
+    // кукла встаёт ниже грибов: не закрывает их и не перехватывает тапы
+    start: (s) => ({ x: s.W * 0.3, y: s.GY + s.band * 0.84 }),
+    wants: BERRIES,
+    lures: [
+      { key: 'mush', who: (s) => s.mush },
+      { key: 'bush', who: (s) => s.bushes },
+      { key: 'ride', who: (s) => [s.uni, s.dolls[0]] },
+      { key: 'fairy', who: (s) => s.fairies },
+    ],
+    events: [
+      (s) => s.skyfall('shooting star'),
+      (s) => s.flyby(['butterfly', 'monarch butterfly', 'blue morpho butterfly', 'swallowtail butterfly', 'butterfly'], { y: 52, dys: [0, -9, 7, -4, 10], gap: 15, wave: 6, speed: 30 }),
+    ],
     build(s) {
       const { W, H, GY, band } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -219,6 +303,7 @@ export const WORLDS = {
           m.offEv = s.time.delayedCall(9000, () => { m.lit = false; m.glow.setVisible(false); });
           if (!s.mush.every((x) => x.lit)) return;
           // хор грибов: аккорд, салют и подарок
+          s.tried('mush');
           sfx.fanfare();
           for (const x of s.mush) { x.offEv?.remove(); s.fxSparks.explode(10, x.x, x.y - 22); x.offEv = s.time.delayedCall(1600, () => { x.lit = false; x.glow.setVisible(false); }); }
           s.gift(W * 0.42 + rnd(-20, 20), GY - 6);
@@ -247,6 +332,7 @@ export const WORLDS = {
           speed: 90, done: () => {
             f2.busy = false;
             if (d.dragging || d.busy || d.mount) return;
+            s.tried('fairy');
             sfx.whee();
             s.fxSparks.explode(16, d.x, d.y - 20);
             d.busy = true;
@@ -260,15 +346,64 @@ export const WORLDS = {
           },
         });
       };
-      ['fairy', 'flower fairy', 'frost fairy'].forEach((sub, i) => {
+      s.fairies = ['fairy', 'flower fairy', 'frost fairy'].map((sub, i) => {
         const fa = s.spr(sub, W * (0.3 + i * 0.22), 30 + i * 9, { fly: true, tap: dust });
         s.wander(fa, [20, W - 20, 16, GY - 12], { wave: 3, speed: 16, rest: 0.15, every: 2600 });
+        return fa;
       });
-      // лесные жители
-      for (const [sub, fx] of [['deer', 0.5], ['hedgehog', 0.28], ['fox', 0.66]]) {
-        const a = s.spr(sub, W * fx, GY + band * rnd(0.5, 0.85), { tap: hello(s) });
+      // лесные жители: любят ягоды и загадывают желания
+      s.critters = ['deer', 'hedgehog', 'fox', 'rabbit', 'squirrel'].map((sub, i) => {
+        const a = s.spr(sub, W * (0.28 + i * 0.1), GY + band * rnd(0.5, 0.85), { tap: hello(s), eats: true, wisher: true });
         s.wander(a, [22, W - 22, GY + 10, H - 4], { hops: true, speed: 18 });
-      }
+        return a;
+      });
+      // прятки: за кустом кто-то сидит — тап, и зверёк выскакивает; пустой куст роняет ягоду
+      const hide = (a, b) => { s.halt(a); a.hid = true; a.setVisible(false).disableInteractive(); a.x = b.x0; a.y = b.y + 1; b.hides = a; };
+      const shake = (b) => {
+        s.act(b, { x: b.x0 + 1, duration: 50, yoyo: true, repeat: 2, onComplete: () => { b.x = b.x0; } });
+        s.fxCrumbs.setParticleTint(0x58b888);
+        s.fxCrumbs.explode(5, b.x0, b.y - 18);
+      };
+      s.bushes = [[0.1, 22], [0.56, 47], [0.93, 27]].map(([fx, dy]) => {
+        const b = s.spr('leafy bush', W * fx, GY + dy, { sc: 2, drag: false, noFlip: true });
+        b.x0 = b.x;
+        b.tap = () => {
+          sfx.step(); sfx.dig();
+          shake(b);
+          const a = b.hides;
+          if (a?.active) {
+            b.hides = null;
+            a.hid = false;
+            a.setVisible(true).setInteractive();
+            a.x = b.x0; a.y = b.y + 2;
+            s.tried('bush');
+            sfx.squeak(); sfx.giggle();
+            s.fxHearts.explode(3, a.x, a.y - 16);
+            const tx = Phaser.Math.Clamp(a.x + (a.x < W / 2 ? rnd(30, 70) : -rnd(30, 70)), 22, W - 22);
+            s.jump(a, 14, 240, () => s.moveTo(a, tx, GY + band * rnd(0.4, 0.9), { hops: true, speed: 50 }));
+            // нашли троих — подарок
+            if (++s.found % 3 === 0) { sfx.fanfare(); s.fxSparks.explode(20, b.x0, b.y - 20); s.gift(b.x0 + (b.x0 < W / 2 ? 22 : -22), b.y - 20); }
+            return;
+          }
+          if (s.time.now < (b.cool || 0)) return;
+          b.cool = s.time.now + 1300;
+          s.gift(b.x0 + rnd(-8, 8), b.y - 22, pick(BERRIES));
+        };
+        return b;
+      });
+      hide(s.critters[3], s.bushes[0]);
+      hide(s.critters[4], s.bushes[2]);
+      // время от времени кто-нибудь снова прячется
+      s.time.addEvent({
+        delay: 9000, loop: true, callback: () => {
+          const now = s.time.now;
+          const b = pick(s.bushes.filter((x) => !x.hides && !(x.going > now)));
+          const a = pick(s.critters.filter((x) => x.active && !x.hid && !x.dragging && !x.moving && !x.busy && !x.jumping && x !== s.wishNow?.who));
+          if (!a || !b || s.leaving || Math.random() < 0.3) return;
+          b.going = now + 7000;
+          s.moveTo(a, b.x0, b.y + 1, { hops: true, speed: 45, done: () => { b.going = 0; if (!a.dragging && !b.hides && a !== s.wishNow?.who) { hide(a, b); shake(b); } } });
+        },
+      });
       s.spr('owl', W - 26, Math.round(GY * 0.55), { fly: true, drag: false, noFlip: true, tap: (o) => { sfx.instrument('wind', 0); sfx.instrument('wind', 0, 0.3); s.fxNotes.explode(2, o.x, o.y - 14); s.jump(o, 2, 120); } });
     },
     walk: (s) => [22, s.W - 22, s.GY + 10, s.H - 4],
@@ -281,6 +416,17 @@ export const WORLDS = {
   // ------------------------------------------------------------------ другая планета
   planet: {
     icon: 'flying saucer', ground: 0.66, gravity: 'moon', music: 1,
+    wants: ['star', 'crescent moon', 'crystal ball', 'jar of stardust'],
+    lures: [
+      { key: 'crater', who: (s) => s.craters },
+      { key: 'ufo', who: (s) => s.ufo },
+      { key: 'ride', who: (s) => [s.rocket, s.dolls[0]] },
+    ],
+    events: [
+      (s) => s.flyby(Array(5).fill('shooting star'), { y: 20, dys: [0, 14, 5, 24, 10], gap: 30, speed: 75, wave: 0 }),
+      (s) => s.skyfall('star'),
+      (s) => s.flyby(Array(3).fill('flying saucer'), { y: 62, dys: [0, -8, 0], gap: 24, speed: 42, wave: 5, tap: () => sfx.beam() }),
+    ],
     build(s) {
       const { W, H, GY, band } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -302,9 +448,10 @@ export const WORLDS = {
       }
 
       // кратеры: тап — из кратера выплывает подарок
-      [[0.2, 0.3], [0.56, 0.72], [0.86, 0.38]].forEach(([fx, fy]) => {
+      s.craters = [[0.2, 0.3], [0.56, 0.72], [0.86, 0.38]].map(([fx, fy]) => {
         const c = s.img('dw_crater', W * fx, GY + band * fy, { drag: false, noFlip: true });
         c.tap = () => {
+          s.tried('crater');
           sfx.blub();
           s.fxPoof.setParticleTint(0xc8c3e0);
           s.fxPoof.explode(8, c.x, c.y - 4);
@@ -312,13 +459,68 @@ export const WORLDS = {
           c.cool = s.time.now + 1500;
           s.gift(c.x + rnd(-6, 6), c.y - 6);
         };
+        return c;
       });
 
-      // инопланетяне: медленно и высоко прыгают; повторяют прыжок куклы
+      // инопланетяне: медленно и высоко прыгают; повторяют прыжок куклы.
+      // У каждого своя нота: они пищат мелодию из трёх нот — повтори её, и получишь подарок
+      const NOTE = [0, 4, 7];
+      const tune = { seq: [0, 1, 2], got: [], at: s.time.now + 3500, playing: false };
+      s.tune = tune;
+      const newTune = () => {
+        do { tune.seq = [0, 1, 2].map(() => Math.floor(Math.random() * 3)); } while (new Set(tune.seq).size < 2);
+        tune.got = [];
+      };
+      newTune();
+      const beep = (i, h = 12) => {
+        const a = s.aliens[i];
+        sfx.instrument('bell', NOTE[i]);
+        if (!a.active) return;
+        s.fxNotes.explode(1, a.x, a.y - 18);
+        if (!a.dragging) s.jump(a, h, 220);
+      };
+      s.playTune = () => {
+        if (tune.playing) return;
+        tune.playing = true;
+        tune.got = [];
+        tune.seq.forEach((n, k) => s.time.delayedCall(k * 560, () => beep(n)));
+        s.time.delayedCall(tune.seq.length * 560 + 200, () => { tune.playing = false; });
+      };
       s.aliens = ['moth fairy', 'firefly', 'moon rabbit'].map((sub, i) => {
-        const a = s.spr(sub, W * (0.48 + i * 0.16), GY + band * rnd(0.35, 0.8), { tap: (x) => { sfx.blub(); s.fxHearts.explode(1, x.x, x.y - 16); s.jump(x, 20, 520); } });
+        const a = s.spr(sub, W * (0.48 + i * 0.16), GY + band * rnd(0.35, 0.8), {
+          wisher: true,
+          tap: (x) => {
+            beep(i, 20);
+            s.fxHearts.explode(1, x.x, x.y - 16);
+            if (tune.playing) return;
+            tune.at = s.time.now + 9000;
+            tune.got.push(i);
+            if (!tune.got.every((n, k) => tune.seq[k] === n)) { tune.got = tune.seq[0] === i ? [i] : []; return; }
+            if (tune.got.length < tune.seq.length) return;
+            // мелодию повторили: все танцуют, подарок — и новая мелодия
+            tune.got = [];
+            tune.playing = true;
+            s.tried('tune');
+            s.time.delayedCall(450, () => {
+              sfx.fanfare();
+              for (const al of s.aliens) if (al.active && !al.dragging) { s.halt(al); s.dance(al, 6); s.fxSparks.explode(8, al.x, al.y - 14); }
+              s.gift(x.x + rnd(-10, 10), x.y - 16);
+              newTune();
+              tune.playing = false;
+              tune.at = s.time.now + 8000;
+            });
+          },
+        });
         s.wander(a, [20, W - 20, GY + 6, H - 4], { hops: true, hopH: 8, speed: 12 });
         return a;
+      });
+      // пока ребёнок думает, они напевают мелодию снова
+      s.time.addEvent({
+        delay: 1000, loop: true, callback: () => {
+          if (s.leaving || s.press || s.time.now < tune.at || performance.now() - s.lastInput < 2500) return;
+          tune.at = s.time.now + (s.isTried('tune') ? 16000 : 10000);
+          s.playTune();
+        },
       });
 
       // летающая тарелка: подлетает, поднимает лучом и переносит на другое место
@@ -329,10 +531,11 @@ export const WORLDS = {
       ufo.cancel = () => { if (ufo.target) ufo.target.busy = false; ufo.target = null; ufo.lift = false; ufo.busy = false; s.halt(ufo); };
       ufo.tap = () => {
         if (ufo.busy) return;
-        const list = s.actors.filter((a) => a !== ufo && a.drag && !a.fly && !a.dragging && !a.mount && !a.rider && !a.owner && !a.busy && a.kind !== 'item');
+        const list = s.actors.filter((a) => a !== ufo && a.drag && a.visible && !a.fly && !a.dragging && !a.mount && !a.rider && !a.owner && !a.busy && a.kind !== 'item');
         const t = list.sort((p, q) => (p.kind === 'doll' ? 0 : 1) - (q.kind === 'doll' ? 0 : 1) || Math.abs(p.x - ufo.x) - Math.abs(q.x - ufo.x))[0];
         sfx.beam();
         if (!t) { s.jump(ufo, 3, 120); return; }
+        s.tried('ufo');
         s.halt(ufo);
         s.halt(t);
         ufo.busy = true;
@@ -412,6 +615,16 @@ export const WORLDS = {
   sea: {
     icon: 'goldfish', ground: 0.84, gravity: 'water', music: 1, tail: true,
     start: (s) => ({ x: s.W * 0.36, y: s.H * 0.6 }),
+    wants: ['pearl', 'seashell', 'starfish'],
+    lures: [
+      { key: 'clam', who: (s) => s.clams.filter((c) => !c.open) },
+      { key: 'chest', who: (s) => (s.chest.open ? [] : [s.crab, s.chest]) },
+      { key: 'ride', who: (s) => [s.whale, s.dolls[0]] },
+    ],
+    events: [
+      (s) => s.flyby(['sea turtle'], { y: 64, sc: 2, speed: 22, wave: 4, tap: () => sfx.blub() }),
+      (s) => s.flyby(['fish', 'betta fish', 'fish', 'koi fish', 'fish', 'betta fish', 'fish'], { y: 52, dys: [0, -8, 8, -16, 16, -24, 24], gap: 11, speed: 62, wave: 2, tap: (a) => s.fxBub.explode(5, a.x, a.y - 8) }),
+    ],
     build(s) {
       const { W, H, GY, band } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -456,9 +669,10 @@ export const WORLDS = {
         },
       });
       s.wander(whale, [44, W - 44, 44, GY - 14], { wave: 2, speed: 11, rest: 0.1, every: 4200 });
+      s.whale = whale;
       // дельфин: прыгает дугой
       const dol = s.spr('dolphin', W * 0.2, H * 0.3, {
-        fly: true, tap: (d) => { sfx.whee(); s.halt(d); s.fxBub.explode(6, d.x, d.y - 8); s.moveTo(d, d.x < W / 2 ? d.x + 90 : d.x - 90, d.y, { speed: 110, wave: 16 }); },
+        fly: true, wisher: true, tap: (d) => { sfx.whee(); s.halt(d); s.fxBub.explode(6, d.x, d.y - 8); s.moveTo(d, d.x < W / 2 ? d.x + 90 : d.x - 90, d.y, { speed: 110, wave: 16 }); },
       });
       s.wander(dol, [20, W - 20, 22, GY - 20], { wave: 5, speed: 34, rest: 0.1, every: 2800 });
       for (let i = 0; i < 2; i++) {
@@ -468,17 +682,69 @@ export const WORLDS = {
       // на дне: осьминог пускает чернила и удирает, краб щёлкает клешнями
       s.fxInk = s.add.particles(0, 0, 'px', { emitting: false, lifespan: 1500, speed: { min: 6, max: 26 }, scale: { start: 3, end: 1 }, alpha: { start: 0.85, end: 0 }, tint: [0x2b1d4e, 0x4a3570] }).setDepth(6000);
       const oct = s.spr('octopus', W * 0.72, GY + band * 0.6, {
-        ground: true, fly: true, noFlip: true, tap: (o) => { sfx.poof(); s.fxInk.explode(22, o.x, o.y - 8); s.halt(o); s.moveTo(o, o.x < W / 2 ? o.x + rnd(60, 110) : o.x - rnd(60, 110), o.y, { speed: 120 }); },
+        ground: true, fly: true, noFlip: true, wisher: true, tap: (o) => { sfx.poof(); s.fxInk.explode(22, o.x, o.y - 8); s.halt(o); s.moveTo(o, o.x < W / 2 ? o.x + rnd(60, 110) : o.x - rnd(60, 110), o.y, { speed: 120 }); },
       });
       s.wander(oct, [20, W - 20, GY + 6, H - 3], { speed: 9, rest: 0.5 });
-      const crab = s.spr('crab', W * 0.3, GY + band * 0.7, { ground: true, fly: true, noFlip: true, tap: (c) => { sfx.click(); s.time.delayedCall(120, () => sfx.click()); s.halt(c); s.jump(c, 4, 110); } });
+      // краб щёлкает клешнями и носит ключ от сундука: тап — роняет ключ
+      const crab = s.spr('crab', W * 0.3, GY + band * 0.7, {
+        ground: true, fly: true, noFlip: true, wisher: true, tap: (c) => {
+          sfx.click(); s.time.delayedCall(120, () => sfx.click());
+          s.halt(c); s.jump(c, 4, 110);
+          const k = s.ckey;
+          if (!k?.active || k.carrier !== c) return;
+          k.carrier = null;
+          k.x = Math.round(Phaser.Math.Clamp(c.x + (c.x < W / 2 ? 18 : -18), 10, W - 10));
+          k.y = c.y - 8;
+          s.fxSparks.explode(8, k.x, k.y - 8);
+          sfx.jingle();
+          s.settle(k);
+        },
+      });
       s.wander(crab, [16, W - 16, GY + 6, H - 3], { hops: true, hopH: 1, speed: 16 });
-      s.spr('starfish', W * 0.46, GY + band * 0.8, { ground: true, fly: true, noFlip: true, tap: (x) => { sfx.sparkle(); s.fxSparks.explode(5, x.x, x.y - 8); s.halt(x); s.jump(x, 8, 200); } });
+      s.crab = crab;
+      // сундук на дне заперт: ключ у краба. Открыли — три подарка, первый — жемчужина
+      const face = (sub) => { const r = s.room.findRec(sub); if (r) chest.setTexture(r.cat, r.frame); };
+      const newKey = () => { s.ckey = s.spr('chest key', crab.x + 9, crab.y - 5, { kind: 'item', keyItem: true, fly: true, ground: true }); s.ckey.carrier = crab; };
+      const chest = s.spr('locked treasure chest', W * 0.33, GY + 14, { sc: 2, drag: false, noFlip: true });
+      chest.x0 = chest.x;
+      chest.tap = () => {
+        s.act(chest, { x: chest.x0 + 1, duration: 50, yoyo: true, repeat: 2, onComplete: () => { chest.x = chest.x0; } });
+        if (chest.open) { sfx.sparkle(); s.fxSparks.explode(6, chest.x0, chest.y - 20); return; }
+        // заперт: искорки показывают, где ключ
+        sfx.click();
+        const k = s.ckey;
+        if (!k?.active) return;
+        s.fxSparks.explode(8, k.x, k.y - 8);
+        if (k.carrier) s.jump(k.carrier, 6, 140); else if (!k.owner) s.jump(k, 6, 140);
+      };
+      s.chest = chest;
+      s.openChest = (key) => {
+        chest.open = true;
+        face('overflowing treasure chest');
+        s.removeActor(key);
+        s.ckey = null;
+        s.tried('chest');
+        sfx.chestOut(); sfx.fanfare();
+        s.fxSparks.explode(24, chest.x0, chest.y - 18);
+        s.fxBub.explode(12, chest.x0, chest.y - 20);
+        [0, 350, 700].forEach((ms, i) => s.time.delayedCall(ms, () => {
+          if (!s.leaving) s.gift(chest.x0 + (i - 1) * 18, chest.y - 24, i ? null : 'pearl', i ? {} : { keep: true });
+        }));
+        s.time.delayedCall(16000, () => {
+          if (!chest.active || s.leaving) return;
+          chest.open = false;
+          face('locked treasure chest');
+          if (crab.active) { newKey(); s.fxSparks.explode(6, crab.x, crab.y - 10); }
+        });
+      };
+      newKey();
+      s.spr('starfish', W * 0.46, GY + band * 0.8, { ground: true, fly: true, noFlip: true, wisher: true, tap: (x) => { sfx.sparkle(); s.fxSparks.explode(5, x.x, x.y - 8); s.halt(x); s.jump(x, 8, 200); } });
       // ракушки: открываются — внутри подарок
-      [0.16, 0.5, 0.84].forEach((fx, i) => {
+      s.clams = [0.16, 0.5, 0.84].map((fx, i) => {
         const c = s.img('dw_clam', W * fx, GY + 8 + (i % 2) * 5, { drag: false, noFlip: true });
         c.tap = () => {
           if (c.open) { sfx.boing(); return; }
+          s.tried('clam');
           c.open = true;
           c.setTexture('dw_clam_open');
           sfx.chestOut();
@@ -486,7 +752,23 @@ export const WORLDS = {
           s.gift(c.x, c.y - 10);
           s.time.delayedCall(3800, () => { if (c.active) { c.open = false; c.setTexture('dw_clam'); } });
         };
+        return c;
       });
+    },
+    /** Ключ отпустили у сундука — он открывается. */
+    drop(s, a, q) {
+      const c = s.chest;
+      if (!a.keyItem || c.open || Math.abs(q.x - c.x0) > 22 || q.y < c.y - 42 || q.y > c.y + 8) return false;
+      s.openChest(a);
+      return true;
+    },
+    update(s) {
+      // краб несёт ключ в клешне, пока его не забрали
+      const k = s.ckey;
+      if (!k?.active || !k.carrier) return;
+      if (k.dragging || k.owner || !k.carrier.active) { k.carrier = null; return; }
+      k.x = k.carrier.x + 9;
+      k.y = k.carrier.y - 5;
     },
     /** Русалка кружится в воде. */
     dollTap(s, d) {
@@ -522,6 +804,16 @@ export const WORLDS = {
   clouds: {
     icon: 'rainbow', ground: 0.88, gravity: 'cloud', music: 0,
     start: (s) => ({ x: s.plats[0].x - 8, y: s.plats[0].y - 9, plat: s.plats[0] }),
+    wants: ['star', 'rainbow', 'kite'],
+    lures: [
+      { key: 'star', who: (s) => s.stars.filter((x) => !x.hiding) },
+      { key: 'rainbow', show: (s) => WORLDS.clouds.demo(s) },
+      { key: 'ride', who: (s) => [s.bal, s.dolls[0]] },
+    ],
+    events: [
+      (s) => { s.planes = s.flyby(['airplane'], { y: 34, sc: 2, speed: 58, wave: 0, tap: () => sfx.whee() }); },
+      (s) => s.flyby(['swallow bird', 'robin bird', 'cardinal bird', 'bluebird', 'swallow bird'], { y: 44, dys: [0, -8, 8, -16, 16], gap: 12, speed: 55, wave: 2 }),
+    ],
     build(s) {
       const { W, H, GY } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -552,38 +844,106 @@ export const WORLDS = {
       });
 
       // звёзды: тап — звезда падает подарком, а на небе загорается новая
-      for (let i = 0; i < 4; i++) {
+      s.stars = [0, 1, 2, 3].map((i) => {
         const st = s.spr('star', W * (0.14 + i * 0.22), 14 + rs(i, 16), { fly: true, drag: false, noFlip: true });
         s.tweens.add({ targets: st, alpha: 0.55, duration: 700 + i * 130, yoyo: true, repeat: -1 });
         st.tap = () => {
           if (st.hiding) return;
+          s.tried('star');
           st.hiding = true;
           sfx.sparkle();
           s.gift(st.x, st.y);
           st.setVisible(false);
           s.time.delayedCall(4500, () => { if (!st.active) return; st.x = Math.round(rnd(20, W - 20)); st.y = Math.round(rnd(12, 34)); st.setVisible(true); st.hiding = false; s.fxSparks.explode(6, st.x, st.y - 8); });
         };
-      }
+        return st;
+      });
       // солнышко смеётся
       s.spr('sun', W * 0.9, 34, { sc: 2, fly: true, drag: false, noFlip: true, tap: (x) => { sfx.giggle(); s.fxSparks.explode(14, x.x, x.y - 16); s.jump(x, 3, 130); } });
       // облачные барашки
       [[1, -10], [2, 6]].forEach(([pi, dx]) => {
         const p = s.plats[pi];
-        const sh = s.spr('cloud sheep', p.x + dx, p.y - 9, { tap: (x) => { sfx.baa(); s.fxHearts.explode(1, x.x, x.y - 16); s.jump(x, 14, 240); } });
+        const sh = s.spr('cloud sheep', p.x + dx, p.y - 9, { wisher: true, tap: (x) => { sfx.baa(); s.fxHearts.explode(1, x.x, x.y - 16); s.jump(x, 14, 240); } });
         sh.plat = p;
       });
-      const sheep = s.spr('cloud sheep', W * 0.62, GY + 9, { tap: (x) => { sfx.baa(); s.fxHearts.explode(1, x.x, x.y - 16); s.jump(x, 14, 240); } });
+      const sheep = s.spr('cloud sheep', W * 0.62, GY + 9, { wisher: true, tap: (x) => { sfx.baa(); s.fxHearts.explode(1, x.x, x.y - 16); s.jump(x, 14, 240); } });
       s.wander(sheep, [16, W - 16, GY + 6, H - 3], { hops: true, hopH: 4, speed: 16 });
       // летуны
       for (const [sub, fx, fy] of [['bluebird', 0.6, 30], ['winged pig', 0.3, 48], ['winged cat', 0.72, 60]]) {
-        const a = s.spr(sub, W * fx, fy, { fly: true, tap: (x) => { sfx.squeak(); s.fxHearts.explode(1, x.x, x.y - 16); s.halt(x); s.moveTo(x, x.x + (x.x < W / 2 ? 46 : -46), x.y, { speed: 80, wave: 10 }); } });
+        const a = s.spr(sub, W * fx, fy, { fly: true, wisher: sub !== 'bluebird', tap: (x) => { sfx.squeak(); s.fxHearts.explode(1, x.x, x.y - 16); s.halt(x); s.moveTo(x, x.x + (x.x < W / 2 ? 46 : -46), x.y, { speed: 80, wave: 10 }); } });
         s.wander(a, [18, W - 18, 16, GY - 20], { wave: 4, speed: 20, rest: 0.15, every: 2600 });
       }
       // небесный кит катает по небу
       const whale = s.spr('sky whale', W * 0.55, GY - 62, { sc: 2, fly: true, ride: { seat: 13 }, tap: (w) => { sfx.whale(); s.fxSparks.explode(10, w.x, w.y - 30); } });
       s.wander(whale, [40, W - 40, 44, GY - 30], { wave: 3, speed: 12, rest: 0.1, every: 4000 });
-      const bal = s.spr('hot air balloon', W * 0.13, 62, { sc: 2, fly: true, noFlip: true, tap: (b) => { sfx.whee(); s.halt(b); s.moveTo(b, b.x, Math.max(36, b.y - 20), { speed: 26 }); } });
-      s.wander(bal, [36, W - 18, 52, GY - 30], { wave: 2, speed: 7, rest: 0.2, every: 4600 });
+      // воздушный шар: в корзину можно сесть — и полететь, куда он понесёт
+      const fly = (b) => {
+        if (b.dragging) return;
+        sfx.whee();
+        s.halt(b);
+        s.moveTo(b, rnd(30, W - 26), rnd(86, GY - 8), { speed: 30, wave: 3 });
+      };
+      const bal = s.img('dw_balloon', W * 0.13, 100, { fly: true, noFlip: true, ride: { seat: 3, over: true, zone: 34, go: fly }, tap: fly });
+      s.bal = bal;
+      s.balFront = s.add.image(bal.x, bal.y, 'dw_basket').setOrigin(0.5, 1);
+      s.wander(bal, [30, W - 26, 88, GY - 8], { wave: 2, speed: 7, rest: 0.2, every: 4600 });
+    },
+    /** Радуга сама рисуется дугой через небо — так показываем, что её можно рисовать пальцем (и кататься с неё). */
+    demo(s) {
+      if (s.time.now < (s.rbDemoAt || 0)) return;
+      s.rbDemoAt = s.time.now + 14000;
+      const st = { pts: [], t: s.time.now };
+      s.strokes.push(st);
+      const N = 84;
+      for (let k = 0; k <= N; k++) {
+        s.time.delayedCall(k * 14, () => {
+          const a = Math.PI * (1 - k / N);
+          const x = s.W * 0.5 + Math.cos(a) * 64;
+          const y = 82 - Math.sin(a) * 46;
+          s.trailAdd(x, y, RB_LIFE);
+          st.pts.push({ x: Math.round(x), y: Math.round(y) });
+          st.t = s.time.now;
+          if (k % 12 === 0) sfx.instrument('bell', (k / 12) % 8);
+        });
+      }
+    },
+    /** Куклу (или барашка) отпустили на радугу — она съезжает по ней, как с горки. */
+    drop(s, a) {
+      if (a.kind === 'item' || !a.drag) return false;
+      const now = s.time.now;
+      let best = null;
+      for (const st of s.strokes) {
+        if (now - st.t > RB_LIFE - 1500 || st.pts.length < 10) continue;
+        st.pts.forEach((p, i) => {
+          const d = Math.hypot(p.x - a.x, p.y - (a.y - 3));
+          if (d < 10 && (!best || d < best.d)) best = { st, i, d };
+        });
+      }
+      if (!best) return false;
+      const pts = best.st.pts;
+      const end = pts[pts.length - 1].y >= pts[0].y ? pts.length - 1 : 0; // радуга спускается к этому концу
+      const n = Math.abs(end - best.i);
+      if (n < 5) return false;
+      s.tried('slide');
+      a.busy = true;
+      sfx.whee();
+      if (a.kind === 'doll') { sfx.giggle(); a.setTexture(a.key + '_smile'); }
+      a.tws.push(s.tweens.addCounter({
+        from: best.i, to: end, duration: Math.max(350, n * 26), ease: 'Quad.easeIn',
+        onUpdate: (tw) => {
+          const p = pts[Math.round(tw.getValue())];
+          a.x = p.x; a.y = p.y + 3;
+          if (Math.random() < 0.4) s.fxSparks.explode(1, a.x, a.y);
+        },
+        onComplete: () => { a.busy = false; if (a.kind === 'doll') a.setTexture(a.key); s.settle(a); },
+      }));
+      return true;
+    },
+    update(s) {
+      const b = s.bal;
+      if (b?.active) s.balFront.setPosition(b.x, b.y).setDepth(b.depth + 0.2);
+      // самолёт тянет за собой радужный след
+      for (const p of s.planes || []) if (p.active) s.trailAdd(p.x + (p.flipX ? -14 : 14), p.y - 14, 2600);
     },
     /** Кукла прыгает как на батуте. */
     dollTap(s, d) {
@@ -593,13 +953,24 @@ export const WORLDS = {
       return true;
     },
     // пальцем по небу — радуга
-    skyDown(s, q) { s.rb = { x: q.x, y: q.y, n: 0, at: 0 }; },
+    skyDown(s, q) {
+      s.rb = { x: q.x, y: q.y, n: 0, at: 0, pts: [], t: s.time.now };
+      s.strokes.push(s.rb);
+      if (s.strokes.length > 6) s.strokes.shift();
+    },
     skyMove(s, q) {
       const p = s.rb;
       if (!p) return;
       const d = Math.hypot(q.x - p.x, q.y - p.y);
       if (d < 2) return;
-      for (let k = 2; k <= d; k += 2) s.trailAdd(p.x + (q.x - p.x) * k / d, p.y + (q.y - p.y) * k / d, 6000);
+      for (let k = 2; k <= d; k += 2) {
+        const x = p.x + (q.x - p.x) * k / d;
+        const y = p.y + (q.y - p.y) * k / d;
+        s.trailAdd(x, y, RB_LIFE);
+        p.pts.push({ x: Math.round(x), y: Math.round(y) });
+      }
+      p.t = s.time.now;
+      if (p.pts.length > 12) s.tried('rainbow');
       p.x = q.x; p.y = q.y;
       if (s.time.now - p.at > 190) { p.at = s.time.now; sfx.instrument('bell', p.n++ % 8); }
     },
@@ -609,6 +980,23 @@ export const WORLDS = {
   // ------------------------------------------------------------------ конфетная страна
   candy: {
     icon: 'cupcake', ground: 0.6, gravity: 'ground', music: 2, maxGifts: 10,
+    wants: SWEETS,
+    lures: [
+      { key: 'house', who: (s) => s.house },
+      { key: 'tree', who: (s) => s.trees },
+      { key: 'fountain', who: (s) => s.fountain },
+      { key: 'cloud', who: (s) => [s.candyCloud, s.dolls[0]] },
+    ],
+    events: [
+      // конфетный салют
+      (s) => {
+        for (let i = 0; i < 6; i++) s.time.delayedCall(i * 240, () => { if (s.leaving) return; sfx.pop(); s.fxSparks.explode(18, rnd(40, s.W - 40), rnd(14, 50)); });
+        for (let i = 0; i < 3; i++) s.time.delayedCall(500 + i * 300, () => { if (!s.leaving) s.gift(rnd(40, s.W - 40), 20, pick(SWEETS)); });
+        s.room.stat('dreamevent');
+      },
+      // парад пряничных человечков
+      (s) => s.flyby([0, 1, 2, 3], { tex: 'dw_ginger', ground: true, noFlip: true, y: s.GY + s.band * 0.78, gap: 20, speed: 34, tap: () => sfx.hello() }),
+    ],
     build(s) {
       const { W, H, GY, band } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -633,58 +1021,118 @@ export const WORLDS = {
       for (let x = 3; x < W; x += 9) g.fillRect(x, GY + 2, 3, 1 + (x % 2));
       for (let i = 0; i < 46; i++) g.fillStyle([0xff5a6f, 0x5ac4f2, 0x7ad9b5, 0xc48ff2, 0xffd84a][i % 5]).fillRect(rs(i, W - 2), GY + 5 + rs(i + 9, Math.max(3, band - 7)), 2, 1);
 
-      const SWEETS = ['cupcake', 'lollipop', 'cotton candy', 'candy cane', 'macaron', 'glazed donut'];
       // пряничный домик: от него можно откусывать
       const house = s.img('dw_house_0', W * 0.2, GY + 10, { drag: false, noFlip: true });
       house.bites = 0;
       house.tap = () => {
         if (house.bites >= BITES.length) { sfx.boing(); return; }
+        s.tried('house');
         const [bx, by] = BITES[house.bites];
         house.bites++;
         house.setTexture(`dw_house_${house.bites}`);
         sfx.chew(); sfx.chew(0.12);
         s.fxCrumbs.setParticleTint(0xc8843f);
         s.fxCrumbs.explode(10, house.x - 22 + bx, house.y - 43 + by);
-        s.gift(house.x - 22 + bx, house.y - 43 + by, pick(['heart shaped cookie', 'chocolate bar', 'sugar cookie']));
+        s.gift(house.x - 22 + bx, house.y - 43 + by, pick(['heart shaped cookie', 'chocolate bar', 'sugar cookie']), { keep: true });
         if (house.bites < BITES.length) return;
         // доели — домик вырастает заново
         s.time.delayedCall(4500, () => { if (!house.active) return; house.bites = 0; house.setTexture('dw_house_0'); sfx.sparkle(); s.fxSparks.explode(20, house.x, house.y - 22); });
       };
+      s.house = house;
       // леденцовые деревья: потряси — упадёт сладость
-      for (const [sub, fx] of [['swirl lollipop', 0.46], ['lollipop', 0.58], ['cotton candy', 0.82], ['candy cane', 0.94]]) {
+      s.trees = [['swirl lollipop', 0.44], ['lollipop', 0.56], ['cotton candy', 0.84], ['candy cane', 0.95]].map(([sub, fx]) => {
         const t = s.spr(sub, W * fx, GY + 5, { sc: 2, drag: false, noFlip: true });
+        t.x0 = t.x;
         t.tap = () => {
-          const x0 = t.x;
+          s.tried('tree');
           sfx.jingle();
-          s.act(t, { x: x0 + 2, duration: 60, yoyo: true, repeat: 2, onComplete: () => { t.x = x0; } });
+          s.act(t, { x: t.x0 + 2, duration: 60, yoyo: true, repeat: 2, onComplete: () => { t.x = t.x0; } });
           if (s.time.now < (t.cool || 0)) return;
           t.cool = s.time.now + 900;
-          s.gift(t.x + rnd(-8, 8), t.y - 26, pick(SWEETS));
+          s.gift(t.x0 + rnd(-8, 8), t.y - 26, pick(SWEETS));
         };
-      }
-      // сладкая тучка: конфетный дождь
-      const cloud = s.img('dw_cloud', W * 0.66, 24, { drag: false, fly: true, noFlip: true }).setTint(0xffb0d8);
-      s.tweens.add({ targets: cloud, x: cloud.x - 30, duration: 7000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
-      cloud.tap = () => {
+        return t;
+      });
+      // сладкая тучка: конфетный дождь; на ней можно кататься
+      const rain = () => {
         if (s.time.now < (cloud.cool || 0)) { sfx.boing(); return; }
         cloud.cool = s.time.now + 2600;
+        s.tried('cloud');
         sfx.sparkle();
         for (let i = 0; i < 6; i++) s.time.delayedCall(i * 170, () => { if (cloud.active) s.gift(cloud.x + rnd(-22, 22), cloud.y + 2, pick(SWEETS)); });
       };
-      // жители: мармеладные мишки и пряничный человечек — сладкоежки
-      for (const fx of [0.4, 0.7]) {
-        const b = s.spr('gummy bear', W * fx, GY + band * rnd(0.5, 0.85), { eats: true, noFlip: true, tap: (x) => { sfx.titter(); s.dance(x); } });
+      const cloud = s.img('dw_cloud', W * 0.72, 52, { drag: false, fly: true, noFlip: true, ride: { seat: 8, go: rain, key: 'cloud' }, tap: rain }).setTint(0xffb0d8);
+      s.tweens.add({ targets: cloud, x: cloud.x - 60, duration: 9000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+      s.candyCloud = cloud;
+      // шоколадный фонтан: тап — брызги и шоколадка; что в него окунуть — станет шоколадным
+      const fountain = s.img('dw_fountain', W * 0.7, GY + 9, { drag: false, noFlip: true });
+      s.fountain = fountain;
+      s.add.particles(fountain.x, fountain.y - 30, 'px', {
+        lifespan: 700, speedX: { min: -14, max: 14 }, speedY: { min: -20, max: -6 }, gravityY: 130, tint: 0x7a4a2a, frequency: 150, scale: { onEmit: () => (Math.random() < 0.4 ? 2 : 1) },
+      }).setDepth(fountain.y + 1);
+      fountain.tap = () => {
+        WORLDS.candy.splash(s);
+        if (s.time.now < (fountain.cool || 0)) return;
+        fountain.cool = s.time.now + 1500;
+        s.gift(fountain.x + rnd(-12, 12), fountain.y - 24, 'chocolate bar', { keep: true });
+      };
+      // жители: мармеладные мишки и пряничный человечек — сладкоежки; мишка становится цвета того, что съел
+      for (const fx of [0.4, 0.62]) {
+        const b = s.spr('gummy bear', W * fx, GY + band * rnd(0.5, 0.85), { eats: true, gummy: true, wisher: true, noFlip: true, tap: (x) => { sfx.titter(); s.dance(x); } });
         s.wander(b, [20, W - 20, GY + 12, H - 4], { hops: true, hopH: 3, speed: 16 });
       }
-      const gm = s.img('dw_ginger', W * 0.56, GY + band * 0.7, { eats: true, noFlip: true, tap: (x) => { sfx.hello(); s.dance(x, 8); } });
+      const gm = s.img('dw_ginger', W * 0.56, GY + band * 0.7, { eats: true, wisher: true, noFlip: true, tap: (x) => { sfx.hello(); s.dance(x, 8); } });
       s.wander(gm, [20, W - 20, GY + 12, H - 4], { hops: true, speed: 18 });
     },
     walk: (s) => [20, s.W - 20, s.GY + 12, s.H - 4],
+    splash(s) {
+      const f = s.fountain;
+      s.tried('fountain');
+      sfx.blub(); sfx.splash();
+      s.fxCrumbs.setParticleTint(0x7a4a2a);
+      s.fxCrumbs.explode(14, f.x, f.y - 22);
+    },
+    /** Отпустили над фонтаном: вещи и жители становятся шоколадными, кукла радуется брызгам. */
+    drop(s, a, q) {
+      const f = s.fountain;
+      if (!f?.active || Math.abs(q.x - f.x) > 16 || q.y < f.y - 40 || q.y > f.y + 6) return false;
+      WORLDS.candy.splash(s);
+      a.x = Math.round(Phaser.Math.Clamp(f.x + (q.x < f.x ? -22 : 22), 10, s.W - 10));
+      a.y = Math.max(a.y, f.y - 4);
+      if (a.kind === 'doll') { sfx.giggle(); s.fxHearts.explode(3, a.x, a.y - a.displayHeight); } else {
+        a.setTint(0xa8703f);
+        a.dipped = true;
+        s.fxSparks.explode(8, a.x, a.y - 8);
+      }
+      s.settle(a);
+      return true;
+    },
+    /** Мишка съел сладость — и стал её цвета (окунутое в шоколад красит в шоколадный). */
+    ate(s, who, rec, dipped) {
+      if (!who.gummy || !who.rec || !who.active) return;
+      const hue = dipped ? 24 : SWEET_HUE[rec.subject] ?? Math.floor(Math.random() * 12) * 30;
+      who.clearTint();
+      who.setTexture(hueTex(s, who.rec, hue, dipped || rec.subject === 'chocolate bar' ? 0.62 : 1));
+      s.fxSparks.explode(10, who.x, who.y - 8);
+      sfx.sparkle();
+    },
   },
 
   // ------------------------------------------------------------------ ледяной дворец
   ice: {
     icon: 'penguin', ground: 0.6, gravity: 'ground', music: 2,
+    wants: ['fish', 'snowflake'],
+    lures: [
+      { key: 'snowman', who: (s) => (s.snow.base.active ? [s.snow.base.level === 1 ? s.snow.mid : s.snow.head, s.snow.base] : []) },
+      { key: 'hole', who: (s) => s.hole },
+      { key: 'door', who: (s) => s.door },
+      { key: 'ride', who: (s) => [s.sled, s.dolls[0]] },
+    ],
+    events: [
+      (s) => { sfx.whee(); s.flyby(['penguin', 'emperor penguin', 'penguin', 'penguin'], { ground: true, hopH: 0, y: s.GY + s.band * 0.92, gap: 22, speed: 85 }); },
+      (s) => s.flyby(['snowy owl'], { y: 40, sc: 2, speed: 45, wave: 6 }),
+      (s) => s.skyfall('snowflake'),
+    ],
     build(s) {
       const { W, H, GY, band } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -729,12 +1177,12 @@ export const WORLDS = {
 
       // пингвины: катятся на пузе
       for (const [sub, fx] of [['penguin', 0.34], ['emperor penguin', 0.5], ['penguin', 0.9]]) {
-        const p = s.spr(sub, W * fx, GY + band * rnd(0.3, 0.85), { tap: (x) => { sfx.whee(); s.halt(x); s.fxPoof.setParticleTint(0xffffff); s.fxPoof.explode(5, x.x, x.y); s.moveTo(x, x.x < W / 2 ? x.x + 70 : x.x - 70, x.y, { speed: 120, ease: 'Cubic.easeOut' }); } });
+        const p = s.spr(sub, W * fx, GY + band * rnd(0.3, 0.85), { eats: true, wisher: true, tap: (x) => { sfx.whee(); s.halt(x); s.fxPoof.setParticleTint(0xffffff); s.fxPoof.explode(5, x.x, x.y); s.moveTo(x, x.x < W / 2 ? x.x + 70 : x.x - 70, x.y, { speed: 120, ease: 'Cubic.easeOut' }); } });
         s.wander(p, [20, W - 20, GY + 6, H - 4], { hops: true, hopH: 1, speed: 13 });
       }
-      const bear = s.spr('polar bear', W * 0.08, GY + band * 0.4, { tap: hello(s, sfx.purr, 4) });
+      const bear = s.spr('polar bear', W * 0.08, GY + band * 0.4, { eats: true, wisher: true, tap: hello(s, sfx.purr, 4) });
       s.wander(bear, [16, W - 16, GY + 6, H - 4], { hops: true, speed: 10, rest: 0.5 });
-      s.spr('harp seal', pond.cx + pond.rx - 4, pond.cy - pond.ry + 2, { tap: (x) => { sfx.squeak(); s.time.delayedCall(140, () => sfx.squeak()); s.fxHearts.explode(1, x.x, x.y - 14); s.jump(x, 5, 120); } });
+      s.spr('harp seal', pond.cx + pond.rx - 4, pond.cy - pond.ry + 2, { eats: true, tap: (x) => { sfx.squeak(); s.time.delayedCall(140, () => sfx.squeak()); s.fxHearts.explode(1, x.x, x.y - 14); s.jump(x, 5, 120); } });
       // санки: мчатся через поляну (можно ехать на них)
       const run = (sl) => {
         if (sl.moving || sl.dragging) return;
@@ -744,6 +1192,42 @@ export const WORLDS = {
       };
       s.sled = s.img('dw_sled', W * 0.14, GY + band * 0.85, { ride: { seat: 6, go: run }, tap: run });
 
+      // лунка: тап — из воды выпрыгивает рыбка; ею кормят пингвинов, медведя и тюленя
+      const hole = s.img('dw_hole', W * 0.93, GY + band * 0.62, { drag: false, noFlip: true });
+      s.hole = hole;
+      hole.tap = () => {
+        s.tried('hole');
+        sfx.splash();
+        s.fxCrumbs.setParticleTint(0x9fdcff);
+        s.fxCrumbs.explode(10, hole.x, hole.y - 4);
+        if (s.time.now < (hole.cool || 0)) return;
+        hole.cool = s.time.now + 1400;
+        s.gift(hole.x - 14, hole.y - 12, 'fish', { keep: true, edible: 'res' });
+      };
+      // дверь дворца: тап — она открывается, и ледяная фея выносит подарок
+      const door = s.img('dw_door', cx, GY + 1, { drag: false, noFlip: true });
+      door.input.hitArea.setTo(-8, -40, 28, 58); // вся центральная башня: в саму дверь пальцем не попасть
+      s.door = door;
+      door.tap = () => {
+        if (door.busy) { sfx.boing(); return; }
+        door.busy = true;
+        s.tried('door');
+        door.setTexture('dw_door_open');
+        sfx.chestOut(); sfx.sparkle();
+        s.fxSparks.explode(14, door.x, door.y - 10);
+        const f = s.spr('fairy queen', door.x, door.y - 4, { kind: 'guest', fly: true, drag: false, tap: (x) => { sfx.sparkle(); s.fxHearts.explode(2, x.x, x.y - 16); } }).setTint(0xbfe6ff);
+        const close = () => { if (f.active) s.removeActor(f); if (door.active) { door.setTexture('dw_door'); door.busy = false; } };
+        const tx = Phaser.Math.Clamp(door.x + (Math.random() < 0.5 ? -1 : 1) * rnd(30, 60), 20, W - 20);
+        s.moveTo(f, tx, GY - 26, {
+          speed: 55, wave: 4, done: () => {
+            sfx.sparkle();
+            s.fxSparks.explode(12, f.x, f.y - 8);
+            s.gift(f.x, f.y + 4);
+            s.time.delayedCall(1100, () => { if (f.active) s.moveTo(f, door.x, door.y - 4, { speed: 70, wave: 3, done: close }); else close(); });
+          },
+        });
+        s.time.delayedCall(9000, close); // страховка: если фею перехватили по пути
+      };
       // снеговик из трёх шаров: большой стоит, средний и маленький нужно поставить сверху
       const base = s.img('dw_ball3', W * 0.22, GY + band * 0.42, { drag: false, noFlip: true });
       base.level = 1;
@@ -784,6 +1268,7 @@ export const WORLDS = {
         for (const b of [base, mid, a]) s.removeActor(b);
         const man = s.img('dw_snowman', x, y, { noFlip: true, tap: (m) => { sfx.hello(); s.dance(m, 6); } });
         s.snowman = man;
+        s.tried('snowman');
         sfx.fanfare();
         s.fxSparks.explode(24, x, y - 18);
         s.time.delayedCall(500, () => { if (man.active) { s.dance(man, 8); s.gift(x + 18, y - 14); } });
@@ -810,6 +1295,17 @@ export const WORLDS = {
   // ------------------------------------------------------------------ игрушечный мир
   toys: {
     icon: 'teddy bear', ground: 0.58, gravity: 'ground', music: 0,
+    wants: ['balloon', 'spinning top', 'yo-yo', 'toy car'],
+    lures: [
+      { key: 'blocks', who: (s) => s.blocks },
+      { key: 'train', who: (s) => s.train[0] },
+      { key: 'chest', who: (s) => s.chest },
+      { key: 'ride', who: (s) => [s.horse, s.dolls[0]] },
+    ],
+    events: [
+      (s) => s.floatUp(['balloon', 'heart balloon', 'balloon', 'heart balloon', 'balloon', 'balloon']),
+      (s) => { sfx.toot(); s.flyby(['toy car', 'race car', 'toy truck', 'police car'], { ground: true, hopH: 0, y: s.GY + 12, gap: 24, speed: 60 }); },
+    ],
     build(s) {
       const { W, H, GY } = s;
       const g = s.add.graphics().setDepth(-10);
@@ -849,6 +1345,7 @@ export const WORLDS = {
       const run = () => {
         if (s.trainRun) return;
         s.trainRun = true;
+        s.tried('train');
         sfx.toot();
         const off = W + 150;
         for (const c of s.train) {
@@ -866,12 +1363,14 @@ export const WORLDS = {
       // живые игрушки
       const SOUND = { 'toy robot': sfx.beam, 'rubber duck': sfx.squeak, 'wind-up toy mouse': sfx.squeak, 'teddy bear': sfx.purr };
       ['teddy bear', 'toy robot', 'rag doll', 'nesting doll', 'wind-up toy mouse', 'rubber duck'].forEach((sub, i) => {
-        const t = s.spr(sub, W * (0.3 + i * 0.09), GY + 8 + rs(i, Math.max(4, H - GY - 30)), { tap: (x) => { (SOUND[sub] || sfx.titter)(); s.dance(x); } });
+        const t = s.spr(sub, W * (0.3 + i * 0.09), GY + 8 + rs(i, Math.max(4, H - GY - 30)), { wisher: true, tap: (x) => { (SOUND[sub] || sfx.titter)(); s.dance(x); } });
         s.wander(t, WORLDS.toys.walk(s), { hops: true, speed: 16 });
       });
       // сундук: из него выскакивает игрушка-подарок
       const chest = s.img('big_chest', W * 0.86, GY + 12, { drag: false, noFlip: true });
+      s.chest = chest;
       chest.tap = () => {
+        s.tried('chest');
         if (s.time.now < (chest.cool || 0)) { sfx.boing(); return; }
         chest.cool = s.time.now + 1400;
         chest.setTexture('big_chestOpen');
@@ -888,9 +1387,65 @@ export const WORLDS = {
         const x0 = h.x;
         s.act(h, { x: x0 + 3, duration: 170, yoyo: true, repeat: 5, ease: 'Sine.easeInOut', onRepeat: () => sfx.step(), onComplete: () => { h.x = x0; h.busy = false; } });
       };
-      s.spr('rocking horse', W * 0.72, GY + 18, { sc: 2, noFlip: true, ride: { seat: 13, go: rock }, tap: rock });
+      s.horse = s.spr('rocking horse', W * 0.72, GY + 18, { sc: 2, noFlip: true, ride: { seat: 13, go: rock }, tap: rock });
+      // кубики: ставь один на другой — вырастет башня; тап по башне — она рассыпается
+      s.blocks = [[0.19, 30], [0.245, 30], [0.3, 30], [0.215, 41], [0.27, 41]].map(([fx, dy], i) => {
+        const b = s.img(`dw_block_${i}`, W * fx, GY + dy, { kind: 'toy', noFlip: true, block: true });
+        b.tap = () => WORLDS.toys.topple(s, b);
+        return b;
+      });
     },
     walk: (s) => [24, s.W - 24, s.GY + 8, s.H - 22],
+    /** Башня рассыпается (одиночный кубик просто подпрыгивает). */
+    topple(s, b) {
+      let r = b;
+      while (r.above) r = r.above;
+      if (!r.topB) { sfx.boing(); s.jump(b, 5, 130); return; }
+      sfx.giggle();
+      let c = r.topB;
+      r.topB = null;
+      for (let k = 0; c; k++) {
+        const next = c.topB;
+        const it = c;
+        it.above = null;
+        it.topB = null;
+        s.halt(it);
+        const tx = Math.round(Phaser.Math.Clamp(r.x + (k % 2 ? 1 : -1) * rnd(14, 38), 10, s.W - 10));
+        s.act(it, { x: tx, duration: 380, ease: 'Quad.easeOut' });
+        s.act(it, { y: Math.round(r.y + rnd(-3, 8)), duration: 480, ease: 'Bounce.easeOut', onComplete: () => sfx.thud() });
+        c = next;
+      }
+      s.fxPoof.setParticleTint(0xffffff);
+      s.fxPoof.explode(8, r.x, r.y - 20);
+      s.jump(r, 3, 100);
+    },
+    /** Кубик сняли с башни (вместе с тем, что стоит на нём). */
+    unstack(s, a) {
+      if (!a.block || !a.above) return;
+      a.above.topB = null;
+      a.above = null;
+    },
+    /** Кубик отпустили над другим — он встаёт сверху. */
+    drop(s, a) {
+      if (!a.block) return false;
+      const root = (b) => { while (b.above) b = b.above; return b; };
+      const base = s.blocks
+        .filter((b) => b !== a && b.active && !b.topB && !b.dragging && root(b) !== a && Math.abs(b.x - a.x) < 11 && a.y > b.y - 32 && a.y < b.y + 7)
+        .sort((p, q) => Math.abs(p.x - a.x) - Math.abs(q.x - a.x))[0];
+      if (!base) return false;
+      a.above = base;
+      a.aboveDy = 15;
+      base.topB = a;
+      s.tried('blocks');
+      sfx.click(); sfx.thud();
+      let n = 1;
+      for (let b = root(a); b.topB; b = b.topB) n++;
+      s.fxSparks.explode(4 + n * 2, base.x, base.y - 20);
+      if (n >= 3) s.fxHearts.explode(n - 1, base.x, base.y - 15 * n);
+      // башня из всех кубиков — фанфары и подарок
+      if (n === s.blocks.length) { sfx.fanfare(); s.gift(base.x + 24, base.y - 20); }
+      return true;
+    },
     update(s) {
       const e = s.train?.[0];
       if (e?.active && s.trainRun && Math.random() < 0.25) { s.fxPoof.setParticleTint(0xffffff); s.fxPoof.explode(1, e.x + 8, e.y - 30); }

@@ -36,7 +36,7 @@ export function installRepair(Room, { L }) {
       try {
         this.defaultRoom(); this.ensureKitchen(); this.ensureGarden(); this.ensureBath(); this.ensureParty();
         this.ensureHall(); this.ensurePetBed(); this.ensureKitchen2(); this.ensureBath2(); this.ensureHall2();
-        this.ensureBedroom2(); this.ensureGarden2();
+        this.ensureBedroom2(); this.ensureGarden2(); this.ensureTidy(); this.ensureClean();
         for (const o of this.objs) if (o.kind === 'item') (spots[o.rec.id] ||= []).push({ x: o.x, y: o.y });
       } finally {
         for (const o of this.objs) { o.glow?.destroy(); o.destroy(); }

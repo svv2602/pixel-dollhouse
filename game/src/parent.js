@@ -3,6 +3,7 @@
 // Всё хранится только на устройстве; в сеть ничего не уходит.
 import { readSnapshots } from './repair.js';
 import { getVolume, setVolume, setMusic, musicPlaying, VOICES, hasVoice, setVoice, say, unlockAudio } from './sfx.js';
+import { helpHtml, HELP_CSS } from './help.js';
 
 // ---------------------------------------------------------------- статистика
 const STATS_KEY = 'pixel-house-stats';
@@ -16,6 +17,10 @@ const FEATS = {
   chest: 'Сундук', photo: 'Фотоаппарат', stars: 'Ночник', rain: 'Тучка', swing: 'Качели', butterfly: 'Бабочки',
   dig: 'Клад', mic: 'Микрофон', audience: 'Зрители', curtain: 'Занавес', disco: 'Диско-шар',
   dream: 'Сон: вошла из кровати', dreamsky: 'Мечта на качелях', dreamsea: 'Нырнула из ванны', dreamcandy: 'Мечта у холодильника',
+  dreamtoys: 'Мечта у сундука', dreamforest: 'Мечта у яблони', dreamspace: 'Мечта под диско-шаром',
+  tidy: 'Урна: уборка комнаты', trash: 'Урна: выбросила предмет', sweep: 'Метла и грабли',
+  robot: 'Робот-пылесос', roboride: 'Катание на роботе', wash: 'Стиральная машина', mop: 'Швабра', compost: 'Компост: удобрение', clean: 'Комната убрана',
+  dreamwish: 'Во сне: исполнила желание жителя', dreamwalk: 'Во сне: кукла идёт за пальцем', dreamevent: 'Во сне: поймала редкое событие',
   w_forest: 'Мир: сказочный лес', w_planet: 'Мир: другая планета', w_sea: 'Мир: подводное царство', w_clouds: 'Мир: облачная страна',
   w_candy: 'Мир: конфетная страна', w_ice: 'Мир: ледяной дворец', w_toys: 'Мир: игрушечный мир',
 };
@@ -73,7 +78,7 @@ const CSS = `
 #parent-zone .feats{columns:2;column-gap:14px;margin:4px 0 0;padding:0;list-style:none;font-size:13px}
 #parent-zone .wide{grid-column:1/-1}
 @media (max-width:560px){#parent-zone .pz{grid-template-columns:1fr}}
-`;
+${HELP_CSS}`;
 const mins = (sec) => (sec < 60 ? `${Math.round(sec)} с` : `${Math.round(sec / 60)} мин`);
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -174,6 +179,11 @@ export function openParent(scene) {
     </section>
     <section><h2>Во что играет</h2><div id="pz-stats">${statsHtml()}</div>
       <div class="row"><button class="sec" data-act="statreset">Обнулить статистику</button></div>
+    </section>
+    <section class="wide"><h2>Что умеет игра — подсказки для ребёнка</h2>
+      <small>Всё, что можно делать в доме и во снах. <span style="color:#7ad9b5">✓</span> — уже пробовали,
+        <span style="color:#ffd84a">○</span> — ещё не находили: это и стоит подсказать. Отметки ведутся только на этом устройстве.</small>
+      <div id="pz-help">${helpHtml(stats.feats, scene.flags)}</div>
     </section>
     <section class="wide"><h2>Копия дома</h2>
       <small>Файл со всем домом, альбомами, фото и голосами. Пригодится при смене телефона или перед сбросом.</small>

@@ -1,3 +1,4 @@
+import { CLEAN_ROOMS } from './clean.js';
 // Альбом наклеек на весь дом: кроме открытий котла — блюда с плиты, урожай, клады и сувениры из снов.
 // Наклейка появляется, когда ребёнок впервые получил предмет; страницы подсказывают, где искать остальные.
 
@@ -40,7 +41,8 @@ export function installStickers(Room, { COOK, GROW, TREASURE, DREAMS, DREAM_THEM
           { key: 'dish', icon: 'big_stove_icon', list: dishes },
           { key: 'plant', icon: 'big_gardenbed_icon', list: recs(GROW).map((result) => ({ a: 'big_gardenbed_icon', b: can || 'water_drop', result })) },
           { key: 'treasure', icon: this.findRec('shovel') || 'dig_x', list: recs(TREASURE).map((result) => ({ a: this.findRec('shovel') || 'dig_x', b: 'dig_x', result })) },
-          { key: 'dream', icon: 'wish_sleep', list: recs([...DREAMS, ...DREAM_THEMES.flatMap((t) => t.items)]).map((result) => ({ a: 'big_bed_icon', b: 'wish_sleep', result })) },
+          { key: 'tidy', icon: 'bin_icon', list: CLEAN_ROOMS.map((k) => this.big[k]).filter(Boolean).map((result) => ({ a: 'bin_icon', b: 'broom_icon', result })) },
+          { key: 'dream', icon: 'wish_sleep', list: recs([...DREAMS, ...DREAM_THEMES.flatMap((t) => [...t.items, ...(t.rare || [])])]).map((result) => ({ a: 'big_bed_icon', b: 'wish_sleep', result })) },
         ];
       }
       return this.albumDefs.map((t) => ({
