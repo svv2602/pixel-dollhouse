@@ -27,6 +27,7 @@ import { makeVillage, installVillage } from './village.js';
 import { makeCity, installCity } from './city.js';
 import { makeSea, installSea } from './sea.js';
 import { makePark, installPark } from './park.js';
+import { makeCenter, installCenter } from './center.js';
 import { makePots, installPots } from './pots.js';
 import { makePlayroom, installPlayroom } from './playroom.js';
 import { installDecor } from './decor.js';
@@ -87,7 +88,7 @@ class Room extends Phaser.Scene {
     for (const r of village) this.byId.set(r.id, r);
     const city = makeCity(this); // прилавки, касса, автоматы города — в мебели
     for (const r of city) this.byId.set(r.id, r);
-    const sea = [...makeSea(this), ...makePark(this), ...makePots(this), ...makePlayroom(this)]; // пальма, лодка, сундук моря, слон и карусель парка, котлы локаций, вещи игровой — в мебели
+    const sea = [...makeSea(this), ...makePark(this), ...makeCenter(this), ...makePots(this), ...makePlayroom(this)]; // пальма, лодка, сундук моря, слон и карусель парка, котлы локаций, вещи игровой — в мебели
     for (const r of sea) this.byId.set(r.id, r);
     this.winter = isWinter(today());
     const season = makeSeason(this); // ёлка — во вкладке мебели, только зимой
@@ -97,7 +98,7 @@ class Room extends Phaser.Scene {
       garden: clean.filter((r) => r.cat === 'garden' && !r.hidden),
       kitchen: salon.filter((r) => r.cat === 'kitchen'),
       food: party.filter((r) => r.cat === 'food'),
-      toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden), ...tidy, ...clean.filter((r) => r.cat === 'toy')],
+      toy: [...party.filter((r) => r.cat === 'toy'), ...bath.filter((r) => r.cat === 'toy'), ...salon.filter((r) => r.cat === 'toy'), ...play.filter((r) => !r.hidden), ...tidy, ...clean.filter((r) => r.cat === 'toy' && !r.hidden)],
       animal: [...bath.filter((r) => r.cat === 'animal'), ...village.filter((r) => r.cat === 'animal')],
     };
     for (const r of this.items) {
@@ -184,6 +185,8 @@ class Room extends Phaser.Scene {
     this.initSea();
     this.ensurePark();
     this.initPark();
+    this.ensureCenter();
+    this.initCenter();
     this.ensurePots();
     this.initPots();
     this.initTravel();
@@ -634,6 +637,7 @@ class Room extends Phaser.Scene {
     if (this.cityTap(o)) return;
     if (this.seaTap(o)) return;
     if (this.parkTap(o)) return;
+    if (this.centerTap(o)) return;
     if (this.playroomTap(o)) return;
     if (b.disco) { this.toggleDisco(o); return; }
     if (b.bin) { this.binTap(o); return; }
@@ -1300,6 +1304,7 @@ class Room extends Phaser.Scene {
     this.updateCity(); // тележка и пакет с покупками, облачко покупателя
     this.updateSea(); // замок из песка, круг на кукле в воде, хвост под водой
     this.updatePark(time, delta); // карусель, седоки слона, плота, гусеницы и самокатов
+    this.updateCenter(); // занавес театра, луч прожектора, пластыри на куклах
     const plain = !this.dress && !this.albumUi && !this.mapUi && !this.cardUi; // нет открытых экранов поверх комнаты
     const [camLo, camHi] = this.camRange(); // стрелки ведут только по комнатам своей локации
     if (this.nav) {
@@ -1426,6 +1431,7 @@ installVillage(Room, ENV);
 installCity(Room, ENV);
 installSea(Room, ENV);
 installPark(Room, ENV);
+installCenter(Room, ENV);
 installPots(Room, ENV);
 installPlayroom(Room, ENV);
 installDecor(Room, ENV);

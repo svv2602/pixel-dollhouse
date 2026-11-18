@@ -29,7 +29,7 @@ export function installNav(Room, { L, pixelMap, sfx, statHit }) {
       const bg = add(this.add.rectangle(0, 0, W, H, 0x2b1d2e, 0.9).setOrigin(0).setInteractive(), 30000);
       bg.ui = { mapClose: true };
       // локации
-      const tw = 34;
+      const tw = Math.min(34, Math.floor((W - 8 - 6 * (PLACES.length - 1)) / PLACES.length)); // шесть локаций — вкладки уже
       const tx0 = Math.floor((W - tw * PLACES.length - 6 * (PLACES.length - 1)) / 2);
       PLACES.forEach((p, k) => {
         const x = tx0 + k * (tw + 6);

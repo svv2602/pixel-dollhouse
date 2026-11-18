@@ -3,6 +3,7 @@ import { FARM_STICKERS } from './village.js';
 import { CITY_STICKERS } from './city.js';
 import { SEA_STICKERS } from './sea.js';
 import { PARK_STICKERS } from './park.js';
+import { CENTER_STICKERS } from './center.js';
 // Альбом наклеек на весь дом: кроме открытий котла — блюда с плиты, урожай, клады и сувениры из снов.
 // Наклейка появляется, когда ребёнок впервые получил предмет; страницы подсказывают, где искать остальные.
 
@@ -65,6 +66,11 @@ export function installStickers(Room, { COOK, GROW, TREASURE, DREAMS, DREAM_THEM
           {
             key: 'park', icon: 'place_park',
             list: PARK_STICKERS.map(([sub, a, b]) => ({ a: this.farmPic(a), b: this.farmPic(b), result: this.byId.get(sub) || this.findRec(sub) })).filter((e) => e.result),
+          },
+          // центр: билет, звери с глобуса, пластырь, витамины из шкафчика, костюмы театра
+          {
+            key: 'center', icon: 'place_center',
+            list: CENTER_STICKERS.map(([sub, a, b]) => ({ a: this.farmPic(a), b: this.farmPic(b), result: this.byId.get(sub) || this.findRec(sub) })).filter((e) => e.result),
           },
           { key: 'dream', icon: 'wish_sleep', list: recs([...DREAMS, ...DREAM_THEMES.flatMap((t) => [...t.items, ...(t.rare || [])])]).map((result) => ({ a: 'big_bed_icon', b: 'wish_sleep', result })) },
         ];

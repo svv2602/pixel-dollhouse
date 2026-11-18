@@ -8,6 +8,7 @@ import { CITY_HINTS, CITY_LURES } from './city.js';
 import { SEA_HINTS, SEA_LURES } from './sea.js';
 import { PARK_HINTS, PARK_LURES } from './park.js';
 import { PLAYROOM_HINTS, PLAYROOM_LURES } from './playroom.js';
+import { CENTER_HINTS, CENTER_LURES } from './center.js';
 
 
 // =====================================================================
@@ -139,8 +140,8 @@ export const HINTS = {
   dreamtoys: { room: 0, seq: () => ['big_chest', 'tex:dream_cloud_icon', 'teddy bear'] },
   dreamforest: { room: 2, seq: () => ['big_tree', 'tex:dream_cloud_icon', 'unicorn'] },
   dreamspace: { room: 4, seq: () => ['disco-ball', 'tex:dream_cloud_icon', 'flying saucer'] },
-  // уборка: робот-пылесос в спальне, стиральная машина в ванной
-  robot: { room: 0, seq: () => ['robo-vac'] },
+  // уборка: робот-пылесос приезжает по кнопке в любую комнату (когда на полу много лишнего), стиральная машина в ванной
+  robot: { room: ROOMS.map((r) => r.idx), when: (s) => !s.robot?.active && s.litter(Math.round(s.cameras.main.scrollX / L.W)).length >= 5, seq: () => ['tex:robovac_btn'] },
   wash: { room: 3, seq: () => [pick(['teddy bear', 'sock', 'rag doll']), 'washer'] },
   mic: { room: 4, seq: () => ['microphone'] },
   audience: { room: 4, seq: () => ['chair', 'teddy bear'] },
@@ -149,7 +150,7 @@ export const HINTS = {
   potty: { room: null, seq: () => ['big_toilet'] },   // наелась — пора на горшок
   dryer: { room: null, seq: () => ['hair-dryer'] },   // мокрая после ванны
 };
-Object.assign(HINTS, VILLAGE_HINTS, CITY_HINTS, SEA_HINTS, PARK_HINTS, PLAYROOM_HINTS); // подсказки села, города, моря и парка — рядом с их механиками
+Object.assign(HINTS, VILLAGE_HINTS, CITY_HINTS, SEA_HINTS, PARK_HINTS, PLAYROOM_HINTS, CENTER_HINTS); // подсказки локаций — рядом с их механиками
 // Облачка с кроватью («хочу спать», сон, прыжки на кровати) — после показа берут паузу, см. noteBed()
 export const BED_HINTS = new Set(['dream', 'bounce']);
 export const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocolate|macaron|muffin|\bpie\b|waffle|pancake|\btart\b|cobbler/;
@@ -157,7 +158,7 @@ export const SWEET = /cake|cookie|candy|lollipop|donut|cupcake|ice cream|chocola
 export const LURES = [['fridge', (b) => b.fridge], ['smoothie', (b) => b.blender], ['bubbles', (b) => b.tub], ['toilet', (b) => b.toilet],
   ['makeup', (b) => !!b.makeup], ['teeth', (b) => b.toothbrush], ['mic', (b) => b.mic], ['disco', (b) => b.disco],
   ['robot', (b) => b.robot], ['wash', (b) => b.washer], ['bounce', (b) => b.bigBed], ['chest', (b) => b.chest], ['photo', (b) => b.camera], ['swing', (b) => b.swing], ['dig', (b) => b.shovel]];
-LURES.push(...VILLAGE_LURES, ...CITY_LURES, ...SEA_LURES, ...PARK_LURES, ...PLAYROOM_LURES);
+LURES.push(...VILLAGE_LURES, ...CITY_LURES, ...SEA_LURES, ...PARK_LURES, ...PLAYROOM_LURES, ...CENTER_LURES);
 // Сундук с сюрпризами: что выскакивает по тапу
 export const TOYBOX = ['teddy bear', 'beach ball', 'rubber duck', 'kite', 'yo-yo', 'spinning top', 'toy robot', 'rag doll', 'nesting doll',
   'jack-in-the-box', 'toy castle', 'soccer ball', 'pinwheel', 'toy car', 'balloon', 'toy train engine', 'toy sailboat'];

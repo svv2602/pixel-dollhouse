@@ -45,6 +45,8 @@ export function installInput(Room) {
       this.closeChoices(); // тап мимо облачков выбора — они исчезают
       if (top?.crow) { this.shooCrow(top); this.press = null; return; }
       if (top?.portal) { this.portalTap(top); this.press = null; return; }
+      if (top?.train) { this.trainTap(top); this.press = null; return; } // поезд на вокзале: везёт в любую локацию
+      if (top?.chalk) { if (this.chalkDown(q)) this.press.chalk = true; else this.press = null; return; } // доска в школе: рисуем мелом
       if (top?.guest) { this.guestTap(top); this.press = null; return; }
       if (top?.car) { this.carTap(top); this.press = null; return; }
       if (top?.dolphin) { this.dolphinTap(top); this.press = null; return; }
@@ -64,6 +66,7 @@ export function installInput(Room) {
     onMove(p) {
       const pr = this.press;
       if (!pr || pr.id !== p.id || !p.isDown) return;
+      if (pr.chalk) { this.chalkAt(this.pt(p)); return; }
       if (pr.swipe) {
         const dx = (p.x - pr.swipe.sx) / L.P;
         if (!pr.scrolling && Math.abs(dx) < 4) return;
@@ -122,6 +125,7 @@ export function installInput(Room) {
       if (!pr || pr.id !== p.id) return; // отпустили другой палец
       this.press = null;
       const q = this.pt(p);
+      if (pr.chalk) { this.chalkEnd(); return; }
       if (pr.scrolling) {
         // свайп на 15% экрана — перелистнуть комнату
         const dx = (p.x - pr.swipe.sx) / L.P;
@@ -133,6 +137,7 @@ export function installInput(Room) {
       if (pr.wave !== undefined) { this.waveTap(pr.wave, q.x); return; }
       if (pr.moved && pr.obj) { this.drop(pr.obj, q); if (this.edgeScrolled) { this.edgeScrolled = false; this.snapCamera(); } return; }
       if (pr.ui?.nav) { this.goRoom(this.inPlace(Math.round(this.cameras.main.scrollX / L.W) + pr.ui.nav)); return; }
+      if (pr.ui?.robot) { this.callRobot(); return; }
       if (pr.ui && (pr.ui.map || pr.ui.mapClose || 'mapRoom' in pr.ui || 'mapPlace' in pr.ui)) { this.onMapUi(pr.ui); return; }
       if (pr.ui && (pr.ui.cardClose || 'cardGo' in pr.ui)) { this.onCardUi(pr.ui); return; }
       if (pr.ui && ('albumSel' in pr.ui || 'albumTab' in pr.ui || pr.ui.albumPage || pr.ui.albumDone)) { this.onAlbumUi(pr.ui); return; }
@@ -207,6 +212,8 @@ export function installInput(Room) {
       if (this.seaDrop(o, q)) { this.save(); return; }
       // парк: горка, пьедестал, мяч в ворота и в кольцо, угощение слону и обезьянке
       if (this.parkDrop(o, q)) { this.save(); return; }
+      // центр: билет на поезд, пластырь на куклу, кукла или питомец на рентген
+      if (this.centerDrop(o, q)) { this.save(); return; }
       // село: стог, трактор, повозка, пугало, мельница
       if (this.villageDrop(o, q)) { this.save(); return; }
       if ((o.beh?.pet || o.rec?.cat === 'toy') && !o.beh.mic && !o.beh.disco && q.y <= L.ROOM_H) {

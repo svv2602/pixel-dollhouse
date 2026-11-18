@@ -13,6 +13,7 @@ export const POTS = {
   city: { id: 'cafepot', room: 'cafe', fx: 0.54, dy: 10 }, // рядом со стойкой
   sea: { id: 'campot', room: 'island', fx: 0.5, dy: 14 },
   park: { id: 'fairpot', room: 'rides', fx: 0.41, dy: 10 }, // между каруселью и силомером
+  center: { id: 'flaskpot', room: 'school', fx: 0.92, dy: 14 }, // кабинет химии в углу класса
 };
 /** Значки групп в альбоме котла: локации, «привези издалека» и свои открытия. */
 export const RECIPE_GROUPS = [...PLACES.map((p) => [p.key, p.icon]), ['far', 'busstop_icon'], ['own', 'big_cauldron_icon']];
@@ -62,6 +63,17 @@ const fairPot = (alt) => canvasFor(26, 30, (r) => {
   r(alt ? 11 : 12, 0, 3, 2, '#ffd0e4'); // сладкий пар
 });
 
+/** Колба на лабораторном столике в школе (alt — второй кадр огонька горелки). */
+const flaskPot = (alt) => canvasFor(26, 30, (r) => {
+  r(1, 18, 24, 3, '#c98a52'); r(1, 18, 24, 1, '#e0a971'); r(3, 21, 2, 9, '#a8693c'); r(21, 21, 2, 9, '#a8693c'); // столик
+  r(9, 15, 8, 3, '#5a5068'); r(alt ? 11 : 12, 13, 2, 2, '#5ac4f2'); r(alt ? 13 : 12, 12, 1, 1, '#bfe6ff'); // горелка
+  // колба: круглое донышко, горлышко
+  for (let y = -6; y <= 6; y++) for (let x = -7; x <= 7; x++) if (x * x + y * y <= 44) r(13 + x, 6 + y, 1, 1, y < -1 ? '#e6f6ff' : '#9ff5b8');
+  r(11, -2, 4, 3, '#e6f6ff'); r(10, -3, 6, 1, '#ffffff'); r(8, 4, 2, 2, '#ffffff');
+  r(16, 3, 1, 1, '#c8ffd8'); r(12, 1, 1, 1, '#c8ffd8'); r(alt ? 13 : 14, -5, 1, 1, '#c8ffd8'); // пузырьки
+  r(19, 14, 4, 4, '#ff9ac8'); r(20, 12, 2, 2, '#ffd0e4'); // пробирка рядом
+});
+
 export function makePots(scene) {
   const T = scene.textures;
   const add = (key, canvas, icon = true) => {
@@ -71,7 +83,7 @@ export function makePots(scene) {
   };
   const big = (id, subject, order) => ({ id, subject, cat: 'furniture', tags: ['furniture'], tex: id, bbox: [0, 0, 15, 15], order, beh: { cauldron: true, firepot: true } });
   const recs = [];
-  for (const [id, draw, subject, order] of [['ironpot', ironPot, 'granny cauldron', 63], ['cafepot', cafePot, 'cafe cauldron', 91], ['campot', camPot, 'campfire cauldron', 109], ['fairpot', fairPot, 'fairground cauldron', 136]]) {
+  for (const [id, draw, subject, order] of [['ironpot', ironPot, 'granny cauldron', 63], ['cafepot', cafePot, 'cafe cauldron', 91], ['campot', camPot, 'campfire cauldron', 109], ['fairpot', fairPot, 'fairground cauldron', 136], ['flaskpot', flaskPot, 'science cauldron', 149]]) {
     add(id, draw(false));
     add(`${id}_b`, draw(true), false);
     recs.push(big(id, subject, order));

@@ -72,6 +72,17 @@ export const PLACES = [
       { key: 'sport', stat: 22, music: 13, outdoor: true, clouds: [[30, 4], [140, 6]], icon: 'goal_icon', colors: [0x9fdcff, 0xd9764a], clean: 'goal' },
     ],
   },
+  {
+    // центр: вокзал с поездом (он возит во все локации), школа, больница и театр
+    key: 'center', icon: 'place_center', gate: 'station', stop: 0.86, cart: 0.64,
+    card: { who: 'conductor', pics: ['stationclock_0', 'ticketbox'] },
+    rooms: [
+      { key: 'station', stat: 24, music: 15, outdoor: true, clouds: [[50, 4], [160, 8]], icon: 'train_icon', colors: [0x9fdcff, 0xd9dce8], clean: 'ticketbox' },
+      { key: 'school', stat: 25, music: 16, icon: 'globe_0_icon', colors: [0xdff2d8, 0xd9a874], clean: 'globe' },
+      { key: 'hospital', stat: 26, music: 15, icon: 'firstaid_icon', colors: [0xe6f6fb, 0xf2f4fa], clean: 'couch' },
+      { key: 'theater', stat: 27, music: 4, icon: 'tstage_0_icon', colors: [0x5a2a4a, 0x8d5a3b], clean: 'tstage' },
+    ],
+  },
 ];
 
 /**

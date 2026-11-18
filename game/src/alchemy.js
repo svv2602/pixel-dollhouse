@@ -3,7 +3,7 @@
 // чтобы ребёнок мог повторить открытие и показать его взрослым.
 
 // [ингредиент, ингредиент, результат, место] — названия субъектов из каталога (стабильны между пересборками).
-// Место — локация, где оба ингредиента лежат под рукой (village | city | sea | park; без него — дом); 'far' — ингредиенты из двух разных мест:
+// Место — локация, где оба ингредиента лежат под рукой (village | city | sea | park | center; без него — дом); 'far' — ингредиенты из двух разных мест:
 // их привозят на повозке. По месту подсказка-облачко выбирает рецепт, а альбом котла сгруппирован (pots.js).
 export const RECIPES = [
   ['glass of milk', 'chocolate bar', 'chocolate milkshake'],
@@ -57,6 +57,15 @@ export const RECIPES = [
   ['soccer ball', 'medal on ribbon', 'star rank badge', 'park'],
   ['paper cup of soda', 'cotton candy', 'bubble tea cup', 'park'],
   ['pinwheel', 'balloon', 'kite', 'park'],
+  // ---- центр: колба в кабинете химии (школа)
+  ['picture book', 'box of crayons', 'colored pencil set', 'center'],
+  ['green apple', 'picture book', 'graduation cap', 'center'],
+  ['vitamin jar', 'glass of orange juice', 'green smoothie', 'center'],
+  ['jester hat', 'tiara', 'party hat', 'center'],
+  ['world map', 'parrot', 'treasure map', 'center'],
+  ['wizard hat', 'picture book', 'spellbook', 'center'],
+  ["king's crown", 'feathered hat', 'imperial crown', 'center'],
+  ['polar bear', 'glass of milk', 'snow globe', 'center'],
   // ---- «привези издалека»: ингредиенты из двух разных мест
   ['glass bottle of milk', 'mug of cocoa', 'glass of chocolate milk', 'far'],
   ['pineapple', 'coconut', 'smoothie bowl', 'far'],
@@ -69,6 +78,8 @@ export const RECIPES = [
   ['candy apple', 'jar of honey', 'caramel apple', 'far'],
   ['soccer ball', 'top hat', 'propeller beanie', 'far'],
   ['cotton candy', 'glass bottle of milk', 'strawberry milkshake', 'far'],
+  ['world map', 'seashell', 'island map', 'far'],
+  ['jester hat', 'balloon', 'balloon dog', 'far'],
 ];
 
 const ALBUM_KEY = 'pixel-house-album-v1'; // отдельно от комнаты: сброс комнаты альбом не стирает

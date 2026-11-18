@@ -129,6 +129,7 @@ export function installSeason(Room, { L, rnd, sfx }) {
         fall(R.street, R.street + 1); // в городе на улице — только первая комната
         fall(R.zoo, R.zoo + 1); // в парке — зоопарк, аттракционы и спортплощадка; аквапарк и море остаются летними
         fall(R.rides, R.sport + 1);
+        fall(R.station, R.station + 1); // в центре — только вокзал (остальное — в помещении)
       }
     },
 

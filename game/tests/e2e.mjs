@@ -84,7 +84,7 @@ test('комната загружается: персонажи, кухня, к�
     bath: s.objs.some((o) => o.beh?.tub && o.x >= 3 * 293),
     album: s.objs.some((o) => o.beh?.album),
   }));
-  assert.equal(st.chars, 16); // две свои куклы + жильцы кухни, ванной, зала и игровой + трое в селе + трое в городе + двое у моря + двое в парке
+  assert.equal(st.chars, 20); // две свои куклы + жильцы кухни, ванной, зала и игровой + трое в селе + трое в городе + двое у моря + двое в парке + четверо в центре
   assert.ok(st.kitchen, 'котёл на кухне');
   assert.ok(st.album, 'альбом в комнате');
   assert.ok(st.garden, 'сад с грядками и яблоней');
@@ -663,12 +663,12 @@ test('семья: жильцы в комнатах, портрет зовёт к
     s.callCast('star');  // певица — из зала
     return before;
   });
-  assert.deepEqual(st, { mia: 0, mom: 1, boy: 3, star: 4, dad: 9, view: 16 });
+  assert.deepEqual(st, { mia: 0, mom: 1, boy: 3, star: 4, dad: 9, view: 20 });
   await waitFor((s) => {
     const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
     return ['dad', 'star', 'kid'].every((id) => { const c = s.castChar(id); return c && !c.walking && c.x > 0 && c.x < W; });
   });
-  assert.equal(await room((s) => s.objs.filter((o) => o.kind === 'char').length), 16);
+  assert.equal(await room((s) => s.objs.filter((o) => o.kind === 'char').length), 20);
 });
 
 test('кукла, с которой играли, идёт следом в соседнюю комнату; сидящая — остаётся', async () => {
@@ -742,7 +742,7 @@ test('альбом наклеек: блюдо, урожай, клад и сон 
     s.onAlbumUi({ albumDone: true });
     return { sizes, first, again, openedOn, found: dish?.found, closed: !s.albumUi };
   });
-  assert.deepEqual(st, { sizes: 'recipe:true,dish:true,plant:true,treasure:true,tidy:23,farm:13,city:19,sea:24,park:22,dream:true', first: true, again: false, openedOn: 1, found: true, closed: true });
+  assert.deepEqual(st, { sizes: 'recipe:true,dish:true,plant:true,treasure:true,tidy:27,farm:13,city:19,sea:24,park:22,center:23,dream:true', first: true, again: false, openedOn: 1, found: true, closed: true });
 });
 
 test('карта комнат и подсветка желания в ящике', async () => {
@@ -801,8 +801,8 @@ test('родительская зона: удержание шестерёнки
       count: document.querySelector('#pz-help details summary span').textContent,
     };
   });
-  assert.equal(help.groups.length, 35);
-  for (const g of ['Общее', 'Уборка', 'Спальня', 'Кухня', 'Сад', 'Ванная', 'Концертный зал', 'Дорога: село, город, море, парк', 'Село: двор', 'Село: поле', 'Город: улица', 'Город: кафе', 'Город: магазин игрушек', 'Котёл везде', 'Море: пляж', 'Море: остров', 'Парк: зоопарк', 'Парк: спортплощадка', 'Сон: игрушечный мир']) assert.ok(help.groups.includes(g), `раздел справки: ${g}`);
+  assert.equal(help.groups.length, 39);
+  for (const g of ['Общее', 'Уборка', 'Спальня', 'Кухня', 'Сад', 'Ванная', 'Концертный зал', 'Дорога: село, город, море, парк, центр', 'Центр: вокзал', 'Центр: театр', 'Село: двор', 'Село: поле', 'Город: улица', 'Город: кафе', 'Город: магазин игрушек', 'Котёл везде', 'Море: пляж', 'Море: остров', 'Парк: зоопарк', 'Парк: спортплощадка', 'Сон: игрушечный мир']) assert.ok(help.groups.includes(g), `раздел справки: ${g}`);
   assert.match(await page.textContent('#pz-stats'), /Село: двор[\s\S]*Село: поле[\s\S]*Город: улица[\s\S]*Город: игрушки[\s\S]*Море: пляж[\s\S]*Море: остров/);
   assert.ok(help.rows > 80, `строк справки: ${help.rows}`);
   assert.deepEqual({ fed: help.fed, slide: help.slide, note: help.note }, { fed: 'ok', slide: 'no', note: 'na' });
@@ -920,7 +920,7 @@ test('дом, уехавший под потолок, сам возвращае�
     return { coop: at((o) => o.beh?.coop), mill: at((o) => o.beh?.mill), cart: at((o) => o.beh?.cart), granny: at((o) => o.cast === 'granny'), bins: s.objs.filter((o) => o.beh?.bin).length, claw: at((o) => o.beh?.claw), cook: at((o) => o.cast === 'cook'),
       sub: at((o) => o.beh?.sub), pots: s.objs.filter((o) => o.beh?.cauldron).map((o) => Math.floor(o.x / 293)).sort((a, b) => a - b).join() };
   });
-  assert.deepEqual(farm, { coop: [6, true], mill: [9, true], cart: [2, true], granny: [6, true], bins: 23, claw: [14, true], cook: [12, true], sub: [17, true], pots: '1,6,12,18,21' });
+  assert.deepEqual(farm, { coop: [6, true], mill: [9, true], cart: [2, true], granny: [6, true], bins: 23, claw: [14, true], cook: [12, true], sub: [17, true], pots: '1,6,12,18,21,24' });
   // стулья и шарик у правой стены зала при сбое упёрлись в край мира — и всё равно встают на свои места
   for (const k of ['bed', 'wardrobe', 'clock', 'fridge', 'tub', 'chairs', 'balloon']) assert.deepEqual(after[k], before[k], `${k} — точно на прежнем месте`);
   for (const k of ['kite', 'mia']) {
@@ -1286,7 +1286,7 @@ test('миры снов: в каждом из семи работает своя
 
   const end = await room((s) => ({ seen: Object.keys(s.flags.dreamSeen).sort().join(), chars: s.objs.filter((o) => o.kind === 'char').length }));
   assert.equal(end.seen, 'candy,clouds,forest,ice,planet,sea,toys');
-  assert.equal(end.chars, 16, 'все куклы на месте'); // пятеро в доме, трое в селе, трое в городе и двое у моря
+  assert.equal(end.chars, 20, 'все куклы на месте'); // пятеро в доме, трое в селе, трое в городе и двое у моря
   const stats = await page.evaluate(() => window.__dev.getStats());
   for (const w of ['forest', 'planet', 'sea', 'clouds', 'candy', 'ice', 'toys']) assert.ok(stats.feats[`w_${w}`] >= 1, `счётчик мира ${w}`);
 });
@@ -1529,7 +1529,7 @@ test('уборка: урна в каждой комнате ест брошен�
       tools: !!s.objs.find((o) => o.rec?.id === 'broom') && s.objs.some((o) => o.rec?.subject === 'leaf rake' && o.beh.sweeper),
     };
   });
-  assert.deepEqual(st, { rooms: '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22', eaten: true, pet: true, swept: { n: 2, tex: 'bin_full', gone: true, pet: true }, back: true, furniture: true, tools: true });
+  assert.deepEqual(st, { rooms: '0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26', eaten: true, pet: true, swept: { n: 2, tex: 'bin_full', gone: true, pet: true }, back: true, furniture: true, tools: true });
   // через несколько секунд собранное исчезает насовсем, урна снова пустая
   await waitFor((s) => { const bin = s.objs.find((o) => o.beh?.bin && o.x < 293); return !bin.stash && bin.texture.key === 'bin'; });
   // метла: провели по предмету на полу — он улетел в урну; лопатку и лейку уборка не трогает
@@ -1555,29 +1555,39 @@ test('уборка: урна в каждой комнате ест брошен�
 
 test('уборка, вторая волна: робот разносит вещи по местам и катает питомца; лужа пачкает, машина стирает; следы и швабра; компост и удобрение; наклейки «чистюля»', async () => {
   await freshRoom();
-  // робот-пылесос: еда — в холодильник, одежда — в шкаф, игрушка — в сундук; котёнок едет сверху
+  // робот-пылесос приезжает по кнопке: еда — в холодильник, одежда — в шкаф, игрушка — в сундук; кукла едет сверху
   const rb = await room((s) => {
     const y = s.objs.find((o) => o.beh?.bin).y;
-    for (const [sub, x] of [['apple', 110], ['cupcake', 150], ['sock', 190], ['beach ball', 230]]) s.spawnItem(s.findRec(sub), x, y - 6);
-    const r = s.objs.find((o) => o.beh?.robot);
-    const kitten = s.spawnItem(s.findRec('kitten'), r.x, r.y - 20);
-    s.startDrag(kitten);
-    s.drop(kitten, { x: r.x, y: r.y - 3 });
-    const litter = s.litter(0).length;
-    s.tap(r);
-    return { rider: kitten.restOn === r, running: r.running, tex: r.texture.key, litter };
+    const out = { none: !s.objs.some((o) => o.beh?.robot), drawer: !(s.byCat.toy || []).some((r) => r.id === 'robo-vac') };
+    for (const [sub, x] of [['apple', 110], ['cupcake', 150], ['sock', 190], ['beach ball', 230], ['kite', 250]]) s.spawnItem(s.findRec(sub), x, y - 6);
+    out.dot = s.litter(0).length >= 5;
+    s.callRobot();
+    const r = s.robot;
+    out.running = r.running;
+    s.saveNow();
+    out.saved = JSON.parse(localStorage.getItem('pixel-house-v3')).objs.some((o) => o.id === 'robo-vac');
+    return out;
   });
-  assert.deepEqual(rb, { rider: true, running: true, tex: 'robovac_on', litter: 4 });
-  await waitFor((s) => !s.objs.find((o) => o.beh?.robot).running, null, 240000);
+  assert.deepEqual(rb, { none: true, drawer: true, dot: true, running: true, saved: false });
+  // въехал — сажаем куклу
+  await waitFor((s) => s.robot && !s.robot.entering, null, 20000);
+  const ride = await room((s) => {
+    const r = s.robot;
+    const c = s.objs.find((o) => o.kind === 'char' && o.x < r.x + 200 && !o.restOn && !o.sleeping);
+    s.startDrag(c);
+    s.drop(c, { x: r.x, y: r.y - 3 });
+    return { rider: c.restOn === r, sit: s.poseOf(c) };
+  });
+  assert.deepEqual(ride, { rider: true, sit: 'sit' });
+  await waitFor((s) => !s.robot, null, 240000);
   const done = await room((s) => {
-    const r = s.objs.find((o) => o.beh?.robot);
     const subs = (o) => o.contents.map((id) => s.recOf(id).subject).sort().join();
     const chest = s.objs.find((o) => o.beh?.chest);
     const out = {
-      litter: s.litter(0).length, tex: r.texture.key,
+      litter: s.litter(0).length, gone: !s.objs.some((o) => o.beh?.robot),
       fridge: subs(s.objs.find((o) => o.beh?.fridge)), wardrobe: subs(s.objs.find((o) => o.rec.id === 'big_wardrobe')), chest: subs(chest),
       sticker: s.stickers.has('tidy', 'bed'),
-      rider: s.objs.some((o) => o.restOn === r && Math.abs(o.x - r.x) < 2),
+      unloaded: !s.objs.some((o) => o.restOn?.beh?.robot),
     };
     // ничего не потеряно: тап по сундуку высыпает убранное обратно
     const n0 = s.objs.length;
@@ -1585,7 +1595,20 @@ test('уборка, вторая волна: робот разносит вещ�
     out.back = s.objs.length - n0;
     return out;
   });
-  assert.deepEqual(done, { litter: 0, tex: 'robovac', fridge: 'apple,cupcake', wardrobe: 'sock', chest: 'beach ball', sticker: true, rider: true, back: 1 });
+  assert.deepEqual(done, { litter: 0, gone: true, fridge: 'apple,cupcake', wardrobe: 'sock', chest: 'beach ball,kite', sticker: true, unloaded: true, back: 2 });
+  // в море робот приплывает в надувном круге и уезжает по второму нажатию
+  await room((s) => { s.travel(window.__dev.R.waves); return true; });
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.waves, null, 20000);
+  const wet = await room((s) => {
+    s.callRobot();
+    s.updateClean();
+    const key = s.robot.texture.key;
+    s.callRobot(); // ещё раз — уезжает
+    return { ring: key.startsWith('robovacr'), leaving: s.robot.leaving };
+  });
+  assert.deepEqual(wet, { ring: true, leaving: true });
+  await room((s) => { s.travel(0); return true; });
+  await waitFor((s) => !s.travelling && s.curRoom === 0, null, 20000);
 
   // сад: мишка в луже пачкается; испачканная кукла оставляет следы; швабра их стирает — комната чистая
   const gd = await room((s) => {
@@ -1794,8 +1817,8 @@ test('локации: камера не выходит из своей лока�
     };
   });
   assert.deepEqual(st0, {
-    chars: 16, granny: 6, dad: 9, kid: 8, coop: 6, well: 7, hive: 8, mill: 9, cart: 2, bins: 23,
-    signs: '2>choose,6>choose,10>choose,15>choose,19>choose', cook: 12, claw: 14, place: 'home', range: '0,5', edge: 5, // мест три — остановка предлагает выбор
+    chars: 20, granny: 6, dad: 9, kid: 8, coop: 6, well: 7, hive: 8, mill: 9, cart: 2, bins: 27,
+    signs: '2>choose,6>choose,10>choose,15>choose,19>choose,23>choose', cook: 12, claw: 14, place: 'home', range: '0,5', edge: 5, // мест три — остановка предлагает выбор
   });
   await waitFor((s) => s.curRoom === 4);
   // занавес зала не заходит во двор села (он справа от зала на ленте)
@@ -1819,7 +1842,7 @@ test('локации: камера не выходит из своей лока�
     res.closed = !s.mapUi;
     return res;
   });
-  assert.deepEqual(map, { tabs: 5, home: '0,1,2,3,4,5', village: '6,7,8,9', view: 'village', travelling: true, closed: true });
+  assert.deepEqual(map, { tabs: 6, home: '0,1,2,3,4,5', village: '6,7,8,9', view: 'village', travelling: true, closed: true });
   await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.orchard);
   const st1 = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
@@ -1842,7 +1865,7 @@ test('локации: камера не выходит из своей лока�
   await room((s) => s.goRoom(window.__dev.R.yard));
   await waitFor((s) => s.curRoom === window.__dev.R.yard);
   await room((s) => s.portalTap(s.stopHere())); // остановка: облачка с местами — выбираем дом
-  assert.equal(await choose('place_home'), 'place_home,place_city,place_sea,place_park');
+  assert.equal(await choose('place_home'), 'place_home,place_city,place_sea,place_park,place_center');
   await waitFor((s) => !s.travelling && s.placeNow().key === 'home');
   const st2 = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
@@ -1903,11 +1926,11 @@ test('дорога: открытка зовёт в село; автобус и �
     return { ...res, asks: !!s.choices, press: !!s.press };
   }, finger.toString());
   assert.deepEqual(bus, { at: true, to: 'choose', asks: true, press: false }); // мест несколько — автобус спрашивает куда
-  assert.equal(await choose('place_home'), 'place_home,place_city,place_sea,place_park');
+  assert.equal(await choose('place_home'), 'place_home,place_city,place_sea,place_park,place_center');
   await waitFor((s) => !s.travelling && s.curRoom === 2 && !s.bus);
   // повозка: тап — облачка с местами; с грузом — ещё и «выгрузить»
   await room((s) => s.tap(s.objs.find((o) => o.beh?.cart)));
-  assert.equal(await choose('place_village'), 'place_village,place_city,place_sea,place_park');
+  assert.equal(await choose('place_village'), 'place_village,place_city,place_sea,place_park,place_center');
   assert.equal(await room((s) => s.travelling), true);
   await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.yard);
   const loaded = await room((s, mk) => {
@@ -1921,7 +1944,7 @@ test('дорога: открытка зовёт в село; автобус и �
     s.onDown(f(1, unload.x, unload.y - 8), [unload]);
     return { ...res, closed: !s.choices, left: cart.contents.length };
   }, finger.toString());
-  assert.deepEqual(loaded, { travelling: false, icons: 'place_home,place_city,place_sea,place_park,unload', closed: true, left: 0 });
+  assert.deepEqual(loaded, { travelling: false, icons: 'place_home,place_city,place_sea,place_park,place_center,unload', closed: true, left: 0 });
   // выбор из нескольких мест: облачка целиком на экране, даже когда их четыре; тап мимо их убирает
   const many = await room((s, mk) => {
     const f = new Function(`return ${mk}`)();
@@ -2289,7 +2312,7 @@ test('город: магазины на улице, светофор, морож
     s.testCart = cart;
     s.portalTap(s.stopHere());
   });
-  assert.equal(await choose('place_home'), 'place_home,place_village,place_sea,place_park');
+  assert.equal(await choose('place_home'), 'place_home,place_village,place_sea,place_park,place_center');
   await waitFor((s) => !s.travelling && s.curRoom === 2);
   const home = await room((s) => {
     const W = Math.ceil(s.sys.game.config.width / s.cameras.main.zoom);
@@ -2440,7 +2463,7 @@ test('море: волна, замок из песка, пальма, кабин
       pots: s.objs.filter((o) => o.beh?.cauldron).map((o) => Math.floor(o.x / W)).sort((a, b) => a - b).join(), // кухня, двор села, кафе, остров
     };
   });
-  assert.deepEqual(island, { dug: true, digging: true, inPot: 2, hint: 'sea', places: { home: 20, village: 7, city: 6, sea: 7, park: 7, far: 11 }, pots: '1,6,12,18,21' });
+  assert.deepEqual(island, { dug: true, digging: true, inPot: 2, hint: 'sea', places: { home: 20, village: 7, city: 6, sea: 7, park: 7, center: 8, far: 13 }, pots: '1,6,12,18,21,24' });
   await waitFor((s) => s.objs.some((o) => o.rec?.subject === 'sea turtle') && s.objs.some((o) => o.rec?.subject === 'diamond'));
   await waitFor((s) => !s.testX.digging && (s.testX.x !== s.testAt.x || s.testX.y !== s.testAt.y)); // крестик переехал
   await waitFor((s) => !s.testPot.brewing && s.alchemy.found['seashell + starfish']?.result === 'pearl');
@@ -2781,6 +2804,159 @@ test('таймер сна: время вышло — ночь, домой в с�
   assert.match(pz.text, /Осталось примерно 20 мин/);
   assert.match(pz.storage, /КБ|МБ/);
   assert.equal(pz.off, null);
+});
+
+test('центр: поезд везёт куда угодно, билет, часы; доска с мелом, звонок, глобус, счёты, котёл-колба; кушетка, рентген, пластырь и ушиб, шкафчик, скорая; занавес и декорации, аплодисменты, прожектор, костюмы, ширма', async () => {
+  await freshRoom();
+  const R = await page.evaluate(() => window.__dev.R);
+  await room((s, R) => { s.travel(R.station); return true; }, R);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.station, null, 20000);
+  // вокзал: жители на местах, поезд — облачка со всеми местами, билет на поезд — тоже
+  const st = await room((s) => {
+    const R = window.__dev.R;
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    const at = (id) => { const c = s.castChar(id); return c ? Math.floor(c.x / W) : -1; };
+    const out = { cast: [at('conductor'), at('teacher'), at('doctor'), at('actress')].join() === [R.station, R.school, R.hospital, R.theater].join(), train: !!s.trainImg };
+    s.trainTap(s.trainImg);
+    out.places = s.choices.parts.filter((o) => o.choice).map((o) => o.choice.icon).join();
+    s.closeChoices();
+    const box = s.objs.find((o) => o.beh?.tickets);
+    s.tap(box);
+    const clock = s.objs.find((o) => o.beh?.sclock);
+    s.tap(clock);
+    out.ticking = !!clock.ticking;
+    return out;
+  });
+  assert.deepEqual(st, { cast: true, train: true, places: 'place_home,place_village,place_city,place_sea,place_park', ticking: true });
+  await waitFor((s) => s.objs.some((o) => o.beh?.ticket), null, 5000);
+  const tk = await room((s) => {
+    const t = s.objs.find((o) => o.beh?.ticket);
+    s.startDrag(t);
+    s.drop(t, { x: s.trainImg.x, y: s.trainImg.y - 10 });
+    const n = s.choices?.parts.filter((o) => o.choice).length;
+    // едем поездом на море
+    s.choices.parts.find((o) => o.choice?.icon === 'place_sea').choice.act();
+    return { n, sticker: s.stickers.has('center', 'train ticket'), via: s.viaTrain };
+  });
+  assert.deepEqual(tk, { n: 5, sticker: true, via: true });
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.beach, null, 20000);
+  assert.equal(await room((s) => s.viaTrain), false);
+  await room((s, R) => { s.travel(R.school); return true; }, R);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.school, null, 20000);
+  // школа: мел по доске (и губка), звонок — урок и перемена, глобус, счёты, котёл-колба
+  const sc = await room((s) => {
+    const b = s.board;
+    const out = {};
+    s.chalkDown({ x: b.x0 + 10, y: b.y + 8 });
+    for (let i = 0; i < 20; i++) s.chalkAt({ x: b.x0 + 10 + i, y: b.y + 8 + (i % 5) });
+    s.chalkEnd();
+    out.strokes = s.flags.board.length;
+    out.points = s.flags.board[0].p.length > 20;
+    s.saveNow();
+    out.saved = JSON.parse(localStorage.getItem('pixel-house-v3')).flags.board.length;
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    s.tap(s.objs.find((o) => o.beh?.sbell)); // урок: куклы в классе садятся за парты
+    out.pot = s.objs.some((o) => o.rec?.id === 'flaskpot' && Math.floor(o.x / W) === s.curRoom);
+    return out;
+  });
+  assert.deepEqual(sc, { strokes: 1, points: true, saved: 1, pot: true });
+  await waitFor((s) => s.objs.some((o) => o.kind === 'char' && o.restOn?.beh?.desk), null, 5000);
+  const sc2 = await room((s) => {
+    const bell = s.objs.find((o) => o.beh?.sbell);
+    bell.ringing = false;
+    s.tap(bell); // перемена: встают из-за парт
+    const out = { seated: s.objs.filter((o) => o.kind === 'char' && o.restOn?.beh?.desk).length };
+    const g = s.objs.find((o) => o.beh?.globe);
+    s.tap(g);
+    const a = s.objs.find((o) => o.beh?.abacus);
+    for (let i = 0; i < 5; i++) s.tap(a);
+    out.abacus = a.texture.key;
+    // губка в конце полочки стирает доску
+    const b = s.board;
+    const slot = Math.floor(b.w / 5);
+    s.chalkDown({ x: b.x0 + 4 + 4 * slot + 3, y: b.y + b.h + 1 });
+    out.wiped = s.flags.board.length;
+    return out;
+  });
+  assert.deepEqual(sc2, { seated: 0, abacus: 'abacus_5', wiped: 0 });
+  await waitFor((s) => Object.keys(s.stickers.found.center || {}).length >= 2, null, 5000); // билет и зверь с глобуса
+  // больница: рентген, пластырь на ушибленную куклу, кушетка, шкафчик, скорая
+  await room((s) => { s.goRoom(window.__dev.R.hospital); return true; });
+  await waitFor((s) => s.curRoom === window.__dev.R.hospital);
+  const hs = await room((s) => {
+    const doc = s.castChar('doctor');
+    const x = s.objs.find((o) => o.beh?.xray);
+    s.startDrag(doc);
+    s.drop(doc, { x: x.x, y: x.y - 8 });
+    const out = { xray: x.texture.key, hidden: !doc.visible };
+    s.tap(s.objs.find((o) => o.beh?.firstaid));
+    s.tap(s.objs.find((o) => o.beh?.medcab));
+    const amb = s.objs.find((o) => o.beh?.ambulance);
+    s.tap(amb);
+    out.amb = !!amb.rolling;
+    return out;
+  });
+  assert.deepEqual(hs, { xray: 'xray_doll', hidden: true, amb: true });
+  await waitFor((s) => s.castChar('doctor').visible && s.objs.some((o) => o.beh?.plaster), null, 6000);
+  await room((s) => { s.ouch(s.castChar('doctor')); return true; });
+  await waitFor((s) => s.castChar('doctor').needs?.has('ouch'), null, 5000);
+  const pl2 = await room((s) => {
+    const doc = s.castChar('doctor');
+    const p = s.objs.find((o) => o.beh?.plaster);
+    s.startDrag(p);
+    s.drop(p, { x: doc.x, y: doc.y - 10 });
+    s.updateCenter();
+    const couch = s.objs.find((o) => o.beh?.couch);
+    const kit = s.findRec('kitten');
+    const k = s.spawnItem(kit, couch.x, couch.y + 6);
+    s.startDrag(k);
+    s.drop(k, { x: couch.x, y: couch.y - 6 });
+    s.tap(couch);
+    return { need: doc.needs.has('ouch'), on: !!doc.plasterImg?.visible, gone: !s.objs.some((o) => o.beh?.plaster && o.restOn === null && Math.abs(o.x - doc.x) < 3), rider: k.restOn === couch, xray: s.objs.find((o) => o.beh?.xray).texture.key };
+  });
+  assert.deepEqual(pl2, { need: false, on: true, gone: true, rider: true, xray: 'xray' });
+  // театр: занавес, декорации, аплодисменты, прожектор, костюмы, ширма
+  await room((s) => { s.goRoom(window.__dev.R.theater); return true; });
+  await waitFor((s) => s.curRoom === window.__dev.R.theater);
+  const th = await room((s) => {
+    const st = s.objs.find((o) => o.beh?.tstage);
+    const a = s.castChar('actress');
+    s.startDrag(a);
+    s.drop(a, { x: st.x, y: st.y - 10 });
+    s.tap(st); // открыть
+    const out = { onStage: a.restOn === st, open: !!st.open };
+    st.busyUntil = 0;
+    s.tap(st); // задёрнуть — декорации сменятся
+    s.tap(s.objs.find((o) => o.beh?.spot));
+    out.beam = !!s.spotBeam;
+    s.tap(s.objs.find((o) => o.beh?.costumes));
+    return out;
+  });
+  assert.deepEqual(th, { onStage: true, open: true, beam: true });
+  await waitFor((s) => s.objs.find((o) => o.beh?.tstage).scene_k === 1, null, 3000);
+  const th2 = await room((s) => {
+    const scr = s.objs.find((o) => o.rec?.id === 'tscreen');
+    const a = s.castChar('actress');
+    const before = a.look.outfit + a.look.dress;
+    s.startDrag(a);
+    s.drop(a, { x: scr.x, y: scr.y - 10 });
+    return { before, closed: scr.texture.key };
+  });
+  assert.equal(th2.closed, 'tscreen_closed');
+  await waitFor((s) => { const a = s.castChar('actress'); return a.visible && !a.busy; }, null, 5000);
+  const fin = await room((s) => {
+    const a = s.castChar('actress');
+    s.updateCenter();
+    return {
+      changed: a.look.outfit + a.look.dress,
+      stage: s.objs.find((o) => o.beh?.tstage).texture.key,
+      costume: s.objs.some((o) => o.kind === 'item' && ['tiara', 'jester hat', 'wizard hat', "king's crown", 'tricorne hat', 'feathered hat', 'top hat', 'flower crown'].includes(o.rec.subject)),
+    };
+  });
+  assert.notEqual(fin.changed, th2.before);
+  assert.deepEqual({ stage: fin.stage, costume: fin.costume }, { stage: 'tstage_1', costume: true });
+  const stats = await page.evaluate(() => window.__dev.getStats().feats);
+  for (const k of ['train', 'ticket', 'sclock', 'chalk', 'sbell', 'globe', 'abacus', 'couch', 'xray', 'plaster', 'ouch', 'medcab', 'ambulance', 'tstage', 'spot', 'costumes', 'tscreen']) assert.ok(stats[k] >= 1, `счётчик ${k}`);
 });
 
 test('нет ошибок в консоли', () => {

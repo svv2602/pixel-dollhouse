@@ -9,6 +9,7 @@ import { VILLAGE_SCENERY } from './villagescene.js';
 import { CITY_SCENERY } from './cityscene.js';
 import { SEA_SCENERY } from './seascene.js';
 import { PARK_SCENERY } from './parkscene.js';
+import { CENTER_SCENERY } from './centerscene.js';
 
 const HOME_SCENERY = {
   // ===== спальня: обои в полоску с точками, пол — доски
@@ -195,7 +196,7 @@ HOME_SCENERY.playroom = {
   },
 };
 
-const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY, ...CITY_SCENERY, ...SEA_SCENERY, ...PARK_SCENERY };
+const SCENERY = { ...HOME_SCENERY, ...VILLAGE_SCENERY, ...CITY_SCENERY, ...SEA_SCENERY, ...PARK_SCENERY, ...CENTER_SCENERY };
 
 /** Белая рама окна с переплётом. */
 function windowFrame(f, { x, y, w, h }) {

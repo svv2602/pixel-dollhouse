@@ -228,11 +228,14 @@ export function installTravel(Room, { L, rnd, sfx }) {
           const road = fix(this.add.rectangle(0, y, W, 2, 0x6b4a7e).setOrigin(0));
           const icon = fix(this.add.image(Math.round(W / 2), y - 40, dest.icon).setScale(3));
           // автобус нарисован мордой влево, повозка — оглоблей вправо
+          // поехали поездом с вокзала (center.js) — по дороге едет поезд; он, как и автобус, нарисован мордой влево
+          const train = this.viaTrain && !moved?.loaded;
+          this.viaTrain = false;
           const car = moved?.loaded
             ? this.add.image(0, y, 'cart_full').setFlipX(back)
-            : this.add.image(0, y, 'bus').setFlipX(!back);
+            : this.add.image(0, y, train ? 'train_side' : 'bus').setFlipX(!back);
           fix(car.setOrigin(0.5, 1), 2).x = back ? W + 30 : -30;
-          if (moved?.loaded) sfx.clop(); else sfx.honk();
+          if (moved?.loaded) sfx.clop(); else if (train) sfx.toot(); else sfx.honk();
           this.tweens.add({
             targets: car, x: back ? -30 : W + 30, duration: 900,
             onUpdate: () => { car.y = y - (Math.floor(car.x / 7) % 2 ? 1 : 0); }, // потряхивает на кочках

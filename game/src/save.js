@@ -56,14 +56,14 @@ export function installSave(Room) {
         v: 2, night: this.night, W: L.W, ROOM_H: L.ROOM_H, FLOOR_TOP: L.FLOOR_TOP,
         room: this.targetRoom ?? Math.round(this.cameras.main.scrollX / L.W),
         flags: this.flags, buddy: this.buddy || undefined,
-        objs: this.objs.filter((o) => o.kind === 'item').map((o) => ({
+        objs: this.objs.filter((o) => o.kind === 'item' && !o.summoned).map((o) => ({
           uid: o.uid, id: o.rec.id, x: Math.round(o.x), y: Math.round(o.y), lit: o.lit, plots: o.plots || undefined,
-          dirty: o.dirty || undefined, took: o.tookBy ? [o.tookBy, o.tookSlot] : undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.uid, bites: o.bites || 0,
+          dirty: o.dirty || undefined, took: o.tookBy ? [o.tookBy, o.tookSlot] : undefined, contents: o.contents, owner: o.owner?.uid, slot: o.slot, restOn: o.restOn?.summoned ? undefined : o.restOn?.uid, bites: o.bites || 0,
           stain: o.stain || undefined, foam: o.foam || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx, deco: o.deco || undefined,
           color: o.color, photoId: o.photoId, flip: (o.beh.tractor && o.flipX) || undefined, stage: o.stage || undefined,
         })),
         chars: this.objs.filter((o) => o.kind === 'char').map((o) => ({
-          uid: o.uid, cast: o.cast || undefined, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.uid,
+          uid: o.uid, cast: o.cast || undefined, x: Math.round(o.x), y: Math.round(o.y), look: o.look, mul: o.mul, restOn: o.restOn?.summoned ? undefined : o.restOn?.uid,
           stain: o.stain || undefined, inTub: o.inTub?.uid, tubDx: o.tubDx,
         })),
       };

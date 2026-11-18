@@ -190,7 +190,8 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
         const b = o.beh;
         if (!b || o.kind !== 'item') continue;
         if (b.trolley) {
-          const key = o.contents.length ? 'shopcart_full' : 'shopcart';
+          const base = o.rec.tex === 'bagcart' ? 'bagcart' : 'shopcart'; // тележка для багажа на вокзале (centerart.js) — своя картинка
+          const key = o.contents.length && base === 'shopcart' ? 'shopcart_full' : base;
           if (o.texture.key !== key) o.setTexture(key);
           this.tractorSync(o);
         } else if (b.bag) {
@@ -636,7 +637,9 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
       const tex = booth.rec.tex;
       booth.setTexture(`${tex}_closed`);
       sfx.swish();
-      if (booth.beh.cabin) this.hintDone('cabin'); else this.hintDone('fitting');
+      if (booth.beh.cabin) this.hintDone('cabin');
+      else if (booth.rec.id === 'tscreen') this.hintDone('tscreen'); // ширма в театре — своя отметка
+      else this.hintDone('fitting');
       this.time.addEvent({ delay: 220, repeat: 3, callback: () => { if (booth.active) { this.tweens.add({ targets: booth, y: booth.y - 1, duration: 70, yoyo: true }); sfx.wear(); } } });
       this.time.delayedCall(1100, () => {
         const look = ch.look;

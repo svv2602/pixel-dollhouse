@@ -130,6 +130,7 @@ export function installBedroom(Room) {
           onComplete: () => {
             r.y = r.bounceY0; r.bounceY0 = undefined; r.setFlipX(false);
             if (r.kind === 'char') { r.busy = false; r.setTexture(r.key); if (flip) sfx.giggle(); }
+            if (flip && Math.random() < 0.25) this.ouch(r); // кувыркалась — иногда ушибается и просит пластырь (center.js)
           },
         });
       }

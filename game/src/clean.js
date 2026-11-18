@@ -1,7 +1,9 @@
 // Уборка, вторая волна: то, что убирает само или превращает уборку в игру.
-//  • робот-пылесос: тап — ездит по полу своей комнаты, подбирает лишнее и разносит по местам
-//    (еда — в холодильник, одежда — в шкаф, листья и огрызки в саду — в компост, остальное — в сундук с игрушками);
-//    ничего не выбрасывает. Питомца или игрушку можно посадить сверху — катаются;
+//  • робот-пылесос: приезжает по кнопке (под кнопкой карты) в любую комнату любой локации, подбирает лишнее
+//    и разносит по местам (еда — в холодильник, одежда — в шкаф, листья и огрызки — в компост, остальное — в сундук
+//    с игрушками; из села, города, моря и парка — домой); ничего не выбрасывает. Убрал — круг почёта и уезжает.
+//    Он не предмет дома: в сохранение не попадает и в ящике его нет. Куклу, питомца или игрушку можно посадить
+//    сверху — катаются (perch). В море и в бассейне аквапарка — в надувном круге;
 //  • стиральная машина (ванная): до трёх вещей в барабан, тап — стирка; выходят чистыми, иногда с носком-сюрпризом.
 //    Пачкаются игрушки и одежда в луже грязи;
 //  • следы: испачканная кукла оставляет на полу следы; их стирают шваброй (и робот тоже);
@@ -12,6 +14,7 @@ import Phaser from 'phaser';
 import { canvasFor } from './furniture.js';
 import { LEAVES } from './tidy.js';
 import { roomAt, R } from './places.js';
+import { POOL_TOP } from './parkscene.js';
 
 const tex = (scene, key, canvas) => {
   if (!scene.textures.exists(key)) scene.textures.addCanvas(key, canvas);
@@ -23,11 +26,37 @@ const DIRT = 0x9a7a5a;      // цвет испачканной вещи
 const MAX_PRINTS = 30;
 const WASH_MS = 2600;
 
-const robot = (on) => canvasFor(16, 8, (r) => {
-  r(2, 2, 12, 5, '#e6e8f0'); r(1, 3, 14, 3, '#e6e8f0'); r(3, 1, 10, 1, '#f6f7fb'); r(1, 6, 14, 1, '#b8bccc');
-  r(4, 7, 2, 1, '#2b1d2e'); r(10, 7, 2, 1, '#2b1d2e');
-  r(6, 3, 4, 2, '#8fa8f2'); r(7, 3, 1, 1, '#d6e0ff');
-  r(12, 3, 2, 1, on ? '#7af28a' : '#ef5a6f');
+// Робот: 26×12 (в круге — 32×14). f — кадр щёточек, on — огонёк, ring — надувной круг.
+const ROBOT_W = 26;
+const robot = (f, on, ring = false) => canvasFor(ring ? 32 : ROBOT_W, ring ? 14 : 12, (r0) => {
+  const dx = ring ? 3 : 0;
+  const r = (x, y, w, h, c) => r0(x + dx, y, w, h, c);
+  // щёточки по бокам (крутятся: два кадра)
+  const br = f ? [[0, 9], [2, 11]] : [[0, 11], [2, 9]];
+  for (const [x, y] of br) { r(x, y - 1, 2, 1, '#c8a04a'); r(ROBOT_W - 2 - x, y - 1, 2, 1, '#c8a04a'); }
+  // корпус
+  r(3, 3, 20, 7, '#e6e8f0'); r(1, 5, 24, 4, '#e6e8f0'); r(5, 2, 16, 1, '#f6f7fb'); r(2, 4, 22, 1, '#f6f7fb');
+  r(1, 9, 24, 1, '#b8bccc'); r(3, 10, 20, 1, '#8f96b0');
+  // бампер и колёса
+  r(1, 6, 1, 3, '#8fa8f2'); r(24, 6, 1, 3, '#8fa8f2');
+  r(6, 11, 3, 1, '#2b1d2e'); r(17, 11, 3, 1, '#2b1d2e');
+  // «лицо»: экранчик с глазками
+  r(8, 4, 10, 4, '#2b3d6e'); r(10, 5, 2, 2, on ? '#7af2ff' : '#5a78a8'); r(14, 5, 2, 2, on ? '#7af2ff' : '#5a78a8');
+  if (on) r(11, 7, 4, 1, '#7af2ff');
+  // огонёк на макушке
+  r(12, 0, 2, 2, on ? '#7af28a' : '#ef5a6f'); r(12, 2, 2, 1, '#b8bccc');
+  if (ring) {
+    // надувной круг вокруг: красно-белые полоски, перед корпусом
+    for (let x = -3; x < ROBOT_W + 3; x++) r(x, 10, 1, 4, Math.floor((x + 3) / 4) % 2 ? '#ffffff' : '#ef5a6f');
+    r(-3, 9, 1, 4, '#ef5a6f'); r(ROBOT_W + 2, 9, 1, 4, '#ffffff');
+    r(-2, 9, ROBOT_W + 4, 1, '#ffb0b8');
+  }
+});
+// Значок на кнопке вызова: 13×7
+const robotIcon = () => canvasFor(13, 7, (r) => {
+  r(2, 1, 9, 5, '#e6e8f0'); r(1, 2, 11, 3, '#e6e8f0'); r(3, 0, 7, 1, '#f6f7fb'); r(1, 5, 11, 1, '#b8bccc');
+  r(4, 2, 5, 2, '#2b3d6e'); r(5, 2, 1, 1, '#7af2ff'); r(7, 2, 1, 1, '#7af2ff');
+  r(3, 6, 2, 1, '#2b1d2e'); r(8, 6, 2, 1, '#2b1d2e');
 });
 const washer = (turn) => canvasFor(22, 26, (r) => {
   r(0, 0, 22, 26, '#f2f4fa'); r(0, 0, 22, 5, '#d8dcec'); r(0, 24, 22, 2, '#b8bccc'); r(20, 0, 2, 26, '#d8dcec');
@@ -52,8 +81,9 @@ const compost = (n) => canvasFor(22, 14, (r) => {
 
 export function makeClean(scene) {
   const add = (key, canvas) => { tex(scene, key, canvas); tex(scene, `${key}_icon`, canvas); };
-  add('robovac', robot(false));
-  tex(scene, 'robovac_on', robot(true));
+  add('robovac', robot(0, false));
+  for (const ring of ['', 'r']) for (const f of [0, 1]) tex(scene, `robovac${ring}_on${f}`, robot(f, true, !!ring));
+  tex(scene, 'robovac_btn', robotIcon());
   add('washer', washer(false));
   tex(scene, 'washer_b', washer(true));
   add('mop', canvasFor(11, 22, (r) => {
@@ -77,7 +107,8 @@ export function makeClean(scene) {
     scene.textures.addCanvas('footprint', c);
   }
   return [
-    { id: 'robo-vac', subject: 'robot vacuum', cat: 'toy', tags: ['toy'], tex: 'robovac', robot: true, bbox: [0, 0, 15, 15], order: 32 },
+    // робот приезжает по кнопке (callRobot) — в ящике его нет; сверху можно сесть
+    { id: 'robo-vac', subject: 'robot vacuum', cat: 'toy', tags: ['toy'], tex: 'robovac', robot: true, hidden: true, bbox: [0, 0, 15, 15], order: 32, beh: { perch: { dy: 9, lo: -6, hi: 6 } } },
     { id: 'mop', subject: 'floor mop', cat: 'toy', tags: ['toy'], tex: 'mop', mop: true, bbox: [0, 0, 15, 15], order: 33 },
     { id: 'washer', subject: 'washing machine', cat: 'furniture', tags: ['furniture'], tex: 'washer', washer: true, bbox: [0, 0, 15, 15], order: 40 },
     { id: 'compost', subject: 'compost heap', cat: 'garden', tags: ['garden'], tex: 'compost_0', compost: true, bbox: [0, 0, 15, 15], order: 0 },
@@ -89,13 +120,17 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
   const roomOf = (o) => Math.floor(o.x / L.W);
   const inRoom = (o, k) => o.x >= k * L.W && o.x < (k + 1) * L.W;
   Object.assign(Room.prototype, {
-    /** Робот (спальня), стиральная машина и швабра (ванная), компост (сад) один раз появляются в доме — и в старых сохранениях. */
+    /** Стиральная машина и швабра (ванная), компост (сад) один раз появляются в доме — и в старых сохранениях. */
     ensureClean() {
+      // робот теперь приезжает по кнопке: тот, что стоял в спальне старых домов, уходит (седоки остаются на полу)
+      if (!this.flags.tidy3) {
+        this.flags.tidy3 = true;
+        for (const o of this.objs.filter((x) => x.beh?.robot)) this.removeObj(o, true);
+      }
       if (this.flags.tidy2) return;
       this.flags.tidy2 = true;
-      const { W, FLOOR_TOP, ROOM_H } = L;
+      const { W, FLOOR_TOP } = L;
       const has = (id) => this.objs.some((o) => o.rec?.id === id);
-      if (!has('robo-vac')) this.spawnItem(this.byId.get('robo-vac'), Math.round(W * 0.68), ROOM_H - 3);
       if (!has('washer')) this.spawnItem(this.byId.get('washer'), Math.round(R.bath * W + W * 0.66), FLOOR_TOP + 14);
       if (!has('mop')) this.spawnItem(this.byId.get('mop'), Math.round(R.bath * W + W * 0.76), FLOOR_TOP + 16);
       if (!has('compost')) this.spawnItem(this.byId.get('compost'), Math.round(R.garden * W + W * 0.28), FLOOR_TOP + 9);
@@ -108,14 +143,20 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       this.printImgs = [];
       for (const p of (this.flags.prints ||= [])) this.printImgs.push(this.printImg(p));
       for (const o of this.objs) if (o.beh?.compost) o.setTexture(`compost_${Math.min(o.contents.length, 3)}`);
-      // роботы: гудят, пока работают, и сами берут следующую цель
+      this.robot = null;
+      this.buildRobotBtn();
+      // робот: гудит и крутит щёточками, пока работает, и сам берёт следующую цель; кнопка зовёт, когда в комнате много лишнего
       this.time.addEvent({
         delay: 350, loop: true, callback: () => {
-          for (const r of this.objs) {
-            if (!r.beh?.robot || !r.running) continue;
+          const r = this.robot;
+          if (r?.active && r.running) {
+            r.frame2 = !r.frame2;
             if (this.visible(r)) { sfx.step(); this.fxCrumbs.setParticleTint(0xe6e8f0); this.fxCrumbs.explode(1, r.x, r.y); }
-            if (!r.dragging && !this.tweens.isTweening(r)) this.robotNext(r);
+            if (!r.dragging && !r.leaving && !this.tweens.isTweening(r)) this.robotNext(r);
           }
+          const here = this.cameras.main.scrollX / L.W;
+          const messy = !(r?.active) && Number.isInteger(here) && !this.travelling && this.litter(here).length >= 5;
+          this.robotBtnDot.setVisible(messy);
         },
       });
     },
@@ -139,27 +180,107 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
     },
 
     // ---------------------------------------------------------------- робот-пылесос
+    /** Кнопка вызова — под кнопкой карты; звёздочка на ней — в комнате много лишнего. */
+    buildRobotBtn() {
+      const b = this.add.rectangle(2, 19, 17, 15, 0x3a8fd8, 0.9).setOrigin(0).setDepth(19000).setScrollFactor(0).setInteractive();
+      b.setStrokeStyle(1, 0xffffff, 0.9);
+      b.ui = { robot: true };
+      const ic = this.add.image(11, 27, 'robovac_btn').setDepth(19001).setScrollFactor(0);
+      this.robotBtn = [b, ic];
+      this.robotBtnDot = this.add.image(19, 20, 'spark').setTint(0xfff07a).setDepth(19002).setScrollFactor(0).setVisible(false);
+      this.tweens.add({ targets: this.robotBtnDot, alpha: 0.35, duration: 500, yoyo: true, repeat: -1 });
+    },
+
+    /** Кнопка: робот приезжает в комнату, где сейчас игрок; если он уже здесь — уезжает. */
+    callRobot() {
+      if (this.dress || this.albumUi || this.mapUi || this.cardUi || this.travelling || this.dreaming || this.bedtime) return;
+      const room = this.targetRoom ?? Math.round(this.cameras.main.scrollX / L.W);
+      const old = this.robot?.active ? this.robot : null;
+      if (old && !old.leaving && old.home === room) { sfx.click(); this.robotLeave(old); return; }
+      if (old) this.robotGone(old); // работал в другой комнате — там и исчез
+      const fromLeft = Math.random() < 0.5;
+      const x = fromLeft ? room * L.W - 16 : (room + 1) * L.W + 16;
+      const y = Math.round(rnd(L.FLOOR_TOP + 14, L.ROOM_H - 3));
+      const r = this.spawnItem(this.byId.get('robo-vac'), x, y);
+      r.summoned = true;
+      r.home = room;
+      r.leaving = false;
+      this.robot = r;
+      this.stat('robot');
+      this.hintDone('robot');
+      sfx.ding();
+      this.time.delayedCall(180, () => sfx.ding());
+      this.robotStart(r);
+      // въезжает в комнату
+      r.entering = true;
+      this.robotDrive(r, fromLeft ? room * L.W + 22 : (room + 1) * L.W - 22, y, () => { r.entering = false; this.robotNext(r); });
+    },
+
     robotTap(r) {
-      if (r.running) { this.robotOff(r); sfx.click(); return; }
+      if (r.leaving) return;
+      sfx.click();
+      if (!r.running) { this.robotStart(r); this.robotNext(r); return; }
+      this.robotLeave(r); // тап по работающему роботу — «спасибо, хватит»
+    },
+
+    robotStart(r) {
       r.running = true;
       r.got = 0;
       r.roam = 0;
-      r.setTexture('robovac_on');
-      sfx.ding();
-      this.hintDone('robot');
-      this.robotNext(r);
+      this.robotLook(r);
+    },
+
+    /** Текстура по обстоятельствам: огонёк, кадр щёточек, круг в воде. Зовётся каждый кадр из updateClean. */
+    robotLook(r) {
+      const room = r.entering || r.leaving ? r.home : roomOf(r); // за краем комнаты — ещё (уже) в своей
+      const wet = room === R.waves || (room === R.aqua && r.y > L.FLOOR_TOP + POOL_TOP + 2);
+      const key = r.running || r.leaving ? `robovac${wet ? 'r' : ''}_on${r.frame2 ? 1 : 0}` : 'robovac';
+      if (r.texture.key !== key) r.setTexture(key);
     },
 
     robotOff(r, done = false) {
       r.running = false;
       this.tweens.killTweensOf(r);
       if (!r.active) return;
-      r.setTexture('robovac');
+      this.robotLook(r);
       if (!done) return;
       sfx.ding();
-      this.tweens.add({ targets: r, y: r.y - 3, duration: 110, yoyo: true, repeat: 1 });
+      this.tweens.add({ targets: r, y: r.y - 3, duration: 110, yoyo: true, repeat: 1, onComplete: () => this.robotLeave(r) });
       if (r.got >= 3) this.roomClean(roomOf(r), r);
+    },
+
+    /** Уезжает к ближнему краю комнаты и пропадает до следующего вызова; седоки спрыгивают на пол. */
+    robotLeave(r) {
+      if (!r.active || r.leaving) return;
+      r.leaving = true;
+      r.running = false;
+      this.tweens.killTweensOf(r);
+      this.robotUnload(r);
+      const room = r.entering ? r.home : Math.max(0, roomOf(r));
+      r.entering = false;
+      r.home = room;
+      const toLeft = r.x - room * L.W < L.W / 2;
+      this.robotLook(r);
+      sfx.ding();
+      this.robotDrive(r, toLeft ? room * L.W - 16 : (room + 1) * L.W + 16, r.y, () => this.robotGone(r), true);
       this.save();
+    },
+
+    /** Седоки спрыгивают на пол. */
+    robotUnload(r) {
+      for (const o of this.objs) {
+        if (o.restOn !== r) continue;
+        o.restOn = null;
+        o.x = Math.round(r.x + rnd(-6, 6));
+        o.y = Math.min(L.ROOM_H - 1, Math.round(r.y + 2));
+        this.tweens.add({ targets: o, y: o.y - 4, duration: 110, yoyo: true });
+        if (o.kind === 'char') sfx.giggle();
+      }
+    },
+
+    robotGone(r) {
+      if (this.robot === r) this.robot = null;
+      if (r.active) { this.tweens.killTweensOf(r); this.robotUnload(r); this.removeObj(r, true); }
     },
 
     /** Куда робот отвезёт предмет: у каждой вещи в доме своё место. */
@@ -176,8 +297,9 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
     },
 
     robotNext(r) {
-      if (!r.running || !r.active || r.dragging) return;
+      if (!r.running || !r.active || r.dragging || r.leaving || r.entering) return;
       const room = roomOf(r);
+      r.home = room; // могли перенести в другую комнату — убирает там
       const x0 = room * L.W + 10;
       const x1 = (room + 1) * L.W - 10;
       const far = (p) => Math.hypot(p.x - r.x, (p.y - r.y) * 1.5);
@@ -185,7 +307,7 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       const prints = this.flags.prints.filter((p) => p[0] >= room * L.W && p[0] < (room + 1) * L.W).map((p) => ({ x: p[0], y: p[1], print: true }));
       const t = [...items, ...prints].sort((a, b) => far(a) - far(b))[0];
       if (!t) {
-        // чисто: пара кругов по комнате (упирается в стену и разворачивается) — и выключается
+        // чисто: пара кругов по комнате (упирается в стену и разворачивается) — и уезжает
         if (r.roam >= 2) { this.robotOff(r, true); return; }
         r.roam++;
         const tx = r.x < (x0 + x1) / 2 ? x1 : x0;
@@ -202,10 +324,13 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       });
     },
 
-    robotDrive(r, tx, ty, done) {
+    robotDrive(r, tx, ty, done, always = false) {
       const dist = Math.hypot(tx - r.x, ty - r.y);
       r.setFlipX(tx > r.x);
-      this.tweens.add({ targets: r, x: Math.round(tx), y: Math.round(ty), duration: Math.max(120, dist / 46 * 1000), ease: 'Linear', onComplete: () => { if (r.running && r.active) done(); } });
+      this.tweens.add({
+        targets: r, x: Math.round(tx), y: Math.round(ty), duration: Math.max(120, dist / 46 * 1000), ease: 'Linear',
+        onComplete: () => { if (r.active && (always || r.running)) done(); },
+      });
     },
 
     /** Робот подобрал предмет и «отвёз» его на место: над ним всплывает картинка, куда именно. */
@@ -397,20 +522,21 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
     // ---------------------------------------------------------------- общее
     /** Предмет отпустили: может, это уборка? (вызывается из drop() раньше обычных правил) */
     cleanDrop(o, q) {
-      if (o.kind !== 'item' || q.y > L.ROOM_H) return false;
+      if (q.y > L.ROOM_H) return false;
       const at = (pred) => this.objAt(q.x, q.y, (x) => x.kind === 'item' && x !== o && pred(x));
-      // питомец или игрушка — на робота: катаются
-      if ((o.beh.pet || o.rec.cat === 'toy') && !o.beh.robot && !o.beh.bin && !o.beh.sweeper && !o.beh.mop) {
-        const r = at((x) => x.beh.robot);
+      // кукла, питомец или игрушка — на робота: катаются (по одному)
+      if (o.kind === 'char' || ((o.beh.pet || o.rec.cat === 'toy') && !o.beh.robot && !o.beh.bin && !o.beh.sweeper && !o.beh.mop)) {
+        const r = at((x) => x.beh.robot && !x.leaving);
         if (r && !this.objs.some((x) => x.restOn === r)) {
-          o.restOn = r; o.inTub = null;
-          sfx.drop();
-          if (o.beh.pet) sfx.squeak();
+          this.perchOn(o, r, r.x);
+          if (o.beh?.pet) sfx.squeak();
+          if (o.kind === 'char') sfx.giggle();
           this.fxHearts.explode(1, r.x, r.y - 14);
           this.stat('roboride');
           return true;
         }
       }
+      if (o.kind !== 'item') return false;
       const w = at((x) => x.beh.washer);
       if (w && this.washerPut(w, o)) return true;
       if (this.compostTakes(o)) {
@@ -426,8 +552,12 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       return false;
     },
 
-    /** Каждый кадр: седоки робота едут с ним; испачканная кукла оставляет следы. */
+    /** Каждый кадр: робот и его седок; испачканная кукла оставляет следы. */
     updateClean() {
+      const rb = this.robot;
+      if (rb?.active) {
+        this.robotLook(rb);
+      }
       for (const o of this.objs) {
         if (o.beh?.washer) {
           // вещь в окошке едет вместе с машиной (и появляется после перезапуска, если барабан не пуст)
@@ -439,8 +569,7 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
         if (r?.beh?.robot && !o.dragging) {
           if (!r.active) { o.restOn = null; continue; }
           o.x = r.x;
-          o.y = r.y - r.displayHeight + 3;
-          o.setDepth(r.depth + 0.2);
+          o.y = r.y - r.beh.perch.dy + (o.kind === 'char' ? 0 : -3);
         }
         if (o.kind !== 'char' || !o.stain) { if (o.kind === 'char') o.printAt = null; continue; }
         if (o.dragging || o.inTub || o.restOn || o.y <= L.FLOOR_TOP || o.y > L.ROOM_H) continue;
