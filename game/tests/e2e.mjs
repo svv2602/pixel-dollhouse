@@ -2923,7 +2923,12 @@ test('центр: поезд везёт куда угодно, билет, ча�
     const a = s.castChar('actress');
     s.startDrag(a);
     s.drop(a, { x: st.x, y: st.y - 10 });
-    s.tap(st); // открыть
+    // открыть — через настоящий ввод (нажал и отпустил), а не прямым вызовом: так нашлось, что поле
+    // с картинкой занавеса, названное «curtain», уводило касание в занавес концертного зала
+    const p = { id: 7, x: 0, y: 0, worldX: st.x, worldY: st.y - 20, downTime: s.time.now, upTime: s.time.now + 80, isDown: true };
+    s.onDown(p, [st]);
+    p.isDown = false;
+    s.onUp(p);
     const out = { onStage: a.restOn === st, open: !!st.open };
     st.busyUntil = 0;
     s.tap(st); // задёрнуть — декорации сменятся

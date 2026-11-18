@@ -135,8 +135,9 @@ export function installCenter(Room, { L, rnd, pick, sfx }) {
       for (const o of this.objs) {
         if (o.kind === 'item') {
           if (o.beh.tstage) {
-            if (!o.curtain) { o.curtain = this.add.image(o.x, o.y, o.open ? 'tcurtain' : 'tcurtain_closed').setOrigin(0.5, 1); o.once('destroy', () => o.curtain?.destroy()); }
-            o.curtain.setPosition(o.x, o.y).setDepth(o.depth + 0.8).setVisible(o.visible);
+            // не «curtain»: по этому полю input.js узнаёт занавес концертного зала
+            if (!o.curtainImg) { o.curtainImg = this.add.image(o.x, o.y, o.open ? 'tcurtain' : 'tcurtain_closed').setOrigin(0.5, 1); o.once('destroy', () => o.curtainImg?.destroy()); }
+            o.curtainImg.setPosition(o.x, o.y).setDepth(o.depth + 0.8).setVisible(o.visible);
             const k = `tstage_${o.scene_k || 0}`;
             if (o.texture.key !== k) o.setTexture(k);
           }
@@ -490,7 +491,7 @@ export function installCenter(Room, { L, rnd, pick, sfx }) {
       st.open = !st.open;
       sfx.swish();
       this.hintDone('tstage');
-      st.curtain?.setTexture(st.open ? 'tcurtain' : 'tcurtain_closed');
+      st.curtainImg?.setTexture(st.open ? 'tcurtain' : 'tcurtain_closed');
       if (!st.open) {
         // пока занавес задёрнут, рабочие сцены меняют задник
         this.time.delayedCall(350, () => { st.scene_k = ((st.scene_k || 0) + 1) % 4; sfx.thud(); });
