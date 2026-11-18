@@ -597,6 +597,8 @@ class Room extends Phaser.Scene {
   }
 
   tap(o) {
+    // театр: за задёрнутым занавесом стоят куклы и лежат вещи — их не видно, касание достаётся занавесу (center.js)
+    if (o.restOn?.beh?.tstage && !o.restOn.open && !o.dragging) { this.curtainTap(o.restOn); return; }
     if (o.kind === 'char') {
       this.buddy = o.uid; // с кем играли последней — та и пойдёт следом в другую комнату
       const held = o.slots.hand;

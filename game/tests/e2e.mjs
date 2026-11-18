@@ -2930,6 +2930,12 @@ test('центр: поезд везёт куда угодно, билет, ча�
     p.isDown = false;
     s.onUp(p);
     const out = { onStage: a.restOn === st, open: !!st.open };
+    // задёрнут, а палец попал в куклу за ним — открывается всё равно (на телефоне так и не открывался)
+    st.busyUntil = 0;
+    s.tap(st);
+    st.busyUntil = 0;
+    s.tap(a);
+    out.viaDoll = !!st.open;
     st.busyUntil = 0;
     s.tap(st); // задёрнуть — декорации сменятся
     s.tap(s.objs.find((o) => o.beh?.spot));
@@ -2937,8 +2943,8 @@ test('центр: поезд везёт куда угодно, билет, ча�
     s.tap(s.objs.find((o) => o.beh?.costumes));
     return out;
   });
-  assert.deepEqual(th, { onStage: true, open: true, beam: true });
-  await waitFor((s) => s.objs.find((o) => o.beh?.tstage).scene_k === 1, null, 3000);
+  assert.deepEqual(th, { onStage: true, open: true, viaDoll: true, beam: true });
+  await waitFor((s) => s.objs.find((o) => o.beh?.tstage).scene_k === 2, null, 3000);
   const th2 = await room((s) => {
     const scr = s.objs.find((o) => o.rec?.id === 'tscreen');
     const a = s.castChar('actress');
@@ -2959,7 +2965,7 @@ test('центр: поезд везёт куда угодно, билет, ча�
     };
   });
   assert.notEqual(fin.changed, th2.before);
-  assert.deepEqual({ stage: fin.stage, costume: fin.costume }, { stage: 'tstage_1', costume: true });
+  assert.deepEqual({ stage: fin.stage, costume: fin.costume }, { stage: 'tstage_2', costume: true });
   const stats = await page.evaluate(() => window.__dev.getStats().feats);
   for (const k of ['train', 'ticket', 'sclock', 'chalk', 'sbell', 'globe', 'abacus', 'couch', 'xray', 'plaster', 'ouch', 'medcab', 'ambulance', 'tstage', 'spot', 'costumes', 'tscreen']) assert.ok(stats[k] >= 1, `счётчик ${k}`);
 });
