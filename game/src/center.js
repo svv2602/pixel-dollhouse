@@ -3,8 +3,8 @@
 //  вокзал:   поезд у платформы — тап: гудок, пар и облачка со всеми местами: поезд везёт в любую локацию;
 //            билетный автомат выдаёт билет (билет на поезд — тоже поехали); часы на столбе бьют;
 //            тележка для багажа — в неё кладут вещи и садятся, тап — едет; чемодан — в него складывают вещи;
-//  школа:    доска — водить пальцем: рисует мел (цвет — тап по мелку на полочке, губка — стереть всё; рисунок
-//            сохраняется); звонок: перемена — куклы встают из-за парт и пляшут, урок — садятся за парты;
+//  школа:    доска — водить пальцем: рисует мел (цвет — тап по мелку на полочке; губка — водить ею стирает, два тапа
+//            по губке — стереть всё; рисунок сохраняется); звонок: перемена — куклы встают из-за парт и пляшут, урок — садятся за парты;
 //            глобус крутится — выходит зверь с другого конца света; счёты считают до пяти; котёл-колба (pots.js);
 //  больница: кушетка — куклу или питомца на неё, тап: доктор слушает сердечко; рентген — куклу или питомца на
 //            экран: виден скелетик; аптечка даёт пластырь — его на куклу, он держится на щеке; шкафчик с
@@ -27,6 +27,7 @@ export const CENTER_HINTS = {
   ticket: { room: R.station, seq: () => ['ticketbox', 'train-ticket'] },
   sclock: { room: R.station, seq: () => ['stationclock'] },
   chalk: { room: R.school, seq: () => ['tex:chalk_icon'] },
+  sponge: { room: R.school, when: (s) => (s.flags.board || []).length > 0, seq: () => ['tex:sponge_icon', 'tex:chalk_icon'] }, // на доске что-то есть — подскажем про губку
   sbell: { room: R.school, seq: () => ['schoolbell', 'schooldesk'] },
   globe: { room: R.school, seq: () => ['globe', 'polar bear'] },
   abacus: { room: R.school, seq: () => ['abacus'] },
@@ -124,6 +125,16 @@ export function installCenter(Room, { L, rnd, pick, sfx }) {
       this.add.image(bx, b.y, 'chalkboard').setOrigin(0).setDepth(-7.7);
       const zone = this.add.rectangle(bx - 4, b.y, b.w + 8, b.h + b.tray, 0xffffff, 0.001).setOrigin(0).setDepth(-7.65).setInteractive();
       zone.chalk = true;
+      // мелки и губка на полочке: выбранный приподнят
+      const slot = Math.floor(b.w / (CHALKS.length + 1));
+      const ty = b.y + b.h + 3;
+      this.board.slot = slot;
+      this.board.pieces = [
+        ...CHALKS.map((c, i) => this.add.rectangle(bx + 4 + i * slot, ty, 6, 2, c).setOrigin(0, 1).setDepth(-7.66)),
+        this.add.image(bx + 4 + CHALKS.length * slot, ty, 'sponge').setOrigin(0, 1).setDepth(-7.66),
+      ];
+      this.board.pieceY = ty;
+      this.trayLook();
       this.redrawBoard();
       // зрители театра — спиной к нам, у нижнего края
       this.fans = ['bunny', 'bear', 'cat', 'fox'].map((k, i) => this.add.image(Math.round(R.theater * W + W * (0.3 + i * 0.14)), ROOM_H + 5, `fan_${k}`).setOrigin(0.5, 1).setDepth(9000));
@@ -261,37 +272,58 @@ export function installCenter(Room, { L, rnd, pick, sfx }) {
     },
 
     // ---------------------------------------------------------------- школа
-    /** Нарисовать доску заново по сохранённым штрихам. */
+    /** Нарисовать доску заново по сохранённым штрихам (c = -1 — след губки). */
     redrawBoard() {
       const bd = this.board;
       const ctx = bd.tex.getContext();
       ctx.clearRect(0, 0, bd.w, bd.h);
       for (const s of this.flags.board || []) {
+        if (s.c < 0) { for (let i = 0; i < s.p.length; i += 2) ctx.clearRect(s.p[i] - 2, s.p[i + 1] - 2, 6, 6); continue; }
         ctx.fillStyle = `#${CHALKS[s.c].toString(16).padStart(6, '0')}`;
         for (let i = 0; i < s.p.length; i += 2) ctx.fillRect(s.p[i], s.p[i + 1], 2, 2);
       }
       bd.tex.refresh();
     },
 
-    /** Палец на доске: рисуем; на полочке — выбрать мелок или губку. */
+    /** Выбранный мелок (или губка) на полочке приподнят. */
+    trayLook() {
+      const bd = this.board;
+      bd.pieces.forEach((p, i) => { p.y = bd.pieceY - (i === bd.color ? 2 : 0); });
+    },
+
+    /** Палец на доске: рисуем мелом или стираем губкой; на полочке — выбрать мелок или губку. */
     chalkDown(q) {
       const bd = this.board;
       const lx = Math.round(q.x - bd.x0);
       const ly = Math.round(q.y - bd.y);
-      if (ly >= bd.h - 1) {
-        // полочка: мелки и губка в конце
-        const slot = Math.floor(bd.w / (CHALKS.length + 1));
-        const i = Phaser.Math.Clamp(Math.floor((lx - 2) / slot), 0, CHALKS.length);
-        if (i === CHALKS.length) { this.flags.board = []; this.redrawBoard(); sfx.swish(); this.save(); bd.last = null; return false; }
+      const SPONGE = CHALKS.length;
+      const sx = 4 + SPONGE * bd.slot;
+      const onSponge = lx >= sx - 2 && lx <= sx + 16 && ly >= bd.h - 5;
+      if (onSponge || ly >= bd.h - 1) {
+        const i = onSponge ? SPONGE : Phaser.Math.Clamp(Math.floor((lx - 2) / bd.slot), 0, SPONGE);
+        if (i === SPONGE) {
+          // два тапа по губке подряд — стереть всю доску
+          if (bd.color === SPONGE && this.time.now - (bd.spongeAt || -1e9) < 500) {
+            this.flags.board = [];
+            this.redrawBoard();
+            sfx.swish(); sfx.scrub();
+            this.fxCrumbs.setParticleTint(0xffffff);
+            for (let k = 0; k < 6; k++) this.fxCrumbs.explode(3, bd.x0 + rnd(4, bd.w - 4), bd.y + rnd(4, bd.h - 4));
+            this.hintDone('sponge');
+            this.save();
+          } else sfx.scrub();
+          bd.spongeAt = this.time.now;
+        } else sfx.click();
         bd.color = i;
-        sfx.click();
+        bd.last = null;
+        this.trayLook();
         this.fxSparks.explode(3, q.x, q.y);
         return false;
       }
-      (this.flags.board ||= []).push({ c: bd.color, p: [] });
+      (this.flags.board ||= []).push({ c: bd.color === SPONGE ? -1 : bd.color, p: [] });
       bd.last = null;
       this.chalkAt(q);
-      this.hintDone('chalk');
+      if (bd.color === SPONGE) this.hintDone('sponge'); else this.hintDone('chalk');
       return true;
     },
 
@@ -302,14 +334,15 @@ export function installCenter(Room, { L, rnd, pick, sfx }) {
       const x = Phaser.Math.Clamp(Math.round(q.x - bd.x0), 0, bd.w - 2);
       const y = Phaser.Math.Clamp(Math.round(q.y - bd.y), 0, bd.h - 3);
       const ctx = bd.tex.getContext();
-      ctx.fillStyle = `#${CHALKS[s.c].toString(16).padStart(6, '0')}`;
+      const erase = s.c < 0;
+      if (!erase) ctx.fillStyle = `#${CHALKS[s.c].toString(16).padStart(6, '0')}`;
       // между прошлой и новой точкой — сплошная линия
       const [px, py] = bd.last || [x, y];
-      const n = Math.max(1, Math.ceil(Math.hypot(x - px, y - py)));
+      const n = Math.max(1, Math.ceil(Math.hypot(x - px, y - py) / (erase ? 2 : 1)));
       for (let i = 1; i <= n; i++) {
         const ix = Math.round(px + ((x - px) * i) / n);
         const iy = Math.round(py + ((y - py) * i) / n);
-        ctx.fillRect(ix, iy, 2, 2);
+        if (erase) ctx.clearRect(ix - 2, iy - 2, 6, 6); else ctx.fillRect(ix, iy, 2, 2);
         s.p.push(ix, iy);
       }
       bd.last = [x, y];
@@ -317,7 +350,11 @@ export function installCenter(Room, { L, rnd, pick, sfx }) {
       // слишком много мела — старые штрихи уходят
       let total = this.flags.board.reduce((a, t) => a + t.p.length, 0);
       while (total > MAX_POINTS * 2 && this.flags.board.length > 1) total -= this.flags.board.shift().p.length;
-      if (Math.random() < 0.15) { sfx.scrub?.(); this.fxCrumbs.setParticleTint(0xffffff); this.fxCrumbs.explode(1, q.x, q.y); }
+      if (Math.random() < (erase ? 0.4 : 0.15)) {
+        if (erase) sfx.scrub();
+        this.fxCrumbs.setParticleTint(0xffffff);
+        this.fxCrumbs.explode(erase ? 3 : 1, q.x, q.y); // губка — облачко меловой пыли
+      }
     },
 
     chalkEnd() { this.board.last = null; this.save(); },

@@ -58,6 +58,7 @@ export const CITY_HINTS = {
   shelf: { room: R.market, seq: (s) => { const k = ['fruit', 'bread', 'dairy'][Math.floor(Math.random() * 3)]; return [{ fruit: 'fruitstand', bread: 'breadrack', dairy: 'cooler' }[k], s.stockRecs(k)[0]]; } },
   checkout: { room: R.market, seq: () => ['apple', 'checkout', 'paper-bag'] },
   trolley: { room: R.market, seq: () => ['shopcart'] },
+  taxi: { room: R.street, seq: () => ['taxi'] },
   pastry: { room: R.cafe, seq: () => (Math.random() < 0.5 ? ['showcase', 'croissant'] : ['drinkbar', 'mug of cocoa']) },
   hats: { room: R.clothes, seq: () => ['hatrack', 'top hat'] },
   fitting: { room: R.clothes, seq: () => ['fitting'] },
@@ -73,7 +74,7 @@ export const CITY_HINTS = {
 export const CITY_LURES = [['icecart', (b) => b.stock === 'ice'], ['traffic', (b) => b.traffic], ['fountain', (b) => b.fountain],
   ['shelf', (b) => ['fruit', 'bread', 'dairy'].includes(b.stock)], ['checkout', (b) => b.checkout], ['trolley', (b) => b.trolley],
   ['pastry', (b) => b.stock === 'pastry' || b.stock === 'drink'], ['hats', (b) => b.stock === 'hat' || b.stock === 'acc'],
-  ['fitting', (b) => b.fitting], ['mannequin', (b) => b.mannequin], ['podium', (b) => b.podium],
+  ['taxi', (b) => b.taxi], ['fitting', (b) => b.fitting], ['mannequin', (b) => b.mannequin], ['podium', (b) => b.podium],
   ['toystand', (b) => b.stock === 'toy'], ['claw', (b) => b.claw], ['gumball', (b) => b.gumball], ['giftwrap', (b) => b.giftwrap]];
 /** Страница «город» в альбоме: [что получилось, из чего (предмет каталога, id или ключ текстуры), чем]. */
 export const CITY_STICKERS = [
@@ -92,7 +93,7 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
     // ---------------------------------------------------------------- расстановка
     /** Город один раз обставляется — и в старых сохранениях. */
     ensureCity() {
-      if (this.flags.city) return;
+      if (this.flags.city) { this.ensureTaxi(); return; }
       this.flags.city = 1;
       const { W, FLOOR_TOP, ROOM_H } = L;
       const at = (room) => {
@@ -156,7 +157,66 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
       put('teddy bear', 0.9, ROOM_H - 5);
       put('rocking horse', 0.32, ROOM_H - 5);
       put('toy drum', 0.12, ROOM_H - 12);
+      this.ensureTaxi();
       this.save();
+    },
+
+    /** Такси у тротуара на улице — и в старых сохранениях. */
+    ensureTaxi() {
+      if (this.flags.taxi) return;
+      this.flags.taxi = 1;
+      const rec = this.byId.get('taxi');
+      if (rec) this.spawnItem(rec, Math.round(R.street * L.W + L.W * 0.88), L.ROOM_H - 3); // правее повозки (cart 0.7)
+      this.save();
+    },
+
+    /**
+     * Такси: пустое — сигналит и мигает фонариком; с седоком — везёт его по городу: уезжает за край улицы,
+     * объезжает квартал и возвращается с другой стороны на своё место.
+     */
+    taxiTap(t) {
+      if (t.riding) return;
+      const riders = this.objs.filter((r) => r.restOn === t && !r.dragging);
+      sfx.honk();
+      t.setTexture('taxi_b');
+      this.time.delayedCall(500, () => { if (t.active && !t.riding) t.setTexture('taxi'); });
+      if (!riders.length) { this.tweens.add({ targets: t, y: t.y - 1, duration: 80, yoyo: true, repeat: 1 }); return; }
+      this.hintDone('taxi');
+      t.riding = true;
+      const room = roomOf(t);
+      const home = t.x;
+      const lo = room * L.W + 20;
+      const hi = (room + 1) * L.W - 20;
+      const fade = (a, ms) => this.tweens.add({ targets: [t, ...riders], alpha: a, duration: ms });
+      const end = () => {
+        t.riding = false;
+        t.setFlipX(false);
+        if (!t.active) return;
+        t.setTexture('taxi');
+        this.tractorSync(t);
+        for (const r of riders) {
+          r.alpha = 1;
+          if (r.restOn === t && r.kind === 'char') { sfx.giggle(); this.fxHearts.explode(3, r.x, r.y - r.displayHeight); }
+        }
+        this.save();
+      };
+      // вправо, за угол…
+      this.time.delayedCall(250, () => sfx.putt());
+      this.tweens.add({
+        targets: t, x: hi, duration: Math.max(300, (hi - t.x) * 9), ease: 'Sine.easeIn',
+        onComplete: () => {
+          fade(0, 300);
+          this.time.delayedCall(1300, () => {
+            // …и обратно с другой стороны
+            if (!t.active) { end(); return; }
+            t.x = lo;
+            this.tractorSync(t);
+            fade(1, 300);
+            sfx.honk();
+            this.tweens.add({ targets: t, x: home, duration: Math.max(300, (home - lo) * 9), ease: 'Sine.easeOut', onComplete: end });
+          });
+        },
+      });
     },
 
     /** Вызывается из create(): сцена могла быть пересоздана. */
@@ -194,6 +254,8 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
           const key = o.contents.length && base === 'shopcart' ? 'shopcart_full' : base;
           if (o.texture.key !== key) o.setTexture(key);
           this.tractorSync(o);
+        } else if (b.taxi) {
+          this.tractorSync(o); // седок едет вместе с такси
         } else if (b.bag) {
           const key = o.contents.length ? 'paperbag_full' : 'paperbag';
           if (o.texture.key !== key) o.setTexture(key);
@@ -234,6 +296,7 @@ export function installCity(Room, { L, rnd, pick, sfx }) {
       if (b.traffic) { this.trafficTap(o); return true; }
       if (b.fountain) { this.fountainTap(o); return true; }
       if (b.trolley) { return this.trolleyTap(o); }
+      if (b.taxi) { this.taxiTap(o); return true; }
       if (b.checkout) { this.checkoutBeep(o); this.hintDone('checkout'); return true; }
       if (b.fitting) { this.fittingTap(o); return true; }
       if (b.mannequin) { this.mannequinTap(o); return true; }

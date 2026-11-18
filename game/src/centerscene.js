@@ -30,7 +30,7 @@ export function boardRect(L) {
   const h = Math.max(20, Math.min(40, FLOOR_TOP - 16));
   return { x: Math.round(W * 0.28), y: Math.max(4, FLOOR_TOP - h - 10), w, h, tray: 6 };
 }
-/** Цвета мелков на полочке (последнее место на полочке — губка: стирает всё). */
+/** Цвета мелков на полочке (последнее место на полочке — губка: стирает, где провели; два тапа по ней — всё). */
 export const CHALKS = [0xffffff, 0xffd84a, 0xff9ac8, 0x8fd6f7];
 
 export const CENTER_SCENERY = {
@@ -93,11 +93,7 @@ export const CENTER_SCENERY = {
       g.fillStyle(0xa8693c).fillRect(x - 3, b.y - 3, b.w + 6, b.h + 6);
       g.fillStyle(0x2f5a4a).fillRect(x, b.y, b.w, b.h);
       g.fillStyle(0xc98a52).fillRect(x - 4, b.y + b.h + 3, b.w + 8, 3); // полочка
-      // мелки и губка на полочке
-      const slot = Math.floor(b.w / (CHALKS.length + 1));
-      CHALKS.forEach((c, i) => g.fillStyle(c).fillRect(x + 4 + i * slot, b.y + b.h + 1, 6, 2));
-      g.fillStyle(0xffd84a).fillRect(x + 4 + CHALKS.length * slot, b.y + b.h, 9, 3);
-      g.fillStyle(0x5ac4f2).fillRect(x + 4 + CHALKS.length * slot, b.y + b.h + 2, 9, 1);
+      // мелки и губку на полочку кладёт center.js (выбранный приподнят)
       // азбука над доской
       const cols = [0xef5a6f, 0xffd84a, 0x5ac4f2, 0x7ad98a, 0xc48ff2];
       for (let i = 0; i < 5; i++) g.fillStyle(cols[i]).fillRect(x + 8 + i * Math.floor((b.w - 16) / 5), Math.max(0, b.y - 9), 5, 5);

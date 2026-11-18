@@ -62,6 +62,17 @@ const car = (body, light, dark) => canvasFor(30, 14, (r) => {
   disc(r, 7, 11, 2, '#3a3040'); disc(r, 22, 11, 2, '#3a3040'); r(7, 11, 1, 1, '#b8bccc'); r(22, 11, 1, 1, '#b8bccc');
 });
 
+/** Такси, мордой вправо: жёлтое, с шашечками и фонариком на крыше (lit — фонарик горит). Седок виден в окне. */
+const taxi = (lit) => canvasFor(36, 20, (r) => {
+  r(14, 0, 8, 3, lit ? '#fff07a' : '#e0c060'); r(15, 1, 6, 1, '#3a3040'); // фонарик «такси»
+  r(8, 3, 19, 7, '#ffd84a'); r(8, 3, 19, 1, '#fff4a8');
+  r(10, 4, 7, 5, '#bfe6ff'); r(18, 4, 7, 5, '#bfe6ff'); r(10, 4, 7, 1, '#ffffff'); // окна: в них видно седока
+  r(0, 9, 36, 7, '#ffd84a'); r(0, 9, 36, 1, '#fff4a8'); r(0, 15, 36, 1, '#c8a040');
+  for (let x = 2; x < 34; x += 4) { r(x, 11, 2, 1, '#3a3040'); r(x + 2, 12, 2, 1, '#3a3040'); } // шашечки
+  r(34, 10, 2, 2, '#fff07a'); r(0, 10, 1, 2, '#ef5a6f');
+  for (const x of [8, 27]) { r(x - 3, 15, 7, 5, '#3a3040'); r(x - 1, 17, 2, 1, '#b8bccc'); }
+});
+
 // ---------------------------------------------------------------- супермаркет
 const fruitStand = () => canvasFor(38, 32, (r) => {
   for (let x = 0; x < 38; x++) r(x, 0, 1, 5, Math.floor(x / 4) % 2 ? '#7ad98a' : '#ffffff'); // навес
@@ -295,6 +306,8 @@ export function makeCityArt(scene) {
   add('car_0', car('#ef5a6f', '#ff9aa8', '#b8342c'));
   add('car_1', car('#5a7fd9', '#9fb6f2', '#3a55a0'), false);
   add('car_2', car('#7ad98a', '#b8f0c0', '#4a9a5a'), false);
+  add('taxi', taxi(false));
+  add('taxi_b', taxi(true), false);
   add('fruitstand', fruitStand());
   add('breadrack', breadRack());
   add('cooler', cooler());
@@ -334,6 +347,7 @@ export function makeCityArt(scene) {
     big('fruitstand', 'fruit stand', { stock: 'fruit' }, 73),
     big('breadrack', 'bakery rack', { stock: 'bread' }, 74),
     big('cooler', 'dairy cooler', { stock: 'dairy' }, 75),
+    big('taxi', 'city taxi cab', { taxi: true, perch: { dy: 2, lo: -6, hi: 4, behind: true } }, 69), // кукла сидит в салоне: видна в окне
     big('shopcart', 'shopping trolley', { trolley: true, container: true, perch: { dy: 9, lo: -3, hi: 1, behind: true } }, 76),
     big('checkout', 'checkout counter', { checkout: true }, 77),
     big('showcase', 'pastry showcase', { stock: 'pastry' }, 78),

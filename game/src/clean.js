@@ -308,7 +308,8 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       const t = [...items, ...prints].sort((a, b) => far(a) - far(b))[0];
       if (!t) {
         // чисто: пара кругов по комнате (упирается в стену и разворачивается) — и уезжает
-        if (r.roam >= 2) { this.robotOff(r, true); return; }
+        // пока на нём катаются — ездит кругами дольше, а не уезжает сразу
+        if (r.roam >= (this.objs.some((x) => x.restOn === r) ? 8 : 2)) { this.robotOff(r, true); return; }
         r.roam++;
         const tx = r.x < (x0 + x1) / 2 ? x1 : x0;
         this.robotDrive(r, tx, Math.round(rnd(L.FLOOR_TOP + 8, L.ROOM_H - 2)), () => {
@@ -526,7 +527,9 @@ export function installClean(Room, { L, rnd, pick, sfx }) {
       const at = (pred) => this.objAt(q.x, q.y, (x) => x.kind === 'item' && x !== o && pred(x));
       // кукла, питомец или игрушка — на робота: катаются (по одному)
       if (o.kind === 'char' || ((o.beh.pet || o.rec.cat === 'toy') && !o.beh.robot && !o.beh.bin && !o.beh.sweeper && !o.beh.mop)) {
-        const r = at((x) => x.beh.robot && !x.leaving);
+        // робот низкий и всё время едет: достаточно бросить «примерно на него» — палец над ним или чуть выше
+        const r = at((x) => x.beh.robot && !x.leaving)
+          || this.objs.find((x) => x.beh?.robot && !x.leaving && Math.abs(x.x - q.x) < 20 && q.y > x.y - 40 && q.y < x.y + 8);
         if (r && !this.objs.some((x) => x.restOn === r)) {
           this.perchOn(o, r, r.x);
           if (o.beh?.pet) sfx.squeak();

@@ -249,6 +249,10 @@ const postcard = () => canvasFor(18, 12, (r) => {
 
 /** На чём катаются по спортплощадке (предметы каталога): кукла встаёт сверху, тап — поехали. */
 export const WHEELS = ['skateboard', 'kick scooter', 'bicycle'];
+/** Машинки из ящика, которые катают седоков (как скейт). */
+export const CARS = ['toy car', 'toy truck', 'toy wagon', 'toy train engine', 'car', 'convertible car', 'sports car', 'race car', 'muscle car',
+  'vintage car', 'police car', 'pickup truck', 'dump truck', 'food truck', 'school bus', 'city bus', 'double-decker bus', 'quad bike',
+  'motor scooter', 'hover car', 'hover bike', 'covered wagon', 'sled', 'dog sled'];
 
 export function makeParkArt(scene) {
   const T = scene.textures;
@@ -294,6 +298,11 @@ export function makeParkArt(scene) {
   for (const sub of WHEELS) {
     const rec = scene.items?.find((x) => x.subject === sub);
     if (rec) rec.beh = { wheels: true, perch: { dy: sub === 'bicycle' ? 7 : 4, lo: -2, hi: 2, stand: sub !== 'bicycle' } };
+  }
+  // машинки из ящика (игрушечные и «настоящие» маленькие): на крышу садится кукла, питомец или игрушка, тап — едут
+  for (const sub of CARS) {
+    const rec = scene.items?.find((x) => x.subject === sub);
+    if (rec) rec.beh = { wheels: true, perch: { dy: 7, lo: -2, hi: 2 } };
   }
 
   const big = (id, subject, beh, order, extra = {}) => ({ id, subject, cat: 'furniture', tags: ['furniture'], tex: id, bbox: [0, 0, 15, 15], order, beh, ...extra });

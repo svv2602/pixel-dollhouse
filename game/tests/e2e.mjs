@@ -2871,15 +2871,29 @@ test('центр: поезд везёт куда угодно, билет, ча�
     const a = s.objs.find((o) => o.beh?.abacus);
     for (let i = 0; i < 5; i++) s.tap(a);
     out.abacus = a.texture.key;
-    // губка в конце полочки стирает доску
+    // губка: один тап — выбрана (приподнята), водить по доске — стирает там, где провели; два тапа подряд — всё
     const b = s.board;
-    const slot = Math.floor(b.w / 5);
-    s.chalkDown({ x: b.x0 + 4 + 4 * slot + 3, y: b.y + b.h + 1 });
+    const sponge = { x: b.x0 + 4 + 4 * b.slot + 5, y: b.y + b.h + 1 };
+    const px = (x, y) => b.tex.getContext().getImageData(x, y, 1, 1).data[3];
+    s.chalkDown({ x: b.x0 + 10, y: b.y + 20 });
+    for (let i = 0; i < 30; i++) s.chalkAt({ x: b.x0 + 10 + i, y: b.y + 20 });
+    s.chalkEnd();
+    out.drawn = px(20, 20) > 0 && px(35, 20) > 0;
+    s.chalkDown(sponge);
+    out.lifted = b.pieces[4].y < b.pieceY;
+    s.chalkDown({ x: b.x0 + 18, y: b.y + 21 });
+    for (let i = 0; i < 4; i++) s.chalkAt({ x: b.x0 + 18 + i, y: b.y + 21 });
+    s.chalkEnd();
+    out.erased = px(20, 20) === 0 && px(35, 20) > 0; // стёрто только там, где прошла губка
+    s.redrawBoard(); // после перезагрузки — так же
+    out.kept = px(20, 20) === 0 && px(35, 20) > 0;
+    s.chalkDown(sponge);
+    s.chalkDown(sponge);
     out.wiped = s.flags.board.length;
     return out;
   });
-  assert.deepEqual(sc2, { seated: 0, abacus: 'abacus_5', wiped: 0 });
-  await waitFor((s) => Object.keys(s.stickers.found.center || {}).length >= 2, null, 5000); // билет и зверь с глобуса
+  assert.deepEqual(sc2, { seated: 0, abacus: 'abacus_5', drawn: true, lifted: true, erased: true, kept: true, wiped: 0 });
+  await waitFor((s) => Object.keys(s.stickers.found.center || {}).length >= 2, null, 15000); // билет и зверь с глобуса (под нагрузкой — не сразу)
   // больница: рентген, пластырь на ушибленную куклу, кушетка, шкафчик, скорая
   await room((s) => { s.goRoom(window.__dev.R.hospital); return true; });
   await waitFor((s) => s.curRoom === window.__dev.R.hospital);
@@ -2967,7 +2981,81 @@ test('центр: поезд везёт куда угодно, билет, ча�
   assert.notEqual(fin.changed, th2.before);
   assert.deepEqual({ stage: fin.stage, costume: fin.costume }, { stage: 'tstage_2', costume: true });
   const stats = await page.evaluate(() => window.__dev.getStats().feats);
-  for (const k of ['train', 'ticket', 'sclock', 'chalk', 'sbell', 'globe', 'abacus', 'couch', 'xray', 'plaster', 'ouch', 'medcab', 'ambulance', 'tstage', 'spot', 'costumes', 'tscreen']) assert.ok(stats[k] >= 1, `счётчик ${k}`);
+  for (const k of ['train', 'ticket', 'sclock', 'chalk', 'sponge', 'sbell', 'globe', 'abacus', 'couch', 'xray', 'plaster', 'ouch', 'medcab', 'ambulance', 'tstage', 'spot', 'costumes', 'tscreen']) assert.ok(stats[k] >= 1, `счётчик ${k}`);
+});
+
+test('транспорт: кукла садится на робота «примерно», катается дольше; тап по седоку везёт тележку; такси катает по городу; машинки из ящика возят седоков', async () => {
+  await freshRoom();
+  const R = await page.evaluate(() => window.__dev.R);
+  // робот: бросили куклу чуть выше робота — всё равно села; пока она едет, робот не уезжает после двух кругов
+  const rb = await room((s) => {
+    const y = s.objs.find((o) => o.beh?.bin).y;
+    s.spawnItem(s.findRec('apple'), 120, y - 6);
+    s.callRobot();
+    return true;
+  });
+  await waitFor((s) => s.robot && !s.robot.entering, null, 20000);
+  const ride = await room((s) => {
+    const r = s.robot;
+    const c = s.castChar('mia');
+    c.restOn = null; c.sleeping = false;
+    s.startDrag(c);
+    s.drop(c, { x: r.x + 8, y: r.y - 28 });
+    return { rider: c.restOn === r };
+  });
+  assert.deepEqual(ride, { rider: true });
+  await waitFor((s) => (s.robot?.roam || 0) >= 3, null, 60000);
+  assert.equal(await room((s) => !!s.robot && s.castChar('mia').restOn === s.robot), true, 'с седоком робот ездит дольше двух кругов');
+  await room((s) => { s.robotLeave(s.robot); return true; });
+  await waitFor((s) => !s.robot, null, 20000);
+  // супермаркет: кукла в тележке закрывает её собой — тап по кукле, и тележка едет
+  await room((s, R) => { s.travel(R.market); return true; }, R);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.market, null, 20000);
+  const tr = await room((s) => {
+    const t = s.objs.find((o) => o.beh?.trolley);
+    const c = s.castChar('mia');
+    c.restOn = null; c.sleeping = false;
+    s.startDrag(c);
+    s.drop(c, { x: t.x, y: t.y - 6 });
+    const x0 = t.x;
+    s.tap(c);
+    return { rider: c.restOn === t, rolling: !!t.rolling, x0 };
+  });
+  assert.equal(tr.rider, true);
+  assert.equal(tr.rolling, true);
+  // улица: такси у тротуара — посадили куклу, тап: уезжает, возвращается на место с ней
+  await room((s, R) => { s.travel(R.street); return true; }, R);
+  await waitFor((s) => !s.travelling && s.curRoom === window.__dev.R.street, null, 20000);
+  const tx = await room((s) => {
+    const t = s.objs.find((o) => o.beh?.taxi);
+    const c = s.castChar('mia');
+    c.restOn = null; c.sleeping = false;
+    s.startDrag(c);
+    s.drop(c, { x: t.x, y: t.y - 8 });
+    s.tap(t);
+    return { rider: c.restOn === t, riding: !!t.riding, home: Math.round(t.x) };
+  });
+  assert.deepEqual({ rider: tx.rider, riding: tx.riding }, { rider: true, riding: true });
+  await waitFor((s) => !s.objs.find((o) => o.beh?.taxi).riding, null, 15000);
+  const back = await room((s) => {
+    const t = s.objs.find((o) => o.beh?.taxi);
+    const c = s.castChar('mia');
+    return { x: Math.round(t.x), rider: c.restOn === t, near: Math.abs(c.x - t.x) < 12, alpha: t.alpha + c.alpha };
+  });
+  assert.deepEqual(back, { x: tx.home, rider: true, near: true, alpha: 2 });
+  // машинка из ящика: гоночная — котёнок сверху, тап — едет
+  const car = await room((s) => {
+    const W = Math.round(s.sys.game.config.width / s.cameras.main.zoom);
+    const c = s.spawnItem(s.findRec('race car'), s.curRoom * W + 60, s.objs.find((o) => o.beh?.bin).y - 4);
+    const k = s.spawnItem(s.findRec('kitten'), c.x + 30, c.y);
+    s.startDrag(k);
+    s.drop(k, { x: c.x, y: c.y - 6 });
+    s.tap(k); // тап по седоку — машинка едет
+    return { wheels: !!c.beh.wheels, rider: k.restOn === c, rolling: !!c.rolling };
+  });
+  assert.deepEqual(car, { wheels: true, rider: true, rolling: true });
+  const stats = await page.evaluate(() => window.__dev.getStats().feats);
+  for (const k of ['roboride', 'trolley', 'taxi', 'wheels']) assert.ok(stats[k] >= 1, `счётчик ${k}`);
 });
 
 test('нет ошибок в консоли', () => {

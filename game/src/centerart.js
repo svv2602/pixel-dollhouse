@@ -246,6 +246,12 @@ const postcard = () => canvasFor(18, 12, (r) => {
   r(13, 1, 4, 4, '#ef5a6f'); r(14, 2, 2, 2, '#ffffff');
   r(10, 6, 7, 1, '#c9b3e0'); r(10, 8, 6, 1, '#c9b3e0'); r(10, 10, 4, 1, '#c9b3e0');
 });
+/** Губка для доски: жёлтый поролон в дырочках на синей основе. */
+const sponge = () => canvasFor(14, 7, (r) => {
+  r(0, 0, 14, 4, '#ffd84a'); r(0, 0, 14, 1, '#fff4a8');
+  for (const [x, y] of [[2, 1], [6, 2], [10, 1], [4, 3], [12, 3]]) r(x, y, 1, 1, '#e0a838');
+  r(0, 4, 14, 3, '#5ac4f2'); r(0, 6, 14, 1, '#3a8fc0');
+});
 /** Мелок для значка-подсказки «нарисуй на доске». */
 const chalkIcon = () => canvasFor(14, 12, (r) => {
   r(0, 0, 14, 10, '#2f5a4a'); r(0, 10, 14, 2, '#c98a52');
@@ -305,6 +311,7 @@ export function makeCenterArt(scene) {
   add('place_center', centerIcon(), false);
   add('postcard_center', postcard());
   add('chalk_icon', chalkIcon(), false);
+  add('sponge', sponge());
 
   const big = (id, subject, beh, order, extra = {}) => ({ id, subject, cat: 'furniture', tags: ['furniture'], tex: id, bbox: [0, 0, 15, 15], order, beh, ...extra });
   // названия подобраны так, чтобы правила behaviorOf() по словам (chest, basket, lamp, bed, hat, chair…) их не цепляли
